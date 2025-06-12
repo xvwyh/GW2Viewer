@@ -193,6 +193,7 @@
     <ClInclude Include="PackTextVoices.h" />
     <ClInclude Include="ProgressBarContext.h" />
     <ClInclude Include="RC4.h" />
+    <ClInclude Include="Resource.h" />
     <ClInclude Include="StringsFile.h" />
     <ClInclude Include="Symbols.h" />
     <ClInclude Include="Texture.h" />
@@ -213,6 +214,12 @@
     <Content Include="Resources\**">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="Icon.ico" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="Resource.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

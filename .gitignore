@@ -1,5 +1,6 @@
 GW2Viewer/
 vcpkg_installed/
 x64/
+*.aps
 *.filters
 *.user

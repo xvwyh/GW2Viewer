@@ -1,4 +1,5 @@
 ﻿#include "Config.h"
+#include "Resource.h"
 #include "UI.h"
 #include "Texture.h"
 #include <imgui.h>
@@ -52,9 +53,23 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
     CoInitializeEx(nullptr, COINIT_MULTITHREADED);
 
     // Create application window
-    WNDCLASSEX wc = { sizeof(WNDCLASSEX), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(NULL), NULL, LoadCursor(NULL, IDC_ARROW), NULL, NULL, _T("ImGui Example"), NULL };
+    WNDCLASSEX wc =
+    {
+        .cbSize = sizeof(WNDCLASSEX),
+        .style = CS_CLASSDC,
+        .lpfnWndProc = WndProc,
+        .cbClsExtra = 0,
+        .cbWndExtra = 0,
+        .hInstance = hInstance,
+        .hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON)),
+        .hCursor = LoadCursor(nullptr, IDC_ARROW),
+        .hbrBackground = nullptr,
+        .lpszMenuName = nullptr,
+        .lpszClassName = _T("GW2Viewer Window"),
+        .hIconSm = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_ICON)),
+    };
     RegisterClassEx(&wc);
-    HWND hwnd = CreateWindow(_T("ImGui Example"), _T("ImGui DirectX11 Example"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
+    HWND hwnd = CreateWindow(_T("GW2Viewer Window"), _T("GW2Viewer"), WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, NULL, NULL, wc.hInstance, NULL);
 
     // Setup swap chain
     DXGI_SWAP_CHAIN_DESC sd;
@@ -150,7 +165,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
     if (g_pd3dDeviceContext) { g_pd3dDeviceContext->Release(); g_pd3dDeviceContext = NULL; }
     if (g_pd3dDevice) try { g_pd3dDevice->Release(); g_pd3dDevice = NULL; } catch (...) { }
     DestroyWindow(hwnd);
-    UnregisterClass(_T("ImGui Example"), wc.hInstance);
+    UnregisterClass(_T("GW2Viewer Window"), wc.hInstance);
 
     CoUninitialize();
 
