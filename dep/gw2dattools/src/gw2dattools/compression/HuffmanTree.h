@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstdint>
+#include <optional>
 
 #include "../utils/BitArray.h"
 
@@ -25,6 +26,8 @@ namespace gw2dt {
 
             template <typename IntType>
             void readCode( utils::BitArray<IntType>& iBitArray, SymbolType& oSymbol ) const;
+
+            std::optional<SymbolType> _singleValue;
 
         private:
             void clear( );

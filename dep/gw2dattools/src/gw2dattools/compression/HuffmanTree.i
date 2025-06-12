@@ -11,6 +11,8 @@ namespace gw2dt {
             uint8_t sMaxCodeBitsLength,
             uint16_t sMaxSymbolValue>
             void HuffmanTree<SymbolType, sNbBitsHash, sMaxCodeBitsLength, sMaxSymbolValue>::clear( ) {
+                _singleValue.reset( );
+
                 _codeComparisonArray.fill( 0 );
                 _symbolValueArrayOffsetArray.fill( 0 );
                 _symbolValueArray.fill( 0 );
@@ -27,6 +29,12 @@ namespace gw2dt {
             uint16_t sMaxSymbolValue>
             template <typename IntType>
         void HuffmanTree<SymbolType, sNbBitsHash, sMaxCodeBitsLength, sMaxSymbolValue>::readCode( utils::BitArray<IntType>& iBitArray, SymbolType& oSymbol ) const {
+            if (_singleValue)
+            {
+                oSymbol = *_singleValue;
+                return;
+            }
+
             uint32_t aHashValue;
             iBitArray.readLazy( sNbBitsHash, aHashValue );
 

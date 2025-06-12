@@ -37,6 +37,7 @@ namespace gw2dt {
                 ioHuffmanTreeBuilder.clear( );
 
                 int16_t aRemainingSymbols = aNumberOfSymbols - 1;
+                uint16_t const singleValue = aRemainingSymbols;
 
                 // Fetching the code repartition
                 while ( aRemainingSymbols >= 0 ) {
@@ -58,7 +59,10 @@ namespace gw2dt {
                     }
                 }
 
-                return ioHuffmanTreeBuilder.buildHuffmanTree( ioHuffmanTree );
+                if (!ioHuffmanTreeBuilder.buildHuffmanTree( ioHuffmanTree ))
+                    ioHuffmanTree._singleValue.emplace( singleValue );
+
+                return true;
             }
 
             void inflatedata( DatFileBitArray& ioInputBitArray, uint32_t iOutputSize, uint8_t* ioOutputTab ) {
@@ -81,7 +85,7 @@ namespace gw2dt {
                     // Reading HuffmanTrees
                     if ( !parseHuffmanTree( ioInputBitArray, aHuffmanTreeSymbol, aHuffmanTreeBuilder )
                         || !parseHuffmanTree( ioInputBitArray, aHuffmanTreeCopy, aHuffmanTreeBuilder ) ) {
-                        break;
+                        throw exception::Exception( "Decompression failed." );
                     }
 
                     // Reading MaxCount
