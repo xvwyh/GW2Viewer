@@ -208,6 +208,7 @@ std::unique_ptr<DirectX::ScratchImage> TextureEntry::GetRGBAImage() const
                 case 'DXTL': format = DXGI_FORMAT_BC3_UNORM; miscFlags2 |= TEX_ALPHA_MODE_PREMULTIPLIED; break;
 
                 case 'DXTA': format = DXGI_FORMAT_BC4_UNORM; miscFlags2 |= TEX_ALPHA_MODE_OPAQUE; break;
+                case 'BC7X': format = DXGI_FORMAT_BC7_UNORM; miscFlags2 |= TEX_ALPHA_MODE_STRAIGHT; break;
                 case '3DCX': format = DXGI_FORMAT_R8G8B8A8_UNORM; miscFlags2 |= TEX_ALPHA_MODE_OPAQUE; break;
                 default:
                     return nullptr;

@@ -47,7 +47,7 @@ namespace gw2dt {
 
             // Static Values
             HuffmanTree sHuffmanTreeDict;
-            Format sFormats[9];
+            Format sFormats[10];
             bool sStaticValuesInitialized( false );
 
             void initializeStaticValues( ) {
@@ -64,6 +64,7 @@ namespace gw2dt {
                     sFormats[2] = sFormats[1];
                     sFormats[3] = sFormats[1];
                     sFormats[4] = sFormats[1];
+                    sFormats[9] = sFormats[1];
 
                     Format& aDxtAFormat = sFormats[5];
                     aDxtAFormat.flags = FF_ALPHA | FF_PLAINCOMP;
@@ -141,6 +142,9 @@ namespace gw2dt {
 
                 case 0x58434433: // 3DCX
                     return sFormats[8];
+
+                case 0x58374342: // BC7X
+                    return sFormats[9];
 
                 default:
                     throw exception::Exception( "Unknown format." );
