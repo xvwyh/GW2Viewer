@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <VCProjectVersion>16.0</VCProjectVersion>
+    <Keyword>Win32Proj</Keyword>
+    <ProjectGuid>{8928d89f-4a74-4b93-87df-61ef5d214ec3}</ProjectGuid>
+    <RootNamespace>GW2Viewer</RootNamespace>
+    <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Common.props" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="Common.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup Label="Vcpkg">
+    <VcpkgEnableManifest>true</VcpkgEnableManifest>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+  </PropertyGroup>
+  <PropertyGroup Label="Vcpkg" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <VcpkgUseStatic>true</VcpkgUseStatic>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile />
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+    <ClCompile>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+    </ClCompile>
+    <Link>
+      <SubSystem>Windows</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="Archive.cpp" />
+    <ClCompile Include="ArchiveManager.cpp" />
+    <ClCompile Include="BankFileData.cpp" />
+    <ClCompile Include="BankIndexData.cpp" />
+    <ClCompile Include="Config.cpp" />
+    <ClCompile Include="Content.cpp" />
+    <ClCompile Include="ContentQuery.cpp" />
+    <ClCompile Include="dep\gw2browser\src\FileReader.cpp" />
+    <ClCompile Include="dep\gw2browser\src\Readers\ImageReader.cpp" />
+    <ClCompile Include="dep\gw2browser\src\Util\Misc.cpp" />
+    <ClCompile Include="dep\gw2dattools\src\gw2dattools\compression\huffmanTreeUtils.cpp" />
+    <ClCompile Include="dep\gw2dattools\src\gw2dattools\compression\inflateDatFileBuffer.cpp" />
+    <ClCompile Include="dep\gw2dattools\src\gw2dattools\compression\inflateTextureFileBuffer.cpp" />
+    <ClCompile Include="dep\gw2dattools\src\gw2dattools\c_api\compression_inflateDatFileBuffer.cpp" />
+    <ClCompile Include="dep\gw2dattools\src\gw2dattools\exception\Exception.cpp" />
+    <ClCompile Include="dep\gw2dattools\src\gw2dattools\format\ANDat.cpp" />
+    <ClCompile Include="dep\gw2dattools\src\gw2dattools\format\Mapping.cpp" />
+    <ClCompile Include="dep\gw2dattools\src\gw2dattools\format\Mft.cpp" />
+    <ClCompile Include="dep\gw2dattools\src\gw2dattools\interface\ANDatInterface.cpp" />
+    <ClCompile Include="dep\imgui\imgui.cpp" />
+    <ClCompile Include="dep\imgui\imgui_demo.cpp" />
+    <ClCompile Include="dep\imgui\imgui_draw.cpp" />
+    <ClCompile Include="dep\imgui\imgui_impl_dx11.cpp" />
+    <ClCompile Include="dep\imgui\imgui_impl_win32.cpp" />
+    <ClCompile Include="dep\imgui\imgui_stdlib.cpp" />
+    <ClCompile Include="dep\imgui\imgui_tables.cpp" />
+    <ClCompile Include="dep\imgui\imgui_widgets.cpp" />
+    <ClCompile Include="Encryption.cpp" />
+    <ClCompile Include="HexViewer.cpp" />
+    <ClCompile Include="ImGuiExtensions.cpp" />
+    <ClCompile Include="Main.cpp" />
+    <ClCompile Include="MapLayoutViewer.cpp" />
+    <ClCompile Include="PackContent.cpp" />
+    <ClCompile Include="PackFileLayout.cpp" />
+    <ClCompile Include="PackTextManifest.cpp" />
+    <ClCompile Include="PackTextVariants.cpp" />
+    <ClCompile Include="PackTextVoices.cpp" />
+    <ClCompile Include="StringsFile.cpp" />
+    <ClCompile Include="Symbols.cpp" />
+    <ClCompile Include="Texture.cpp" />
+    <ClCompile Include="TypeInfo.cpp" />
+    <ClCompile Include="UI.cpp" />
+    <ClCompile Include="Utils.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Natvis Include="pf.natvis" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Archive.h" />
+    <ClInclude Include="ArchiveManager.h" />
+    <ClInclude Include="BankFileData.h" />
+    <ClInclude Include="BankIndexData.h" />
+    <ClInclude Include="Common.h" />
+    <ClInclude Include="Config.h" />
+    <ClInclude Include="Content.h" />
+    <ClInclude Include="ContentConstants.h" />
+    <ClInclude Include="ContentQuery.h" />
+    <ClInclude Include="dep\fmod\fmod.h" />
+    <ClInclude Include="dep\fmod\fmod.hpp" />
+    <ClInclude Include="dep\fmod\fmod_codec.h" />
+    <ClInclude Include="dep\fmod\fmod_common.h" />
+    <ClInclude Include="dep\fmod\fmod_dsp.h" />
+    <ClInclude Include="dep\fmod\fmod_dsp_effects.h" />
+    <ClInclude Include="dep\fmod\fmod_errors.h" />
+    <ClInclude Include="dep\fmod\fmod_output.h" />
+    <ClInclude Include="dep\fmod\fmod_studio.h" />
+    <ClInclude Include="dep\fmod\fmod_studio.hpp" />
+    <ClInclude Include="dep\fmod\fmod_studio_common.h" />
+    <ClInclude Include="dep\gw2browser\src\ANetStructs.h" />
+    <ClInclude Include="dep\gw2browser\src\FileReader.h" />
+    <ClInclude Include="dep\gw2browser\src\Readers\ImageReader.h" />
+    <ClInclude Include="dep\gw2browser\src\Util\Misc.h" />
+    <ClInclude Include="dep\gw2browser\src\wx_pch.h" />
+    <ClInclude Include="dep\gw2dattools\include\gw2dattools\compression\inflateDatFileBuffer.h" />
+    <ClInclude Include="dep\gw2dattools\include\gw2dattools\compression\inflateTextureFileBuffer.h" />
+    <ClInclude Include="dep\gw2dattools\include\gw2dattools\c_api\compression_inflateDatFileBuffer.h" />
+    <ClInclude Include="dep\gw2dattools\include\gw2dattools\dllMacros.h" />
+    <ClInclude Include="dep\gw2dattools\include\gw2dattools\exception\Exception.h" />
+    <ClInclude Include="dep\gw2dattools\include\gw2dattools\interface\ANDatInterface.h" />
+    <ClInclude Include="dep\gw2dattools\src\gw2dattools\compression\HuffmanTree.h" />
+    <ClInclude Include="dep\gw2dattools\src\gw2dattools\compression\huffmanTreeUtils.h" />
+    <ClInclude Include="dep\gw2dattools\src\gw2dattools\format\ANDat.h" />
+    <ClInclude Include="dep\gw2dattools\src\gw2dattools\format\Mapping.h" />
+    <ClInclude Include="dep\gw2dattools\src\gw2dattools\format\Mft.h" />
+    <ClInclude Include="dep\gw2dattools\src\gw2dattools\format\Utils.h" />
+    <ClInclude Include="dep\gw2dattools\src\gw2dattools\utils\BitArray.h" />
+    <ClInclude Include="dep\imguiwrap.dear.h" />
+    <ClInclude Include="dep\imguiwrap.defermacro.h" />
+    <ClInclude Include="dep\imguiwrap.helpers.h" />
+    <ClInclude Include="dep\imgui\imconfig.h" />
+    <ClInclude Include="dep\imgui\imgui.h" />
+    <ClInclude Include="dep\imgui\imgui_impl_dx11.h" />
+    <ClInclude Include="dep\imgui\imgui_impl_win32.h" />
+    <ClInclude Include="dep\imgui\imgui_internal.h" />
+    <ClInclude Include="dep\imgui\imgui_stdlib.h" />
+    <ClInclude Include="dep\imgui\imstb_rectpack.h" />
+    <ClInclude Include="dep\imgui\imstb_textedit.h" />
+    <ClInclude Include="dep\imgui\imstb_truetype.h" />
+    <ClInclude Include="Encryption.h" />
+    <ClInclude Include="GUID.h" />
+    <ClInclude Include="HexViewer.h" />
+    <ClInclude Include="IconsFontAwesome6.h" />
+    <ClInclude Include="ImGuiConfig.h" />
+    <ClInclude Include="ImGuiExtensions.h" />
+    <ClInclude Include="JSON.h" />
+    <ClInclude Include="MapLayoutViewer.h" />
+    <ClInclude Include="PackContent.h" />
+    <ClInclude Include="PackFile.h" />
+    <ClInclude Include="PackFileLayout.h" />
+    <ClInclude Include="PackFileLayoutTraversal.h" />
+    <ClInclude Include="PackTextManifest.h" />
+    <ClInclude Include="PackTextVariants.h" />
+    <ClInclude Include="PackTextVoices.h" />
+    <ClInclude Include="ProgressBarContext.h" />
+    <ClInclude Include="RC4.h" />
+    <ClInclude Include="StringsFile.h" />
+    <ClInclude Include="Symbols.h" />
+    <ClInclude Include="Texture.h" />
+    <ClInclude Include="TypeInfo.h" />
+    <ClInclude Include="UI.h" />
+    <ClInclude Include="Utils.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Common.props" />
+    <CopyFileToFolders Include="dep\fmod\fmod.dll">
+      <FileType>Document</FileType>
+    </CopyFileToFolders>
+    <None Include="dep\gw2dattools\src\gw2dattools\compression\HuffmanTree.i" />
+    <None Include="dep\gw2dattools\src\gw2dattools\utils\BitArray.i" />
+    <None Include="vcpkg.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="Resources\**">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

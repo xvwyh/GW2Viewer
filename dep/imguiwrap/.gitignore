@@ -1,0 +1,14 @@
+# IDEs
+.vs
+.vscode
+.idea
+
+# Generated directories
+build
+docker-build
+wsl-build
+out
+Debug
+Release
+RelWithDebInfo
+imgui.ini

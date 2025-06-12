@@ -1,0 +1,24 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "dependencies": [
+    "boost-multiprecision",
+    "boost-thread",
+    "boost-serialization",
+    "cpp-base64",
+    "concurrentqueue",
+    "directxtex",
+    "directxtk",
+    "libpng",
+    "ms-gsl",
+    "magic-enum",
+    "nlohmann-json",
+    "picosha2",
+    "scnlib",
+    "sqlite3",
+    "sqlite-modern-cpp"
+  ],
+  "builtin-baseline": "501cb01e517ee5689577bb01ba8bd1b4c1041a53",
+  "overrides": [
+    { "name": "scnlib", "version": "1.1.2" }
+  ]
+}

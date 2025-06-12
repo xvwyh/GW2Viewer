@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+	<!--
+	<Type Name="pf::Array&lt;*&gt;">
+		<DisplayString>{{ size={m_count}, offset={m_pointer.m_offset} }}</DisplayString>
+		<Expand>
+			<ArrayItems>
+				<Size>m_count</Size>
+				<ValuePointer>($T1*)((char*)&amp;m_pointer + m_pointer.m_offset)</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+	<Type Name="pf::String">
+		<DisplayString>{(char*)((char*)&amp;m_pointer + m_pointer.m_offset),s}</DisplayString>
+	</Type>
+	<Type Name="pf::String32">
+		<DisplayString>{(char*)((char*)&amp;m_pointer + m_pointer.m_offset),s}</DisplayString>
+	</Type>
+	<Type Name="pf::WString">
+		<DisplayString>{(wchar_t*)((char*)&amp;m_pointer + m_pointer.m_offset),su}</DisplayString>
+	</Type>
+	<Type Name="pf::WString32">
+		<DisplayString>{(wchar_t*)((char*)&amp;m_pointer + m_pointer.m_offset),su}</DisplayString>
+	</Type>
+	<Type Name="pf::StringBase&lt;char,__int64&gt;;">
+		<DisplayString>{(char*)((char*)&amp;m_pointer + m_pointer.m_offset),s}</DisplayString>
+	</Type>
+	<Type Name="pf::StringBase&lt;char,int&gt;;">
+		<DisplayString>{(char*)((char*)&amp;m_pointer + m_pointer.m_offset),s}</DisplayString>
+	</Type>
+	<Type Name="pf::StringBase&lt;wchar_t,__int64&gt;;">
+		<DisplayString>{(wchar_t*)((char*)&amp;m_pointer + m_pointer.m_offset),su}</DisplayString>
+	</Type>
+	<Type Name="pf::StringBase&lt;wchar_t,int&gt;;">
+		<DisplayString>{(wchar_t*)((char*)&amp;m_pointer + m_pointer.m_offset),su}</DisplayString>
+	</Type>
+	<Type Name="pf::Ptr&lt;*&gt;">
+		<DisplayString Condition="m_offset">{{ {*($T1*)((char*)&amp;m_offset + m_offset)} }}</DisplayString>
+		<DisplayString Condition="!m_offset">nullptr</DisplayString>
+		<Expand>
+			<ExpandedItem Condition="m_offset">*($T1*)((char*)&amp;m_offset + m_offset)</ExpandedItem>
+		</Expand>
+	</Type>
+	<Type Name="pf::FileReference;">
+		<DisplayString>FileID: {m_high >= 0x100 &amp;&amp; m_low >= 0x100 ? (m_high - 0x100) * 0xff00 + (m_low - 0xff) : 0}</DisplayString>
+	</Type>
+	<Type Name="pf::FileNameBase&lt;__int64&gt;">
+		<DisplayString>FileName: {m_reference}</DisplayString>
+		<Expand/>
+	</Type>
+	<Type Name="pf::FileNameBase&lt;int&gt;">
+		<DisplayString>FileName: {m_reference}</DisplayString>
+		<Expand>
+			<Synthetic Name="[FileID]">
+				<DisplayString>{m_reference}</DisplayString>
+			</Synthetic>
+			<ExpandedItem>m_reference</ExpandedItem>
+		</Expand>
+	</Type>
+	<Type Name="ContentNamespace;">
+		<DisplayString>{Name} {CustomName} Domain: {Domain}</DisplayString>
+	</Type>
+	<Type Name="pf::Token32;">
+		<DisplayString>{GetString(),s8}</DisplayString>
+		<Expand/>
+	</Type>
+	<Type Name="pf::Token64;">
+		<DisplayString>{GetString(),s8}</DisplayString>
+		<Expand/>
+	</Type>
+	-->
+</AutoVisualizer>
