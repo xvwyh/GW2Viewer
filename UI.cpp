@@ -5637,6 +5637,12 @@ void UI::EventViewer::DrawObjective(Event::Objective const& objective, Cache::Da
                     I::CloseCurrentPopup();
             }
         } },
+        { { "Push" }, [](Params const& params)
+        {
+            I::Text("%f", ((float*)params.Objective.ExtraBlob.data())[0]);
+            I::Text("%f", ((float*)params.Objective.ExtraBlob.data())[1]);
+            I::Text("%f", ((float*)params.Objective.ExtraBlob.data())[2]);
+        } },
         { { "QuestManual" }, [](Params const& params)
         {
             
@@ -5770,12 +5776,6 @@ void UI::EventViewer::DrawObjective(Event::Objective const& objective, Cache::Da
                 .WarningTime = params.Objective.ExtraInt,
                 .TargetCount = params.Objective.ExtraInt * 100,
             });
-        } },
-        { { "Unk30" }, [](Params const& params)
-        {
-            I::Text("%f", ((float*)params.Objective.ExtraBlob.data())[0]);
-            I::Text("%f", ((float*)params.Objective.ExtraBlob.data())[1]);
-            I::Text("%f", ((float*)params.Objective.ExtraBlob.data())[2]);
         } },
     };
 
