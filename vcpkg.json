@@ -17,7 +17,7 @@
     "sqlite3",
     "sqlite-modern-cpp"
   ],
-  "builtin-baseline": "501cb01e517ee5689577bb01ba8bd1b4c1041a53",
+  "builtin-baseline": "ef7dbf94b9198bc58f45951adcf1f041fcbc5ea0",
   "overrides": [
     { "name": "scnlib", "version": "1.1.2" }
   ]

@@ -1,0 +1,9 @@
+export module GW2Viewer.Data.Content;
+export import :ContentFilter;
+export import :ContentName;
+export import :ContentNamespace;
+export import :ContentObject;
+export import :ContentTypeInfo;
+export import :Symbols;
+export import :Query;
+export import :TypeInfo;

@@ -1,7 +1,4 @@
-﻿#include "Config.h"
-#include "Resource.h"
-#include "UI.h"
-#include "Texture.h"
+﻿#include "Resource.h"
 #include <imgui.h>
 #include <imgui_impl_dx11.h>
 #include <imgui_impl_win32.h>
@@ -10,13 +7,10 @@
 //#include <dinput.h>
 #include <tchar.h>
 
-static ID3D11Device* g_pd3dDevice = NULL;
-static ID3D11DeviceContext* g_pd3dDeviceContext = NULL;
-static IDXGISwapChain* g_pSwapChain = NULL;
-static ID3D11RenderTargetView* g_mainRenderTargetView = NULL;
-
-ID3D11Device* GetGraphicsDevice() { return g_pd3dDevice; }
-IDXGISwapChain* GetSwapChain() { return g_pSwapChain; }
+import GW2Viewer.Data.Game;
+import GW2Viewer.System.Graphics;
+import GW2Viewer.UI.Manager;
+import GW2Viewer.User.Config;
 
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
@@ -27,13 +21,13 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     switch (msg)
     {
     case WM_SIZE:
-        if (g_pd3dDevice != NULL && wParam != SIZE_MINIMIZED)
+        if (G::GraphicsDevice && wParam != SIZE_MINIMIZED)
         {
-            if (g_mainRenderTargetView) { g_mainRenderTargetView->Release(); g_mainRenderTargetView = NULL; }
-            g_pSwapChain->ResizeBuffers(0, (UINT)LOWORD(lParam), (UINT)HIWORD(lParam), DXGI_FORMAT_UNKNOWN, 0);
+            if (G::RenderTargetView) { G::RenderTargetView->Release(); G::RenderTargetView = nullptr; }
+            G::SwapChain->ResizeBuffers(0, (UINT)LOWORD(lParam), (UINT)HIWORD(lParam), DXGI_FORMAT_UNKNOWN, 0);
             ID3D11Texture2D* pBackBuffer;
-            g_pSwapChain->GetBuffer(0, (IID&)IID_PPV_ARGS(&pBackBuffer));
-            g_pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &g_mainRenderTargetView);
+            G::SwapChain->GetBuffer(0, (IID&)IID_PPV_ARGS(&pBackBuffer));
+            G::GraphicsDevice->CreateRenderTargetView(pBackBuffer, nullptr, &G::RenderTargetView);
             pBackBuffer->Release();
         }
         return 0;
@@ -92,12 +86,12 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
     //createDeviceFlags |= D3D11_CREATE_DEVICE_DEBUG;
     D3D_FEATURE_LEVEL featureLevel;
     const D3D_FEATURE_LEVEL featureLevelArray[2] = { D3D_FEATURE_LEVEL_11_0, D3D_FEATURE_LEVEL_10_0, };
-    if (D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &g_pSwapChain, &g_pd3dDevice, &featureLevel, &g_pd3dDeviceContext) != S_OK)
+    if (D3D11CreateDeviceAndSwapChain(NULL, D3D_DRIVER_TYPE_HARDWARE, NULL, createDeviceFlags, featureLevelArray, 2, D3D11_SDK_VERSION, &sd, &G::SwapChain, &G::GraphicsDevice, &featureLevel, &G::GraphicsDeviceContext) != S_OK)
         return false;
 
     ID3D11Texture2D* pBackBuffer;
-    g_pSwapChain->GetBuffer(0, (IID&)IID_PPV_ARGS(&pBackBuffer));
-    g_pd3dDevice->CreateRenderTargetView(pBackBuffer, NULL, &g_mainRenderTargetView);
+    G::SwapChain->GetBuffer(0, (IID&)IID_PPV_ARGS(&pBackBuffer));
+    G::GraphicsDevice->CreateRenderTargetView(pBackBuffer, NULL, &G::RenderTargetView);
     pBackBuffer->Release();
 
     // Show the window
@@ -114,10 +108,10 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
 
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_Init(hwnd);
-    ImGui_ImplDX11_Init(g_pd3dDevice, g_pd3dDeviceContext);
+    ImGui_ImplDX11_Init(G::GraphicsDevice, G::GraphicsDeviceContext);
 
-    g_config.Load();
-    g_ui.Create();
+    G::Config.Load();
+    G::UI.Load();
 
     ImVec4 clear_col = ImColor(0, 0, 0);
 
@@ -137,33 +131,33 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
         ImGui_ImplWin32_NewFrame();
         ImGui::NewFrame();
 
-        g_ui.DrawFrame();
+        G::UI.Update();
 
         // Rendering
         ImGui::Render();
-        g_pd3dDeviceContext->OMSetRenderTargets(1, &g_mainRenderTargetView, NULL);
-        g_pd3dDeviceContext->ClearRenderTargetView(g_mainRenderTargetView, (float*)&clear_col);
+        G::GraphicsDeviceContext->OMSetRenderTargets(1, &G::RenderTargetView, NULL);
+        G::GraphicsDeviceContext->ClearRenderTargetView(G::RenderTargetView, (float*)&clear_col);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
-        g_pSwapChain->Present(1, 0); // Present with vsync
+        G::SwapChain->Present(1, 0); // Present with vsync
         //g_pSwapChain->Present(0, 0); // Present without vsync
 
         if (GetForegroundWindow() != hwnd && !ImGui::GetIO().WantCaptureMouse)
             Sleep(100);
     }
 
-    g_config.Save();
+    G::Config.Save();
 
-    StopLoadingTextures();
+    G::Game.Texture.StopLoading();
 
     ImGui_ImplDX11_Shutdown();
     ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
 
-    if (g_mainRenderTargetView) { g_mainRenderTargetView->Release(); g_mainRenderTargetView = NULL; }
-    if (g_pSwapChain) { g_pSwapChain->Release(); g_pSwapChain = NULL; }
-    if (g_pd3dDeviceContext) { g_pd3dDeviceContext->Release(); g_pd3dDeviceContext = NULL; }
-    if (g_pd3dDevice) try { g_pd3dDevice->Release(); g_pd3dDevice = NULL; } catch (...) { }
+    if (G::RenderTargetView) { G::RenderTargetView->Release(); G::RenderTargetView = nullptr; }
+    if (G::SwapChain) { G::SwapChain->Release(); G::SwapChain = nullptr; }
+    if (G::GraphicsDeviceContext) { G::GraphicsDeviceContext->Release(); G::GraphicsDeviceContext = nullptr; }
+    if (G::GraphicsDevice) try { G::GraphicsDevice->Release(); G::GraphicsDevice = nullptr; } catch (...) { }
     DestroyWindow(hwnd);
     UnregisterClass(_T("GW2Viewer Window"), wc.hInstance);
 

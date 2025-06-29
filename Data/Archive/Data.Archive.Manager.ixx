@@ -1,0 +1,96 @@
+export module GW2Viewer.Data.Archive.Manager;
+import GW2Viewer.Common;
+import GW2Viewer.Data.Archive;
+import GW2Viewer.Data.Pack.PackFile;
+import GW2Viewer.Utils.ProgressBarContext;
+import std;
+import <boost/container/static_vector.hpp>;
+
+export namespace Data::Archive
+{
+
+class Manager
+{
+public:
+    [[nodiscard]] Source* GetSource(Kind kind = Kind::Game)
+    {
+        auto const itr = std::ranges::find(m_sources, kind, &Source::Kind);
+        return itr != m_sources.end() ? itr.get_ptr() : nullptr;
+    }
+    [[nodiscard]] Archive* GetArchive(Kind kind = Kind::Game)
+    {
+        if (auto const source = GetSource(kind))
+            return &source->Archive;
+        return nullptr;
+    }
+    [[nodiscard]] auto const& GetFiles() const { return m_files; }
+    [[nodiscard]] File const* GetFileEntry(uint32 fileID, Kind kind = Kind::Game) const
+    {
+        if (auto const itr = std::ranges::find(m_sources, kind, &Source::Kind); itr != m_sources.end())
+            if (auto const range = std::ranges::equal_range(itr->Files, fileID, { }, &File::ID))
+                return &range.front();
+
+        return nullptr;
+    }
+    [[nodiscard]] std::vector<byte> GetFile(uint32 fileID)
+    {
+        std::vector<byte> buffer;
+        for (auto& source : m_sources)
+        {
+            if (auto const size = source.Archive.GetFileSize(fileID))
+            {
+                buffer.resize(size);
+                source.Archive.GetFile(fileID, buffer);
+                if (buffer.size() == size)
+                    break;
+            }
+        }
+        return buffer;
+    }
+    [[nodiscard]] std::unique_ptr<Pack::PackFile> GetPackFile(uint32 fileID)
+    {
+        for (auto& source : m_sources)
+            if (auto file = source.Archive.GetPackFile(fileID))
+                return file;
+
+        return nullptr;
+    }
+
+    [[nodiscard]] bool ContainsFile(uint32 fileID)
+    {
+        if (fileID > m_files.rbegin()->ID)
+            return false;
+
+        return std::ranges::binary_search(m_files, fileID, { }, &File::ID);
+    }
+
+    void Add(Kind kind, std::filesystem::path const& path);
+
+    void Load(ProgressBarContext& progress)
+    {
+        if (m_loaded)
+            return;
+        m_loaded = true;
+
+        for (auto& source : m_sources)
+        {
+            source.Archive.Open(source.Path, progress);
+            source.Files.assign_range(source.Archive.FileIdToMftEntry | std::views::keys | std::views::transform([&](uint32 fileID) { return File(fileID, source); }));
+            m_files.insert_range(source.Files);
+        }
+    }
+
+private:
+    boost::container::static_vector<Source, 5> m_sources;
+    std::set<File> m_files;
+    bool m_loaded = false;
+};
+
+inline std::strong_ordering File::operator<=>(File const& other) const
+{
+    if (auto const result = ID <=> other.ID; result != std::strong_ordering::equal) return result;
+    if (auto const result = Source.get() <=> other.Source.get(); result != std::strong_ordering::equal) return result;
+    return std::strong_ordering::equal;
+}
+
+}
