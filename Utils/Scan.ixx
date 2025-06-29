@@ -1,5 +1,5 @@
 module;
-#include "Utils/Utils.Scan.h"
+#include "Utils/Scan.h"
 
 export module GW2Viewer.Utils.Scan;
 import GW2Viewer.Utils.ConstString;

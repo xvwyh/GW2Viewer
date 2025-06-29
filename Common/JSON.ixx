@@ -1,6 +1,6 @@
 module;
 //#include <nlohmann/json.hpp>
-#include "Utils/Utils.Scan.h"
+#include "Utils/Scan.h"
 
 export module GW2Viewer.Common.JSON;
 //export import nlohmann.json;

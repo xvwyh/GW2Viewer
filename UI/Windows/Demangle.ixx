@@ -1,6 +1,6 @@
 module;
 #include "UI/ImGui/ImGui.h"
-#include "Utils/Utils.Async.h"
+#include "Utils/Async.h"
 
 export module GW2Viewer.UI.Windows.Demangle;
 import GW2Viewer.Common.Hash;

@@ -1,6 +1,6 @@
 module;
 #include "UI/ImGui/ImGui.h"
-#include "Utils/Utils.Async.h"
+#include "Utils/Async.h"
 
 export module GW2Viewer.UI.Viewers.StringListViewer;
 import GW2Viewer.Common;

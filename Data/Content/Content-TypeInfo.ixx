@@ -1,6 +1,6 @@
 module;
-#include "Common/Common.JSON.h";
-#include "Utils/Utils.Scan.h";
+#include "Common/JSON.h";
+#include "Utils/Scan.h";
 
 export module GW2Viewer.Data.Content:TypeInfo;
 import GW2Viewer.Common;
