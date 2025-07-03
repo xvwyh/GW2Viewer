@@ -12,7 +12,7 @@ import GW2Viewer.Utils.Async;
 import GW2Viewer.Utils.Exception;
 import std;
 
-export namespace GW2Viewer::UI::Windows::Windows
+export namespace GW2Viewer::UI::Windows
 {
 
 struct ContentSearch : Window
@@ -85,4 +85,4 @@ struct ContentSearch : Window
 
 }
 
-export namespace GW2Viewer::G::Windows { UI::Windows::Windows::ContentSearch ContentSearch; }
+export namespace GW2Viewer::G::Windows { UI::Windows::ContentSearch ContentSearch; }
