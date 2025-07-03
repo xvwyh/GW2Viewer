@@ -53,10 +53,10 @@ public:
             if (language != Language::English)
                 continue;
 
-            g_stringsFiles[language].reserve(fileIDs.size());
+            m_stringsFiles[language].reserve(fileIDs.size());
             for (auto const [fileIndex, fileID] : fileIDs | std::views::enumerate)
             {
-                g_stringsFiles[language].emplace_back(source.Archive.GetFile(fileID), language, fileIndex, m_stringsPerFile);
+                m_stringsFiles[language].emplace_back(source.Archive.GetFile(fileID), language, fileIndex, m_stringsPerFile);
                 ++progress;
             }
         }
@@ -71,7 +71,7 @@ public:
         bool result = false;
         uint32 const fileIndex = stringID / m_stringsPerFile;
         uint32 const stringIndex = stringID % m_stringsPerFile;
-        for (auto& files : g_stringsFiles | std::views::values)
+        for (auto& files : m_stringsFiles | std::views::values)
             if (fileIndex < files.size())
                 result |= files[fileIndex].Wipe(stringIndex);
 
@@ -223,7 +223,7 @@ private:
         std::unordered_map<uint32, TCache> Cache;
         boost::shared_mutex CacheLock;
     };
-    std::map<Language, std::vector<StringsFile>> g_stringsFiles;
+    std::map<Language, std::vector<StringsFile>> m_stringsFiles;
     StringsFile::TCache const& GetStringImpl(uint32 stringID);
     static std::wstring DecryptString(std::span<byte const> const encryptedText, uint64 const key, uint16 const decryptionOffset, uint32 const bitsPerSymbol)
     {

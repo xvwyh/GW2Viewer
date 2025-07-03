@@ -11,7 +11,7 @@ Manager::StringsFile::TCache const& Manager::GetStringImpl(uint32 stringID)
 
     uint32 const fileIndex = stringID / m_stringsPerFile;
     uint32 const stringIndex = stringID % m_stringsPerFile;
-    auto& files = g_stringsFiles[G::Config.Language];
+    auto& files = m_stringsFiles[G::Config.Language];
     if (fileIndex >= files.size())
         return StringsFile::Missing;
 
