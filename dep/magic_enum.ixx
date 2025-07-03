@@ -1,6 +1,9 @@
-﻿export module magic_enum;
-import std;
-import <magic_enum/magic_enum_all.hpp>;
+﻿module;
+#include <string_view>
+#define MAGIC_ENUM_USING_ALIAS_STRING_VIEW using string_view = std::string_view;
+#include <magic_enum/magic_enum_all.hpp>;
+
+export module magic_enum;
 
 extern "C++" {
     #if defined(__clang__)
