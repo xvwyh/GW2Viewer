@@ -68,18 +68,23 @@ void ConversationViewer::Draw()
     uint32 wikiDepth = 0;
     std::string wikiBuffer;
     auto wiki = std::back_inserter(wikiBuffer);
-    if (I::Button(ICON_FA_COPY " Wiki Markup"))
-    {
-        wikiWrite = true;
-        wikiBuffer.reserve(64 * 1024);
-    }
     static bool drawStateTypeIcons = true, drawStateTypeText = false, drawSpeakerName = false, drawEncryptionStatus = false, drawTextID = false, drawEncounterInfo = false;
-    I::SameLine(); I::Checkbox("State Type Icons", &drawStateTypeIcons);
-    I::SameLine(); I::Checkbox("State Type Text", &drawStateTypeText);
-    I::SameLine(); I::Checkbox("Speaker Name", &drawSpeakerName);
-    I::SameLine(); I::Checkbox("Text ID", &drawTextID);
-    I::SameLine(); I::Checkbox("Encryption Status", &drawEncryptionStatus);
-    I::SameLine(); I::Checkbox("Encounter Info", &drawEncounterInfo);
+    if (scoped::Child(I::GetSharedScopeID("ConversationViewer"), { }, ImGuiChildFlags_Border | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+    {
+        DrawHistoryButtons();
+        I::SameLine();
+        if (I::Button(ICON_FA_COPY " Wiki Markup"))
+        {
+            wikiWrite = true;
+            wikiBuffer.reserve(64 * 1024);
+        }
+        I::SameLine(); I::Checkbox("State Type Icons", &drawStateTypeIcons);
+        I::SameLine(); I::Checkbox("State Type Text", &drawStateTypeText);
+        I::SameLine(); I::Checkbox("Speaker Name", &drawSpeakerName);
+        I::SameLine(); I::Checkbox("Text ID", &drawTextID);
+        I::SameLine(); I::Checkbox("Encryption Status", &drawEncryptionStatus);
+        I::SameLine(); I::Checkbox("Encounter Info", &drawEncounterInfo);
+    }
 
     auto drawState = [&](bool parentOpen, Content::Conversation::State const& state, std::set<uint32>& visitedStates, uint32& startingSpeakerNameTextID, auto& drawState) -> void
     {

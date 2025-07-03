@@ -2,22 +2,23 @@ export module GW2Viewer.UI.Viewers.ContentViewer;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Content;
 import GW2Viewer.Utils.Encoding;
-import GW2Viewer.UI.Viewers.Viewer;
+import GW2Viewer.UI.Viewers.ViewerWithHistory;
 import std;
 
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct ContentViewer : Viewer
+struct ContentViewer : ViewerWithHistory<ContentViewer, Data::Content::ContentObject&>
 {
-    Data::Content::ContentObject& Content;
-    std::stack<Data::Content::ContentObject*> HistoryPrev;
-    std::stack<Data::Content::ContentObject*> HistoryNext;
+    TargetType Content;
 
-    ContentViewer(uint32 id, bool newTab, Data::Content::ContentObject& content) : Viewer(id, newTab), Content(content)
+    ContentViewer(uint32 id, bool newTab, Data::Content::ContentObject& content) : Base(id, newTab), Content(content)
     {
         content.Finalize();
     }
+
+    TargetType GetCurrent() const override { return Content; }
+    bool IsCurrent(TargetType target) const override { return &Content == &target; }
 
     std::string Title() override;
     void Draw() override;

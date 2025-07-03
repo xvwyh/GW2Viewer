@@ -22,14 +22,9 @@ import GW2Viewer.Data.Game;
 import GW2Viewer.Data.Pack;
 import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Viewers.ContentListViewer;
-import GW2Viewer.UI.Viewers.ContentViewer;
 import GW2Viewer.UI.Viewers.ConversationListViewer;
-import GW2Viewer.UI.Viewers.ConversationViewer;
 import GW2Viewer.UI.Viewers.EventListViewer;
-import GW2Viewer.UI.Viewers.EventViewer;
 import GW2Viewer.UI.Viewers.FileListViewer;
-import GW2Viewer.UI.Viewers.FileViewer;
-import GW2Viewer.UI.Viewers.FileViewers;
 import GW2Viewer.UI.Viewers.ListViewer;
 import GW2Viewer.UI.Viewers.MapLayoutViewer;
 import GW2Viewer.UI.Viewers.StringListViewer;
@@ -507,138 +502,6 @@ void Manager::Update()
     }();
 }
 
-void Manager::OpenFile(Data::Archive::File const& file, bool newTab, bool historyMove)
-{
-    static auto init = [](uint32 id, bool newTab, Data::Archive::File const& file)
-    {
-        Viewers::FileViewer* result = nullptr;
-        if (auto const data = file.Source.get().Archive.GetFile(file.ID); data.size() >= 4) // TODO: Refactor to avoid copying
-        {
-            auto&& registry = Viewers::FileViewers::GetRegistry();
-            if (auto const itr = registry.find(*(fcc const*)data.data()); itr != registry.end())
-                result = itr->second(id, newTab, file);
-        }
-        if (!result)
-            result = new Viewers::FileViewer(id, newTab, file);
-        result->Initialize();
-        return result;
-    };
-    Defer([=]
-    {
-        if (I::GetIO().KeyAlt)
-        {
-            auto data = file.Source.get().Archive.GetFile(file.ID);
-            ExportData(data, std::format(R"(Export\{})", file.ID));
-            G::Game.Texture.Load(file.ID, { .DataSource = &data, .Export = true });
-            return;
-        }
-
-        if (auto* currentViewer = GetCurrentViewer<Viewers::FileViewer>(); currentViewer && !newTab)
-        {
-            if (currentViewer->File == file)
-                return;
-
-            auto const id = currentViewer->ID;
-            auto historyPrev = std::move(currentViewer->HistoryPrev);
-            auto historyNext = std::move(currentViewer->HistoryNext);
-            if (!historyMove)
-            {
-                historyPrev.emplace(currentViewer->File);
-                historyNext = { };
-            }
-
-            //currentViewer->~FileViewer();
-            //new(currentViewer) FileViewer(id, newTab, file);
-
-            auto const itr = std::ranges::find(m_viewers, m_currentViewer, [](auto const& ptr) { return ptr.get(); });
-            itr->reset(init(id, newTab, file));
-            currentViewer = dynamic_cast<Viewers::FileViewer*>(m_currentViewer = itr->get());
-
-            currentViewer->HistoryPrev = std::move(historyPrev);
-            currentViewer->HistoryNext = std::move(historyNext);
-        }
-        else
-            m_viewers.emplace_back(init(m_nextViewerID++, newTab, file));
-    });
-}
-void Manager::OpenContent(Data::Content::ContentObject& object, bool newTab, bool historyMove)
-{
-    Defer([=, &object]
-    {
-        if (auto* currentViewer = GetCurrentViewer<Viewers::ContentViewer>(); currentViewer && !newTab)
-        {
-            if (&currentViewer->Content == &object)
-                return;
-
-            auto const id = currentViewer->ID;
-            auto historyPrev = std::move(currentViewer->HistoryPrev);
-            auto historyNext = std::move(currentViewer->HistoryNext);
-            if (!historyMove)
-            {
-                historyPrev.emplace(&currentViewer->Content);
-                historyNext = { };
-            }
-            currentViewer->~ContentViewer();
-            new(currentViewer) Viewers::ContentViewer(id, newTab, object);
-            currentViewer->HistoryPrev = std::move(historyPrev);
-            currentViewer->HistoryNext = std::move(historyNext);
-        }
-        else
-            m_viewers.emplace_back(new Viewers::ContentViewer(m_nextViewerID++, newTab, object));
-    });
-}
-void Manager::OpenConversation(uint32 conversationID, bool newTab, bool historyMove)
-{
-    Defer([=]
-    {
-        if (auto* currentViewer = GetCurrentViewer<Viewers::ConversationViewer>(); currentViewer && !newTab)
-        {
-            if (currentViewer->ConversationID == conversationID)
-                return;
-
-            auto const id = currentViewer->ID;
-            auto historyPrev = std::move(currentViewer->HistoryPrev);
-            auto historyNext = std::move(currentViewer->HistoryNext);
-            if (!historyMove)
-            {
-                historyPrev.emplace(currentViewer->ConversationID);
-                historyNext = { };
-            }
-            currentViewer->~ConversationViewer();
-            new(currentViewer) Viewers::ConversationViewer(id, newTab, conversationID);
-            currentViewer->HistoryPrev = std::move(historyPrev);
-            currentViewer->HistoryNext = std::move(historyNext);
-        }
-        else
-            m_viewers.emplace_back(new Viewers::ConversationViewer(m_nextViewerID++, newTab, conversationID));
-    });
-}
-void Manager::OpenEvent(Content::EventID eventID, bool newTab, bool historyMove)
-{
-    Defer([=]
-    {
-        if (auto* currentViewer = GetCurrentViewer<Viewers::EventViewer>(); currentViewer && !newTab)
-        {
-            if (currentViewer->EventID == eventID)
-                return;
-
-            auto const id = currentViewer->ID;
-            auto historyPrev = std::move(currentViewer->HistoryPrev);
-            auto historyNext = std::move(currentViewer->HistoryNext);
-            if (!historyMove)
-            {
-                historyPrev.emplace(currentViewer->EventID);
-                historyNext = { };
-            }
-            currentViewer->~EventViewer();
-            new(currentViewer) Viewers::EventViewer(id, newTab, eventID);
-            currentViewer->HistoryPrev = std::move(historyPrev);
-            currentViewer->HistoryNext = std::move(historyNext);
-        }
-        else
-            m_viewers.emplace_back(new Viewers::EventViewer(m_nextViewerID++, newTab, eventID));
-    });
-}
 void Manager::OpenWorldMap(bool newTab)
 {
     Defer([=]

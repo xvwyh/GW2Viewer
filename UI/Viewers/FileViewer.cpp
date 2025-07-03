@@ -2,13 +2,28 @@
 #include "UI/ImGui/ImGui.h"
 
 module GW2Viewer.UI.Viewers.FileViewer;
+import GW2Viewer.Common.FourCC;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Manager;
+import GW2Viewer.UI.Viewers.FileViewers;
 import GW2Viewer.Utils.Exception;
 
 namespace GW2Viewer::UI::Viewers
 {
+
+void FileViewer::Open(TargetType target, OpenViewerOptions const& options)
+{
+    if (I::GetIO().KeyAlt)
+    {
+        auto data = target.Source.get().Archive.GetFile(target.ID);
+        G::UI.ExportData(data, std::format(R"(Export\{})", target.ID));
+        G::Game.Texture.Load(target.ID, { .DataSource = &data, .Export = true });
+        return;
+    }
+
+    Base::Open(target, options);
+}
 
 std::string FileViewer::Title()
 {
@@ -24,23 +39,10 @@ void FileViewer::Draw()
     bool drawHex = false;
     bool drawOutline = false;
     bool drawPreview = false;
-    if (static ImGuiID sharedScope = 2; scoped::Child(sharedScope, { }, ImGuiChildFlags_Border | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+    if (scoped::Child(I::GetSharedScopeID("FileViewer"), { }, ImGuiChildFlags_Border | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
     {
-        if (scoped::Disabled(HistoryPrev.empty()); I::Button(ICON_FA_ARROW_LEFT "##HistoryBack") || I::IsEnabled() && I::GetIO().MouseClicked[3])
-        {
-            auto const file = HistoryPrev.top();
-            HistoryPrev.pop();
-            HistoryNext.emplace(File);
-            G::UI.OpenFile(file, false, true);
-        }
-        I::SameLine(0, 0);
-        if (scoped::Disabled(HistoryNext.empty()); I::Button(ICON_FA_ARROW_RIGHT "##HistoryNext") || I::IsEnabled() && I::GetIO().MouseClicked[4])
-        {
-            auto const file = HistoryNext.top();
-            HistoryNext.pop();
-            HistoryPrev.emplace(File);
-            G::UI.OpenFile(file, false, true);
-        }
+        DrawHistoryButtons();
+
         I::SameLine();
         if (scoped::TabBar("Tabs", ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_NoTabListScrollingButtons))
         {
@@ -92,6 +94,31 @@ void FileViewer::Draw()
 void FileViewer::DrawPreview()
 {
     Controls::Texture(File.ID, { .Data = &RawData });
+}
+
+std::unique_ptr<FileViewer> Init(uint32 id, bool newTab, FileViewer::TargetType file)
+{
+    std::unique_ptr<FileViewer> result = nullptr;
+    if (auto const data = file.Source.get().Archive.GetFile(file.ID); data.size() >= 4) // TODO: Refactor to avoid copying
+    {
+        auto&& registry = FileViewers::GetRegistry();
+        if (auto const itr = registry.find(*(fcc const*)data.data()); itr != registry.end())
+            result = std::unique_ptr<FileViewer>(itr->second(id, newTab, file));
+    }
+    if (!result)
+        result = std::make_unique<FileViewer>(id, newTab, file);
+    result->Initialize();
+    return result;
+}
+
+std::unique_ptr<FileViewer> FileViewer::Create(HistoryType target, OpenViewerOptions const& options)
+{
+    return Init(G::UI.GetNewViewerID(), options.OpenInNewTab, target);
+}
+
+void FileViewer::Recreate(ViewerType*& viewer, HistoryType target, OpenViewerOptions const& options)
+{
+    viewer = &G::UI.ReplaceViewer(*viewer, Init(viewer->ID, options.OpenInNewTab, target));
 }
 
 }

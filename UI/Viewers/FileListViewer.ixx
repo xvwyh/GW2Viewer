@@ -86,7 +86,7 @@ struct FileListViewer : ListViewer<FileListViewer>
                     I::TableNextRow();
                     I::TableNextColumn(); I::Selectable(std::format("{}", file.ID).c_str(), FileViewer::Is(G::UI.GetCurrentViewer(), file), ImGuiSelectableFlags_SpanAllColumns);
                     if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
-                        G::UI.OpenFile(file, button & ImGuiButtonFlags_MouseButtonMiddle);
+                        FileViewer::Open(file, { .MouseButton = button });
                     if (scoped::PopupContextItem())
                     {
                         if (I::Button("Search for Content References"))

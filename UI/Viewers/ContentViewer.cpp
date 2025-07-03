@@ -27,23 +27,9 @@ void ContentViewer::Draw()
     typeInfo.Initialize(*Content.Type);
 
     auto tabScopeID = I::GetCurrentWindow()->IDStack.back();
-    if (static ImGuiID sharedScope = 1; scoped::Child(sharedScope, { }, ImGuiChildFlags_Border | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+    if (scoped::Child(I::GetSharedScopeID("ContentViewer"), { }, ImGuiChildFlags_Border | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
     {
-        if (scoped::Disabled(HistoryPrev.empty()); I::Button(ICON_FA_ARROW_LEFT "##HistoryBack") || I::IsEnabled() && I::GetIO().MouseClicked[3])
-        {
-            auto* content = HistoryPrev.top();
-            HistoryPrev.pop();
-            HistoryNext.emplace(&Content);
-            G::UI.OpenContent(*content, false, true);
-        }
-        I::SameLine(0, 0);
-        if (scoped::Disabled(HistoryNext.empty()); I::Button(ICON_FA_ARROW_RIGHT "##HistoryNext") || I::IsEnabled() && I::GetIO().MouseClicked[4])
-        {
-            auto* content = HistoryNext.top();
-            HistoryNext.pop();
-            HistoryPrev.emplace(&Content);
-            G::UI.OpenContent(*content, false, true);
-        }
+        DrawHistoryButtons();
 
         I::SameLine();
         if (auto const* guid = Content.GetGUID())

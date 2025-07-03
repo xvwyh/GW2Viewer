@@ -4,7 +4,7 @@ module;
 export module GW2Viewer.UI.Controls:ContentButton;
 import :Texture;
 import GW2Viewer.Data.Content;
-import GW2Viewer.UI.Manager;
+import GW2Viewer.UI.Viewers.ContentViewer;
 
 export namespace GW2Viewer::UI::Controls
 {
@@ -51,7 +51,7 @@ void ContentButton(Data::Content::ContentObject* content, void const* id, Conten
     I::Button("", size);
     if (content)
         if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
-            G::UI.OpenContent(*content, button & ImGuiButtonFlags_MouseButtonMiddle);
+            Viewers::ContentViewer::Open(*content, { .MouseButton = button });
 
     ImRect bb(pos, pos + size);
     I::RenderTextClipped(bb.Min + padding, bb.Max - padding, textPreIcon.c_str(), textPreIcon.c_str() + textPreIcon.size(), &sizePreIcon, { }, &bb);

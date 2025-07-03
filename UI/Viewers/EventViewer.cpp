@@ -31,6 +31,20 @@ std::string EventViewer::Title()
 
 void EventViewer::Draw()
 {
+    if (scoped::Child(I::GetSharedScopeID("EventViewer"), { }, ImGuiChildFlags_Border | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+    {
+        DrawHistoryButtons();
+        I::SameLine();
+        I::Checkbox("Enemy Perspective", &Invert);
+        I::SameLine();
+        I::Checkbox("In Dungeon Map", &InDungeonMap);
+        I::SameLine();
+        I::SetNextItemWidth(-FLT_MIN);
+        int progress = PreviewProgress * 100;
+        I::SliderInt("##Progress", &progress, 0, 100, "Progress: %u%%");
+        PreviewProgress = progress / 100.0f;
+    }
+
     std::shared_lock _(Content::eventsLock);
 
     if (scoped::Child("###EventViewer-Table", { 400, 0 }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX))
@@ -49,16 +63,6 @@ void EventViewer::Draw()
     }
     if (I::SameLine(); scoped::Child("###EventViewer-Details", { }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Border))
     {
-        I::Checkbox("Enemy Perspective", &Invert);
-        I::SameLine();
-        I::Checkbox("In Dungeon Map", &InDungeonMap);
-        I::SetNextItemWidth(-FLT_MIN);
-        int progress = PreviewProgress * 100;
-        I::SliderInt("##Progress", &progress, 0, 100, "Progress: %u%%");
-        PreviewProgress = progress / 100.0f;
-
-        I::Separator();
-
         if (Selected)
         {
             auto const eventID = Selected->first;

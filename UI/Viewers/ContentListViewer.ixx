@@ -490,7 +490,7 @@ private:
                 I::TableNextColumn(); I::SetNextItemAllowOverlap(); open = I::TreeNodeEx(&entry, ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_FramePadding | (entry.Entries.empty() ? ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen : ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick) | (currentViewer && &currentViewer->Content == &entry ? ImGuiTreeNodeFlags_Selected : 0), "") && hasEntries;
                 context.storeFocusedParentInfo(namespaceIndex);
                 if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
-                    G::UI.OpenContent(entry, button & ImGuiButtonFlags_MouseButtonMiddle);
+                    ContentViewer::Open(entry, { .MouseButton = button });
                 if (scoped::PopupContextItem())
                 {
                     I::Text("Full Name: %s", Utils::Encoding::ToUTF8(entry.GetFullName()).c_str());

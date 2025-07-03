@@ -29,10 +29,6 @@ public:
 
     void Update();
 
-    void OpenFile(Data::Archive::File const& file, bool newTab = false, bool historyMove = false);
-    void OpenContent(Data::Content::ContentObject& object, bool newTab = false, bool historyMove = false);
-    void OpenConversation(uint32 conversationID, bool newTab = false, bool historyMove = false);
-    void OpenEvent(Content::EventID eventID, bool newTab = false, bool historyMove = false);
     void OpenWorldMap(bool newTab = false);
 
     std::string MakeDataLink(byte type, uint32 id);
@@ -48,6 +44,23 @@ public:
     template<typename T> requires std::is_base_of_v<Viewers::Viewer, T>
     auto GetCurrentViewer() const { return dynamic_cast<T*>(GetCurrentViewer()); }
     auto GetCurrentViewer() const { return m_currentViewer; }
+
+    auto GetNewViewerID() { return m_nextViewerID++; }
+    void AddViewer(std::unique_ptr<Viewers::Viewer>&& viewer) { m_viewers.emplace_back(std::move(viewer)); }
+    template<typename T> requires std::is_base_of_v<Viewers::Viewer, T>
+    T& ReplaceViewer(T& oldViewer, std::unique_ptr<T>&& newViewer)
+    {
+        if (auto itr = std::ranges::find(m_viewers, &oldViewer, [](auto const& ptr) { return ptr.get(); }); itr != m_viewers.end())
+        {
+            *itr = std::move(newViewer);
+
+            if (m_currentViewer == &oldViewer)
+                m_currentViewer = newViewer.get();
+
+            return *(T*)itr->get();
+        }
+        return oldViewer;
+    }
 
 private:
     std::list<std::function<void()>> m_deferred;

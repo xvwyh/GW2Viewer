@@ -1,9 +1,19 @@
+module;
+#include "UI/ImGui/ImGui.h"
+
 export module GW2Viewer.UI.Viewers.Viewer;
 import GW2Viewer.Common;
 import std;
 
 export namespace GW2Viewer::UI::Viewers
 {
+
+struct OpenViewerOptions
+{
+    ImGuiButtonFlags_ MouseButton = ImGuiButtonFlags_MouseButtonLeft;
+    bool OpenInNewTab = (bool)(MouseButton & ImGuiButtonFlags_MouseButtonMiddle);
+    bool HistoryMove = false;
+};
 
 struct Viewer
 {

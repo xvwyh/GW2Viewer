@@ -201,7 +201,7 @@ struct ConversationListViewer : ListViewer<ConversationListViewer>
                         I::GetWindowDrawList()->AddRectFilled(I::GetCurrentContext()->LastItemData.Rect.Min, { I::GetCurrentContext()->LastItemData.Rect.Min.x + 4, I::GetCurrentContext()->LastItemData.Rect.Max.y }, IM_COL32(0xFF, 0x00, 0x00, (byte)std::lerp(0xFF, 0x00, conversation.GetCompleteness() / (float)Content::Conversation::COMPLETENESS_COMPLETE)));
 
                         if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
-                            G::UI.OpenConversation(conversationID, button & ImGuiButtonFlags_MouseButtonMiddle);
+                            ConversationViewer::Open(conversationID, { .MouseButton = button });
 
                         I::TableNextColumn();
                         I::Text("<c=#8>%u</c>", conversation.UID);

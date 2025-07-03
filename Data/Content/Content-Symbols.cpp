@@ -10,7 +10,7 @@ import GW2Viewer.Common.Token64;
 import GW2Viewer.Data.Encryption;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
-import GW2Viewer.UI.Manager;
+import GW2Viewer.UI.Viewers.FileViewer;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.String;
@@ -268,7 +268,7 @@ void FileID::Draw(byte const* data, TypeInfo::Symbol& symbol) const
     I::Button("<FILE>##Preview");
     if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
         if (auto* file = G::Game.Archive.GetFileEntry(fileID))
-            G::UI.OpenFile(*file, button & ImGuiButtonFlags_MouseButtonMiddle);
+            UI::Viewers::FileViewer::Open(*file, { .MouseButton = button });
     if (scoped::ItemTooltip(ImGuiHoveredFlags_DelayNone))
         UI::Controls::Texture(fileID);
 }

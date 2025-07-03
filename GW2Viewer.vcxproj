@@ -184,6 +184,7 @@
     <ClCompile Include="UI\Viewers\PackFileViewer.ixx" />
     <ClCompile Include="UI\Viewers\StringListViewer.ixx" />
     <ClCompile Include="UI\Viewers\Viewer.ixx" />
+    <ClCompile Include="UI\Viewers\ViewerWithHistory.ixx" />
     <ClCompile Include="UI\Windows\ContentSearch.ixx" />
     <ClCompile Include="UI\Windows\Demangle.ixx" />
     <ClCompile Include="UI\Windows\MigrateContentTypes.ixx" />

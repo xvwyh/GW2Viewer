@@ -2,17 +2,15 @@
 import GW2Viewer.Common;
 import GW2Viewer.Content.Event;
 import GW2Viewer.Data.Content;
-import GW2Viewer.UI.Viewers.Viewer;
+import GW2Viewer.UI.Viewers.ViewerWithHistory;
 import std;
 
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct EventViewer : Viewer
+struct EventViewer : ViewerWithHistory<EventViewer, Content::EventID>
 {
-    Content::EventID EventID;
-    std::stack<Content::EventID> HistoryPrev;
-    std::stack<Content::EventID> HistoryNext;
+    TargetType EventID;
 
     struct Cache
     {
@@ -58,7 +56,10 @@ struct EventViewer : Viewer
         uint32 FormatSex = 2;
     };
 
-    EventViewer(uint32 id, bool newTab, Content::EventID eventID) : Viewer(id, newTab), EventID(eventID) { }
+    EventViewer(uint32 id, bool newTab, TargetType eventID) : Base(id, newTab), EventID(eventID) { }
+
+    TargetType GetCurrent() const override { return EventID; }
+    bool IsCurrent(TargetType target) const override { return EventID == target; }
 
     std::string Title() override;
     void Draw() override;

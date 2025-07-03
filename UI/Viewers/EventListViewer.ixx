@@ -247,7 +247,7 @@ struct EventListViewer : ListViewer<EventListViewer>
                         I::TableNextColumn();
                         I::Selectable(std::format("{}", eventID.UID).c_str(), currentViewer && currentViewer->EventID == eventID ? ImGuiTreeNodeFlags_Selected : 0, ImGuiSelectableFlags_SpanAllColumns);
                         if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
-                            G::UI.OpenEvent(eventID, button & ImGuiButtonFlags_MouseButtonMiddle);
+                            EventViewer::Open(eventID, { .MouseButton = button });
 
                         I::TableNextColumn();
                         I::TextUnformatted(Utils::Encoding::ToUTF8(event.Map()).c_str());

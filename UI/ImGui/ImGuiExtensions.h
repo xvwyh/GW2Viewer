@@ -39,6 +39,7 @@ inline ImU32 ColorLerp(ImU32 a, ImU32 b, float t)
 }
 
 static inline constexpr ImGuiID SHARED = 1;
+inline ImGuiID GetSharedScopeID(std::string_view str) { return GetIDWithSeed(str.data(), str.data() + str.length(), SHARED); }
 
 inline ImVec2 GetFrameSquare() { return { GetFrameHeight(), GetFrameHeight() }; }
 

@@ -2,12 +2,13 @@ export module GW2Viewer.UI.Viewers.FileViewer;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Archive;
 import GW2Viewer.UI.Viewers.Viewer;
+import GW2Viewer.UI.Viewers.ViewerWithHistory;
 import std;
 
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct FileViewer : Viewer
+struct FileViewer : ViewerWithHistory<FileViewer, Data::Archive::File>
 {
     static bool Is(Viewer const* viewer, Data::Archive::File const& file)
     {
@@ -15,12 +16,14 @@ struct FileViewer : Viewer
         return currentViewer && currentViewer->File == file;
     }
 
-    Data::Archive::File File;
-    std::stack<Data::Archive::File> HistoryPrev;
-    std::stack<Data::Archive::File> HistoryNext;
+    TargetType File;
     std::vector<byte> RawData;
 
-    FileViewer(uint32 id, bool newTab, Data::Archive::File const& file) : Viewer(id, newTab), File(file), RawData(File.Source.get().Archive.GetFile(file.ID)) { }
+    FileViewer(uint32 id, bool newTab, TargetType file) : Base(id, newTab), File(file), RawData(File.Source.get().Archive.GetFile(file.ID)) { }
+
+    TargetType GetCurrent() const override { return File; }
+    bool IsCurrent(TargetType target) const override { return File == target; }
+    static void Open(TargetType target, OpenViewerOptions const& options = { });
 
     virtual void Initialize() { }
 
@@ -28,6 +31,11 @@ struct FileViewer : Viewer
     virtual void Draw();
     virtual void DrawOutline() { }
     virtual void DrawPreview();
+
+protected:
+    static std::unique_ptr<ViewerType> Create(HistoryType target, OpenViewerOptions const& options);
+    static void Recreate(ViewerType*& viewer, HistoryType target, OpenViewerOptions const& options);
+    friend Base;
 };
 
 }

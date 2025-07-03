@@ -11,7 +11,6 @@ import GW2Viewer.Data.Game;
 import GW2Viewer.Data.Pack;
 import GW2Viewer.Data.Pack.PackFile;
 import GW2Viewer.UI.Controls;
-import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Viewers.FileViewer;
 import GW2Viewer.Utils.Encoding;
 import std;
@@ -137,7 +136,7 @@ template<typename PointerType> struct DrawPackFileField<Data::Pack::FileNameBase
         I::Button(std::format("File <{}>", fileID).c_str());
         if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
             if (auto* file = G::Game.Archive.GetFileEntry(fileID))
-                G::UI.OpenFile(*file, button & ImGuiButtonFlags_MouseButtonMiddle);
+                UI::Viewers::FileViewer::Open(*file, { .MouseButton = button });
         if (scoped::ItemTooltip(ImGuiHoveredFlags_DelayNone))
             UI::Controls::Texture(fileID);
     }

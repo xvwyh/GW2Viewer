@@ -1,21 +1,22 @@
 export module GW2Viewer.UI.Viewers.ConversationViewer;
 import GW2Viewer.Common;
-import GW2Viewer.UI.Viewers.Viewer;
+import GW2Viewer.UI.Viewers.ViewerWithHistory;
 import std;
 
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct ConversationViewer : Viewer
+struct ConversationViewer : ViewerWithHistory<ConversationViewer, uint32>
 {
-    uint32 ConversationID;
-    std::stack<uint32> HistoryPrev;
-    std::stack<uint32> HistoryNext;
+    TargetType ConversationID;
 
     std::optional<uint32> EditingScriptedStartTransitionStateID;
     bool EditingScriptedStartTransitionFocus = false;
 
-    ConversationViewer(uint32 id, bool newTab, uint32 conversationID) : Viewer(id, newTab), ConversationID(conversationID) { }
+    ConversationViewer(uint32 id, bool newTab, TargetType conversationID) : Base(id, newTab), ConversationID(conversationID) { }
+
+    TargetType GetCurrent() const override { return ConversationID; }
+    bool IsCurrent(TargetType target) const override { return ConversationID == target; }
 
     std::string Title() override
     {
