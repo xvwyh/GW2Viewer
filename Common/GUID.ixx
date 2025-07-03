@@ -40,8 +40,10 @@ struct GUID
 };
 #pragma pack(pop)
 static_assert(sizeof(GUID) == 16);
+
 GUID const GUID::Empty { };
-using MyGUID = GUID;
+
+}
 
 template<class CharT>
 struct std::formatter<GW2Viewer::GUID, CharT>
