@@ -89,6 +89,8 @@ bool ParseMarkup(const char*& s, size_t avail, MarkupState& state)
         for (auto p = colorStart; p < s + avail && numColorChars == -1; ++p)
             if (*p == '"' || *p == '>')
                 numColorChars = p - colorStart;
+        if (numColorChars == -1)
+            return false;
         state.ColorChangeType = ColorChangeType::Push;
         switch (colorStart[-1])
         {
