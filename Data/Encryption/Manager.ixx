@@ -34,7 +34,6 @@ public:
     }
     [[nodiscard]] std::optional<uint64> GetTextKey(uint32 stringID) const
     {
-        std::shared_lock _(m_lock);
         if (auto const info = GetTextKeyInfo(stringID); info && info->Key)
             return info->Key;
         return { };
