@@ -192,7 +192,7 @@ struct ConversationListViewer : ListViewer<ConversationListViewer>
 
                         std::scoped_lock ___(Content::conversationsLock);
                         auto& conversation = Content::conversations.at(conversationID);
-                        auto const* currentViewer = dynamic_cast<ConversationViewer*>(G::UI.GetCurrentViewer());
+                        auto const* currentViewer = G::UI.GetCurrentViewer<ConversationViewer>();
                         I::TableNextRow();
 
                         I::TableNextColumn();

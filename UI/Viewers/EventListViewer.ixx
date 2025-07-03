@@ -241,7 +241,7 @@ struct EventListViewer : ListViewer<EventListViewer>
 
                         std::scoped_lock ___(Content::eventsLock);
                         auto& event = Content::events.at(eventID);
-                        auto const* currentViewer = dynamic_cast<EventViewer*>(G::UI.GetCurrentViewer());
+                        auto const* currentViewer = G::UI.GetCurrentViewer<EventViewer>();
                         I::TableNextRow();
 
                         I::TableNextColumn();

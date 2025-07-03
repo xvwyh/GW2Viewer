@@ -45,6 +45,8 @@ public:
     auto GetTime() const { return m_now; }
     auto DeltaTime() const { return m_deltaTime; }
 
+    template<typename T> requires std::is_base_of_v<Viewers::Viewer, T>
+    auto GetCurrentViewer() const { return dynamic_cast<T*>(GetCurrentViewer()); }
     auto GetCurrentViewer() const { return m_currentViewer; }
 
 private:

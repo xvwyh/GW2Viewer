@@ -484,7 +484,7 @@ private:
             bool open = false;
             if (auto const index = context.VirtualIndex++; index >= context.clipper.DisplayStart && index < context.clipper.DisplayEnd)
             {
-                auto const* currentViewer = dynamic_cast<ContentViewer*>(G::UI.GetCurrentViewer());
+                auto const* currentViewer = G::UI.GetCurrentViewer<ContentViewer>();
                 entry.Finalize();
                 I::TableNextRow();
                 I::TableNextColumn(); I::SetNextItemAllowOverlap(); open = I::TreeNodeEx(&entry, ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_FramePadding | (entry.Entries.empty() ? ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen : ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick) | (currentViewer && &currentViewer->Content == &entry ? ImGuiTreeNodeFlags_Selected : 0), "") && hasEntries;

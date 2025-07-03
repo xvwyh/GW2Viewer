@@ -530,7 +530,7 @@ void Manager::OpenFile(Data::Archive::File const& file, bool newTab, bool histor
             return;
         }
 
-        if (auto* currentViewer = dynamic_cast<Viewers::FileViewer*>(m_currentViewer); currentViewer && !newTab)
+        if (auto* currentViewer = GetCurrentViewer<Viewers::FileViewer>(); currentViewer && !newTab)
         {
             if (currentViewer->File == file)
                 return;
@@ -562,7 +562,7 @@ void Manager::OpenContent(Data::Content::ContentObject& object, bool newTab, boo
 {
     Defer([=, &object]
     {
-        if (auto* currentViewer = dynamic_cast<Viewers::ContentViewer*>(m_currentViewer); currentViewer && !newTab)
+        if (auto* currentViewer = GetCurrentViewer<Viewers::ContentViewer>(); currentViewer && !newTab)
         {
             if (&currentViewer->Content == &object)
                 return;
@@ -588,7 +588,7 @@ void Manager::OpenConversation(uint32 conversationID, bool newTab, bool historyM
 {
     Defer([=]
     {
-        if (auto* currentViewer = dynamic_cast<Viewers::ConversationViewer*>(m_currentViewer); currentViewer && !newTab)
+        if (auto* currentViewer = GetCurrentViewer<Viewers::ConversationViewer>(); currentViewer && !newTab)
         {
             if (currentViewer->ConversationID == conversationID)
                 return;
@@ -614,7 +614,7 @@ void Manager::OpenEvent(Content::EventID eventID, bool newTab, bool historyMove)
 {
     Defer([=]
     {
-        if (auto* currentViewer = dynamic_cast<Viewers::EventViewer*>(m_currentViewer); currentViewer && !newTab)
+        if (auto* currentViewer = GetCurrentViewer<Viewers::EventViewer>(); currentViewer && !newTab)
         {
             if (currentViewer->EventID == eventID)
                 return;
