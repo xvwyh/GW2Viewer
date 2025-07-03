@@ -14,6 +14,22 @@ auto defaultComplexSortComparison(Index const a, Index const b, ComplexIndex con
     #undef COMPARE
 }
 
+export namespace GW2Viewer::UI::Viewers { struct ListViewerBase; }
+
+export namespace GW2Viewer::G::Viewers
+{
+
+template<typename T> requires std::is_base_of_v<UI::Viewers::ListViewerBase, T>
+std::list<T*> ListViewers;
+
+template<typename T, typename Func> requires std::is_base_of_v<UI::Viewers::ListViewerBase, T>
+void ForEach(Func&& func) { std::ranges::for_each(ListViewers<T>, [&func](T* viewer) { return std::invoke(func, *viewer); }); }
+
+template<typename T, typename Result, typename... Args> requires std::is_base_of_v<UI::Viewers::ListViewerBase, T>
+void Notify(Result(T::* method)(Args...), Args&&... args) { ForEach<T>(std::bind_back(method, std::forward<Args>(args)...)); }
+
+}
+
 export namespace GW2Viewer::UI::Viewers
 {
 
@@ -39,13 +55,6 @@ struct ListViewerBase : Viewer
         data.assign_range(sortable | std::views::keys);
     }
 };
-
-}
-
-export namespace GW2Viewer::G::Viewers { template<typename T> std::list<T*> ListViewers; }
-
-export namespace GW2Viewer::UI::Viewers
-{
 
 template<typename T>
 struct ListViewer : ListViewerBase

@@ -8,6 +8,10 @@ import GW2Viewer.Content.Event;
 import GW2Viewer.Data.Encryption.Asset;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Manager;
+import GW2Viewer.UI.Viewers.ConversationListViewer;
+import GW2Viewer.UI.Viewers.EventListViewer;
+import GW2Viewer.UI.Viewers.ListViewer;
+import GW2Viewer.UI.Viewers.StringListViewer;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Async.ProgressBarContext;
 import std;
@@ -92,9 +96,8 @@ class Database
 public:
     void Load(std::filesystem::path const& path, Utils::Async::ProgressBarContext& progress)
     {
-        // TODO:
-        auto updateConversationSearch = [] { };
-        auto updateEventFilter = [] { };
+        auto updateConversationSearch = [] { G::Viewers::Notify(&UI::Viewers::ConversationListViewer::UpdateSearch); };
+        auto updateEventFilter = [] { G::Viewers::Notify(&UI::Viewers::EventListViewer::UpdateFilter); };
 
         using namespace sqlite;
         progress.Start("Reading string decryption keys");
@@ -112,11 +115,13 @@ public:
                     .SharedMutex = &G::Game.Encryption.Mutex(),
                     .PostHandler = [=]
                     {
-                        // TODO:
-                        //if (!m_stringFilterString.empty() && !m_stringFilterID)
-                        //    updateStringSearch();
-                        //else if (m_stringSort == StringSort::Text || m_stringSort == StringSort::DecryptionTime)
-                        //    updateStringSort();
+                        G::Viewers::ForEach<UI::Viewers::StringListViewer>([](UI::Viewers::StringListViewer& viewer)
+                        {
+                            if (!viewer.FilterString.empty() && !viewer.FilterID)
+                                viewer.UpdateSearch();
+                            else if (viewer.Sort == UI::Viewers::StringListViewer::StringSort::Text || viewer.Sort == UI::Viewers::StringListViewer::StringSort::DecryptionTime)
+                                viewer.UpdateSort();
+                        });
                     },
                 }
             ),

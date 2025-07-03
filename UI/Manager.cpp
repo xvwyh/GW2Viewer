@@ -201,8 +201,8 @@ void Manager::Update()
         I::SetNextWindowPos(ImVec2(500, 0), ImGuiCond_FirstUseEver);
         I::ShowDemoWindow(&G::Config.ShowImGuiDemo);
     }
-    
-    std::ranges::for_each(G::Windows::GetAllWindows(), &Windows::Window::Update);
+
+    G::Windows::Notify(&Windows::Window::Update);
     if (G::Windows::Settings.Accepted)
         needInitialSettings = false;
     else if (needInitialSettings)
@@ -228,7 +228,7 @@ void Manager::Update()
             {
                 I::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
                 if (I::MenuItem("Show Original Names", nullptr, &G::Config.ShowOriginalNames))
-                    std::ranges::for_each(G::Viewers::ListViewers<Viewers::ContentListViewer>, &Viewers::ContentListViewer::ClearCache);
+                    G::Viewers::Notify(&Viewers::ContentListViewer::ClearCache);
                 I::MenuItem("Show <c=#CCF>Valid Raw Pointers</c>", nullptr, &G::Config.ShowValidRawPointers);
                 I::MenuItem("Show Content Symbol <c=#8>Name</c> Before <c=#4>Type</c>", nullptr, &G::Config.ShowContentSymbolNameBeforeType);
                 I::MenuItem("Display Content Layout As  " ICON_FA_FOLDER_TREE " Tree", nullptr, &G::Config.TreeContentStructLayout);
@@ -453,7 +453,7 @@ void Manager::Update()
             auto& source = *sourcePtr;
 
             progress.Start("Creating file list");
-            std::ranges::for_each(G::Viewers::ListViewers<Viewers::FileListViewer>, &Viewers::FileListViewer::UpdateFilter);
+            G::Viewers::Notify(&Viewers::FileListViewer::UpdateFilter);
 
             // Wait for PackFile layouts to load before continuing
             while (!G::Game.Pack.IsLoaded())
@@ -463,17 +463,17 @@ void Manager::Update()
 
             G::Game.Text.Load(source, progress);
             progress.Start("Creating string list");
-            std::ranges::for_each(G::Viewers::ListViewers<Viewers::StringListViewer>, &Viewers::StringListViewer::UpdateFilter);
+            G::Viewers::Notify(&Viewers::StringListViewer::UpdateFilter);
             progress.Start("Creating conversation list");
-            std::ranges::for_each(G::Viewers::ListViewers<Viewers::ConversationListViewer>, &Viewers::ConversationListViewer::UpdateSearch);
+            G::Viewers::Notify(&Viewers::ConversationListViewer::UpdateSearch);
             progress.Start("Creating event list");
-            std::ranges::for_each(G::Viewers::ListViewers<Viewers::EventListViewer>, &Viewers::EventListViewer::UpdateFilter);
+            G::Viewers::Notify(&Viewers::EventListViewer::UpdateFilter);
 
             G::Game.Voice.Load(source, progress);
             m_progress[2].Run([=, &source](Utils::Async::ProgressBarContext& progress)
             {
                 G::Game.Content.Load(source, progress);
-                std::ranges::for_each(G::Viewers::ListViewers<Viewers::ContentListViewer>, [](Viewers::ContentListViewer* viewer) { viewer->UpdateFilter(); });
+                G::Viewers::Notify(&Viewers::ContentListViewer::UpdateFilter, false);
 
                 progress.Start("Processing content types for migration");
                 if (!G::Config.LastNumContentTypes)
