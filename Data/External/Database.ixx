@@ -24,9 +24,6 @@ using namespace std::chrono_literals;
 export namespace GW2Viewer::Data::External
 {
 
-using ::sqlite_int64;
-using ::sqlite_uint64;
-
 struct LoadingOperation
 {
     struct Options
@@ -288,18 +285,6 @@ public:
         });
     }
 };
-
-}
-
-export namespace sqlite
-{
-
-using sqlite::database;
-using sqlite::database_binder;
-using sqlite::operator<<;
-using sqlite::operator>>;
-using sqlite::operator++;
-using sqlite::operator|;
 
 }
 
