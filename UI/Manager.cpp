@@ -80,6 +80,7 @@ void Manager::Load()
     {
         static constexpr ImWchar faRanges[] { ICON_MIN_FA, ICON_MAX_FA, 0 };
         auto font = io.Fonts->AddFontFromFileTTF(std::format(R"(Resources\Fonts\{})", filename).c_str(), size, nullptr, ranges.Data);
+        io.Fonts->AddFontFromFileTTF(R"(Resources\Fonts\NotoSansSC-Regular.ttf)", size, &config, ranges.Data); // Fallback for Simplified Chinese
         io.Fonts->AddFontFromFileTTF(R"(Resources\Fonts\)" FONT_ICON_FILE_NAME_FAS, 10.0f, &config, faRanges);
         return font;
     };
