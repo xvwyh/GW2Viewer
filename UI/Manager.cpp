@@ -253,8 +253,19 @@ void Manager::Update()
                 };
                 I::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
                 for (auto const& [lang, text] : languages)
+                {
                     if (I::MenuItem(text, nullptr, G::Config.Language == lang))
+                    {
                         G::Config.Language = lang;
+                        if (!G::Game.Text.IsLoaded(lang))
+                        {
+                            m_progress[3].Run([lang](Utils::Async::ProgressBarContext& progress)
+                            {
+                                G::Game.Text.LoadLanguage(lang, *G::Game.Archive.GetSource(), progress);
+                            });
+                        }
+                    }
+                }
                 I::PopItemFlag();
             }
             if (scoped::Menu("Tools"))

@@ -18,6 +18,7 @@ export namespace GW2Viewer::Data::Media::Text
 class Manager
 {
 public:
+    bool IsLoaded(Language language) const { return m_stringsFiles.contains(language); }
     void Load(Archive::Source& source, Utils::Async::ProgressBarContext& progress)
     {
         progress.Start("Loading text manifest");
@@ -45,20 +46,17 @@ public:
             for (auto const& voice : file->QueryChunk(fcc::txtv)["voices"])
                 m_voices.emplace(voice["textId"], voice["voiceId"]);
 
-
-        progress.Start("Loading strings files", std::accumulate(m_fileIDs.begin(), m_fileIDs.end(), 0, [](uint32 count, auto& pair) { return count + pair.second.size(); }));
-        for (auto const& [language, fileIDs] : m_fileIDs)
+        LoadLanguage(G::Config.Language, source, progress);
+    }
+    void LoadLanguage(Language language, Archive::Source& source, Utils::Async::ProgressBarContext& progress)
+    {
+        auto const& fileIDs = m_fileIDs[language];
+        progress.Start("Loading strings files", fileIDs.size());
+        m_stringsFiles[language].reserve(fileIDs.size());
+        for (auto const [fileIndex, fileID] : fileIDs | std::views::enumerate)
         {
-            // TODO: Temporary solution to speed up debugging
-            if (language != Language::English)
-                continue;
-
-            m_stringsFiles[language].reserve(fileIDs.size());
-            for (auto const [fileIndex, fileID] : fileIDs | std::views::enumerate)
-            {
-                m_stringsFiles[language].emplace_back(source.Archive.GetFile(fileID), language, fileIndex, m_stringsPerFile);
-                ++progress;
-            }
+            m_stringsFiles[language].emplace_back(source.Archive.GetFile(fileID), language, fileIndex, m_stringsPerFile);
+            ++progress;
         }
     }
 
