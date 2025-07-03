@@ -180,6 +180,9 @@ void Manager::Load()
     m_listViewers.emplace_back(std::make_unique<Viewers::ContentListViewer>(m_nextViewerID++, false));
     m_listViewers.emplace_back(std::make_unique<Viewers::ConversationListViewer>(m_nextViewerID++, false));
     m_listViewers.emplace_back(std::make_unique<Viewers::EventListViewer>(m_nextViewerID++, false));
+
+    for (auto const& viewer : m_listViewers)
+        viewer->SetSelected = dynamic_cast<Viewers::StringListViewer*>(viewer.get());
 }
 
 void Manager::Update()
@@ -303,7 +306,7 @@ void Manager::Update()
         }
         if (scoped::Child("SourcesPane", { 250, 0 }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX))
         {
-            if (scoped::TabBar("Tabs", ImGuiTabBarFlags_FittingPolicyResizeDown | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton))
+            if (scoped::TabBar("Tabs", ImGuiTabBarFlags_FittingPolicyResizeDown | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_Reorderable))
             {
                 auto tabBar = I::GetCurrentTabBar();
                 int selectedTabOrder = -1;
@@ -311,7 +314,7 @@ void Manager::Update()
                 for (auto& viewer : m_listViewers)
                 {
                     bool open = true;
-                    if (scoped::TabItem(std::format("{}###Viewer-{}", viewer->Title(), viewer->ID).c_str(), &open, viewer->SetSelected ? ImGuiTabItemFlags_SetSelected : 0))
+                    if (scoped::TabItem(std::format("{}###Viewer-{}", viewer->Title(), viewer->ID).c_str(), nullptr/*TODO: &open*/, viewer->SetSelected ? ImGuiTabItemFlags_SetSelected : 0))
                         viewer->Draw();
                     if (auto tab = I::TabBarGetCurrentTab(tabBar))
                     {
