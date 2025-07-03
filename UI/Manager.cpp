@@ -246,19 +246,10 @@ void Manager::Update()
             }
             if (scoped::Menu("Language"))
             {
-                static constexpr std::pair<Language, char const*> languages[]
-                {
-                    { Language::English, "English" },
-                    { Language::Korean, "Korean" },
-                    { Language::French, "French" },
-                    { Language::German, "German" },
-                    { Language::Spanish, "Spanish" },
-                    { Language::Chinese, "Chinese" },
-                };
                 I::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
-                for (auto const& [lang, text] : languages)
+                for (auto const lang : magic_enum::enum_values<Language>())
                 {
-                    if (I::MenuItem(text, nullptr, G::Config.Language == lang))
+                    if (I::MenuItem(magic_enum::enum_name(lang).data(), nullptr, G::Config.Language == lang))
                     {
                         G::Config.Language = lang;
                         if (!G::Game.Text.IsLoaded(lang))
@@ -331,9 +322,6 @@ void Manager::Update()
                 }
                 if (toRemove)
                     m_listViewers.erase(std::ranges::find(m_listViewers, *toRemove));
-
-
-                // TODO: if (static bool focus = true; scoped::TabItem(ICON_FA_TEXT " Strings", nullptr, std::exchange(focus, false) ? ImGuiTabItemFlags_SetSelected : 0));
 
                 if (scoped::TabItem(ICON_FA_BOOKMARK " Bookmarks"))
                 {
@@ -485,7 +473,7 @@ void Manager::Update()
             G::Viewers::Notify(&Viewers::EventListViewer::UpdateFilter);
 
             G::Game.Voice.Load(source, progress);
-            m_progress[2].Run([=, &source](Utils::Async::ProgressBarContext& progress)
+            m_progress[2].Run([&source](Utils::Async::ProgressBarContext& progress)
             {
                 G::Game.Content.Load(source, progress);
                 G::Viewers::Notify(&Viewers::ContentListViewer::UpdateFilter, false);
