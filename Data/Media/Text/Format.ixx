@@ -44,9 +44,9 @@ void FixupString(std::wstring& string)
                 *writeDest++ = L']';
             else if (fixup == L"plur")
                 plural = true;
-            else if (fixup == L"m")
+            else if (fixup == L"m" || fixup == L"M")
                 sex = GW2Viewer::Sex::Male;
-            else if (fixup == L"f")
+            else if (fixup == L"f" || fixup == L"F")
                 sex = GW2Viewer::Sex::Female;
             else if (fixup == L"s")
             {
