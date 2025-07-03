@@ -1,7 +1,10 @@
 ﻿module GW2Viewer.Data.Media.Text.Manager;
 import GW2Viewer.Data.Game;
 
-Data::Media::Text::Manager::StringsFile::TCache const& Data::Media::Text::Manager::GetStringImpl(uint32 stringID)
+namespace GW2Viewer::Data::Media::Text
+{
+
+Manager::StringsFile::TCache const& Manager::GetStringImpl(uint32 stringID)
 {
     if (stringID >= m_maxID)
         return StringsFile::Missing;
@@ -13,4 +16,6 @@ Data::Media::Text::Manager::StringsFile::TCache const& Data::Media::Text::Manage
         return StringsFile::Missing;
 
     return files[fileIndex].Get(stringIndex, G::Game.Encryption.GetTextKey(stringID));
+}
+
 }

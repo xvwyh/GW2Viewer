@@ -1,7 +1,7 @@
 export module GW2Viewer.Utils.ConstString;
 import std;
 
-export
+export namespace GW2Viewer
 {
 
 template<std::size_t N>

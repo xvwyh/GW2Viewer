@@ -7,10 +7,10 @@ import GW2Viewer.Content.Event;
 import GW2Viewer.Data.Archive;
 import GW2Viewer.Data.Content;
 import GW2Viewer.UI.Viewers.Viewer;
-import GW2Viewer.Utils.ProgressBarContext;
+import GW2Viewer.Utils.Async.ProgressBarContext;
 import std;
 
-export namespace UI
+export namespace GW2Viewer::UI
 {
 
 class Manager
@@ -55,7 +55,7 @@ private:
 
     bool m_showOriginalNames = false;
 
-    std::array<ProgressBarContext, 3> m_progress;
+    std::array<Utils::Async::ProgressBarContext, 3> m_progress;
 
     std::list<std::unique_ptr<Viewers::Viewer>> m_listViewers;
     std::list<std::unique_ptr<Viewers::Viewer>> m_viewers;
@@ -65,4 +65,4 @@ private:
 
 }
 
-export namespace G { UI::Manager UI; }
+export namespace GW2Viewer::G { UI::Manager UI; }

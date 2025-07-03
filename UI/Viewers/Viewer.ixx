@@ -2,7 +2,7 @@ export module GW2Viewer.UI.Viewers.Viewer;
 import GW2Viewer.Common;
 import std;
 
-export namespace UI::Viewers
+export namespace GW2Viewer::UI::Viewers
 {
 
 struct Viewer

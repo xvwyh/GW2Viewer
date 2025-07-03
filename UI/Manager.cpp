@@ -1,6 +1,5 @@
 ﻿module;
 #include "UI/ImGui/ImGui.h"
-#include "Utils/Async.h"
 //#include <cpp-base64/base64.h>
 #include "dep/fmod/fmod.hpp"
 
@@ -57,7 +56,7 @@ import <gsl/gsl>;
 
 using namespace std::chrono_literals;
 
-namespace UI
+namespace GW2Viewer::UI
 {
 
 void Manager::Load()
@@ -320,7 +319,7 @@ void Manager::Update()
 
 
                 // TODO: if (static bool focus = true; scoped::TabItem(ICON_FA_TEXT " Strings", nullptr, std::exchange(focus, false) ? ImGuiTabItemFlags_SetSelected : 0));
-                
+
                 if (scoped::TabItem(ICON_FA_BOOKMARK " Bookmarks"))
                 {
                     if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, { I::GetStyle().FramePadding.x, 0 }))
@@ -396,7 +395,7 @@ void Manager::Update()
             G::Game.Archive.Add(Data::Archive::Kind::Game, G::Config.GameDatPath);
         if (!G::Config.LocalDatPath.empty())
             G::Game.Archive.Add(Data::Archive::Kind::Local, G::Config.LocalDatPath);
-        m_progress[0].Run([this](ProgressBarContext& progress)
+        m_progress[0].Run([this](Utils::Async::ProgressBarContext& progress)
         {
             progress.Start("Preparing decryption key storage");
             if (!G::Config.DecryptionKeysPath.empty())
@@ -471,7 +470,7 @@ void Manager::Update()
             std::ranges::for_each(G::Viewers::ListViewers<Viewers::EventListViewer>, &Viewers::EventListViewer::UpdateFilter);
 
             G::Game.Voice.Load(source, progress);
-            m_progress[2].Run([=, &source](ProgressBarContext& progress)
+            m_progress[2].Run([=, &source](Utils::Async::ProgressBarContext& progress)
             {
                 G::Game.Content.Load(source, progress);
                 std::ranges::for_each(G::Viewers::ListViewers<Viewers::ContentListViewer>, [](Viewers::ContentListViewer* viewer) { viewer->UpdateFilter(); });
@@ -496,7 +495,7 @@ void Manager::Update()
                     G::Windows::MigrateContentTypes.Show();
             });
         });
-        m_progress[1].Run([](ProgressBarContext& progress)
+        m_progress[1].Run([](Utils::Async::ProgressBarContext& progress)
         {
             if (!G::Config.GameExePath.empty())
                 G::Game.Pack.Load(G::Config.GameExePath, progress);

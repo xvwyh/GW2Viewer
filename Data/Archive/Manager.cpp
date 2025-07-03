@@ -3,7 +3,10 @@
 
 module GW2Viewer.Data.Archive.Manager;
 
-void Data::Archive::Manager::Add(Kind kind, std::filesystem::path const& path)
+namespace GW2Viewer::Data::Archive
+{
+
+void Manager::Add(Kind kind, std::filesystem::path const& path)
 {
     std::wstring expanded(1024, L'\0');
     if (auto const length = ExpandEnvironmentStrings(path.c_str(), expanded.data(), expanded.size()))
@@ -11,4 +14,6 @@ void Data::Archive::Manager::Add(Kind kind, std::filesystem::path const& path)
     else
         return;
     m_sources.emplace_back(m_sources.size(), kind, expanded);
+}
+
 }

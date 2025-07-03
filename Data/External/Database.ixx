@@ -7,15 +7,15 @@ import GW2Viewer.Content.Conversation;
 import GW2Viewer.Content.Event;
 import GW2Viewer.Data.Encryption.Asset;
 import GW2Viewer.Data.Game;
-import GW2Viewer.Utils.ProgressBarContext;
-import GW2Viewer.User.Config;
 import GW2Viewer.UI.Manager;
+import GW2Viewer.User.Config;
+import GW2Viewer.Utils.Async.ProgressBarContext;
 import std;
 import <gsl/gsl>;
 
 using namespace std::chrono_literals;
 
-export namespace Data::External
+export namespace GW2Viewer::Data::External
 {
 
 using ::sqlite_int64;
@@ -90,7 +90,7 @@ auto LoadingOperation::Make(std::string_view table, std::string_view columns, au
 class Database
 {
 public:
-    void Load(std::filesystem::path const& path, ProgressBarContext& progress)
+    void Load(std::filesystem::path const& path, Utils::Async::ProgressBarContext& progress)
     {
         // TODO:
         auto updateConversationSearch = [] { };
@@ -137,10 +137,10 @@ public:
                 "GenID, UID, FirstEncounteredTime, LastEncounteredTime",
                 [](uint32 GenID, uint32 UID, uint32 FirstEncounteredTime, uint32 LastEncounteredTime)
                 {
-                    ::Content::conversations[GenID].UID = UID;
+                    GW2Viewer::Content::conversations[GenID].UID = UID;
                 },
                 {
-                    .SharedMutex = &::Content::conversationsLock,
+                    .SharedMutex = &GW2Viewer::Content::conversationsLock,
                     .PostHandler = updateConversationSearch,
                 }
             ),
@@ -148,10 +148,10 @@ public:
                 "GenID, StateID, TextID, SpeakerNameTextID, SpeakerPortraitOverrideFileID, Priority, Flags, Voting, Timeout, CostAmount, CostType, Unk",
                 [](uint32 GenID, uint32 StateID, uint32 TextID, uint32 SpeakerNameTextID, uint32 SpeakerPortraitOverrideFileID, uint32 Priority, uint32 Flags, uint32 Voting, uint32 Timeout, uint32 CostAmount, uint32 CostType, uint32 Unk)
                 {
-                    ::Content::conversations[GenID].States.emplace(StateID, TextID, SpeakerNameTextID, SpeakerPortraitOverrideFileID, Priority, Flags, Voting, Timeout, CostAmount, CostType, Unk);
+                    GW2Viewer::Content::conversations[GenID].States.emplace(StateID, TextID, SpeakerNameTextID, SpeakerPortraitOverrideFileID, Priority, Flags, Voting, Timeout, CostAmount, CostType, Unk);
                 },
                 {
-                    .SharedMutex = &::Content::conversationsLock,
+                    .SharedMutex = &GW2Viewer::Content::conversationsLock,
                     .PostHandler = updateConversationSearch,
                 }
             ),
@@ -159,11 +159,11 @@ public:
                 "GenID, StateID, StateTextID, TransitionID, TextID, CostAmount, CostType, CostKarma, Diplomacy, Unk, Personality, Icon, SkillDefDataID",
                 [](uint32 GenID, uint32 StateID, uint32 StateTextID, uint32 TransitionID, uint32 TextID, uint32 CostAmount, uint32 CostType, uint32 CostKarma, uint32 Diplomacy, uint32 Unk, uint32 Personality, uint32 Icon, uint32 SkillDefDataID)
                 {
-                    for (auto& state : ::Content::conversations[GenID].States | std::views::filter([StateID, StateTextID](auto const& state) { return state.StateID == StateID && state.TextID == StateTextID; }))
+                    for (auto& state : GW2Viewer::Content::conversations[GenID].States | std::views::filter([StateID, StateTextID](auto const& state) { return state.StateID == StateID && state.TextID == StateTextID; }))
                         state.Transitions.emplace(TransitionID, TextID, CostAmount, CostType, CostKarma, Diplomacy, Unk, Personality, Icon, SkillDefDataID);
                 },
                 {
-                    .SharedMutex = &::Content::conversationsLock,
+                    .SharedMutex = &GW2Viewer::Content::conversationsLock,
                     .PostHandler = updateConversationSearch,
                 }
             ),
@@ -171,12 +171,12 @@ public:
                 "GenID, StateID, StateTextID, TransitionID, TransitionTextID, TargetStateID, Flags",
                 [](uint32 GenID, uint32 StateID, uint32 StateTextID, uint32 TransitionID, uint32 TransitionTextID, uint32 TargetStateID, uint32 Flags)
                 {
-                    for (auto& state : ::Content::conversations[GenID].States | std::views::filter([StateID, StateTextID](auto const& state) { return state.StateID == StateID && state.TextID == StateTextID; }))
+                    for (auto& state : GW2Viewer::Content::conversations[GenID].States | std::views::filter([StateID, StateTextID](auto const& state) { return state.StateID == StateID && state.TextID == StateTextID; }))
                         for (auto& transition : state.Transitions | std::views::filter([TransitionID, TransitionTextID](auto const& transition) { return transition.TransitionID == TransitionID && transition.TextID == TransitionTextID; }))
                             transition.Targets.emplace(TargetStateID, Flags);
                 },
                 {
-                    .SharedMutex = &::Content::conversationsLock,
+                    .SharedMutex = &GW2Viewer::Content::conversationsLock,
                     .PostHandler = updateConversationSearch,
                 }
             ),
@@ -184,7 +184,7 @@ public:
                 "ConversationGenID, ConversationStateID, ConversationStateTextID, ConversationStateTransitionID, ConversationStateTransitionTextID, Time, Session, Map, AgentX, AgentY, AgentZ, AgentFacing",
                 [](uint32 ConversationGenID, uint32 ConversationStateID, uint32 ConversationStateTextID, uint32 ConversationStateTransitionID, uint32 ConversationStateTransitionTextID, uint64 Time, uint32 Session, uint32 Map, float AgentX, float AgentY, float AgentZ, float AgentFacing)
                 {
-                    auto& conversation = ::Content::conversations[ConversationGenID];
+                    auto& conversation = GW2Viewer::Content::conversations[ConversationGenID];
                     conversation.EncounteredTime = std::chrono::system_clock::time_point { std::chrono::milliseconds(Time) };
                     conversation.Session = Session;
                     conversation.Map = Map;
@@ -210,7 +210,7 @@ public:
                     }
                 },
                 {
-                    .SharedMutex = &::Content::conversationsLock,
+                    .SharedMutex = &GW2Viewer::Content::conversationsLock,
                     .PostHandler = updateConversationSearch,
                 }
             ),
@@ -218,10 +218,10 @@ public:
                 "Map, UID, TitleTextID, TitleParameterTextID1, TitleParameterTextID2, TitleParameterTextID3, TitleParameterTextID4, TitleParameterTextID5, TitleParameterTextID6, DescriptionTextID, FileIconID, FlagsClient, FlagsServer, Level, MetaTextTextID, AudioEffect, A, Time",
                 [](uint32 Map, uint32 UID, uint32 TitleTextID, uint32 TitleParameterTextID1, uint32 TitleParameterTextID2, uint32 TitleParameterTextID3, uint32 TitleParameterTextID4, uint32 TitleParameterTextID5, uint32 TitleParameterTextID6, uint32 DescriptionTextID, uint32 FileIconID, uint32 FlagsClient, uint32 FlagsServer, uint32 Level, uint32 MetaTextTextID, std::vector<byte> const& AudioEffect, uint32 A, uint64 Time)
                 {
-                    ::Content::events[{ Map, UID }].States.emplace(Map, UID, TitleTextID, std::array { TitleParameterTextID1, TitleParameterTextID2, TitleParameterTextID3, TitleParameterTextID4, TitleParameterTextID5, TitleParameterTextID6 }, DescriptionTextID, FileIconID, (::Content::Event::State::ClientFlags)FlagsClient, (::Content::Event::State::ServerFlags)FlagsServer, Level, MetaTextTextID, AudioEffect, A, Time).first->Time = Time;
+                    GW2Viewer::Content::events[{ Map, UID }].States.emplace(Map, UID, TitleTextID, std::array { TitleParameterTextID1, TitleParameterTextID2, TitleParameterTextID3, TitleParameterTextID4, TitleParameterTextID5, TitleParameterTextID6 }, DescriptionTextID, FileIconID, (GW2Viewer::Content::Event::State::ClientFlags)FlagsClient, (GW2Viewer::Content::Event::State::ServerFlags)FlagsServer, Level, MetaTextTextID, AudioEffect, A, Time).first->Time = Time;
                 },
                 {
-                    .SharedMutex = &::Content::eventsLock,
+                    .SharedMutex = &GW2Viewer::Content::eventsLock,
                     .PostHandler = updateEventFilter,
                 }
             ),
@@ -229,10 +229,10 @@ public:
                 "Map, EventUID, EventObjectiveIndex, Type, Flags, TargetCount, TextID, AgentNameTextID, ProgressBarStyle, ExtraInt, ExtraInt2, ExtraGUID, ExtraGUID2, ExtraBlob, Time",
                 [](uint32 Map, uint32 EventUID, uint32 EventObjectiveIndex, uint32 Type, uint32 Flags, uint32 TargetCount, uint32 TextID, uint32 AgentNameTextID, std::vector<byte> const& ProgressBarStyle, uint32 ExtraInt, uint32 ExtraInt2, std::vector<byte> const& ExtraGUID, std::vector<byte> const& ExtraGUID2, std::vector<byte> const& ExtraBlob, uint64 Time)
                 {
-                    ::Content::events[{ Map, EventUID }].Objectives.emplace(Map, EventUID, EventObjectiveIndex, Type, Flags, TargetCount, TextID, AgentNameTextID, ProgressBarStyle, ExtraInt, ExtraInt2, ExtraGUID, ExtraGUID2, ExtraBlob, Time).first->Time = Time;
+                    GW2Viewer::Content::events[{ Map, EventUID }].Objectives.emplace(Map, EventUID, EventObjectiveIndex, Type, Flags, TargetCount, TextID, AgentNameTextID, ProgressBarStyle, ExtraInt, ExtraInt2, ExtraGUID, ExtraGUID2, ExtraBlob, Time).first->Time = Time;
                 },
                 {
-                    .SharedMutex = &::Content::eventsLock,
+                    .SharedMutex = &GW2Viewer::Content::eventsLock,
                     .PostHandler = updateEventFilter,
                 }
             ),
@@ -240,7 +240,7 @@ public:
                 "ObjectiveMap, ObjectiveEventUID, ObjectiveEventObjectiveIndex, ObjectiveAgentIndex, ObjectiveAgentID, IFNULL(NULLIF(ObjectiveAgentNameTextID, 0), NameTextID), ObjectiveAgentX, ObjectiveAgentY, ObjectiveAgentZ, ObjectiveAgentFacing",
                 [](uint32 ObjectiveMap, uint32 ObjectiveEventUID, uint32 ObjectiveEventObjectiveIndex, uint32 ObjectiveAgentIndex, uint32 ObjectiveAgentID, uint32 ObjectiveAgentNameTextID, float ObjectiveAgentX, float ObjectiveAgentY, float ObjectiveAgentZ, float ObjectiveAgentFacing)
                 {
-                    for (auto& objective : ::Content::events[{ ObjectiveMap, ObjectiveEventUID }].Objectives | std::views::filter([ObjectiveEventObjectiveIndex](auto const& objective) { return objective.EventObjectiveIndex == ObjectiveEventObjectiveIndex; }))
+                    for (auto& objective : GW2Viewer::Content::events[{ ObjectiveMap, ObjectiveEventUID }].Objectives | std::views::filter([ObjectiveEventObjectiveIndex](auto const& objective) { return objective.EventObjectiveIndex == ObjectiveEventObjectiveIndex; }))
                     {
                         objective.Agents.resize(std::max<size_t>(objective.Agents.size(), ObjectiveAgentIndex + 1));
                         objective.Agents.at(ObjectiveAgentIndex) = { ObjectiveAgentID, ObjectiveAgentNameTextID };
@@ -248,7 +248,7 @@ public:
                 },
                 {
                     .Joins = "LEFT JOIN Agents a ON ObjectiveAgents.Session=a.Session AND ObjectiveAgents.MapSession=a.MapSession AND ObjectiveAgents.ObjectiveAgentID=a.AgentID",
-                    .SharedMutex = &::Content::eventsLock,
+                    .SharedMutex = &GW2Viewer::Content::eventsLock,
                     .PostHandler = updateEventFilter,
                 }
             ),
@@ -292,4 +292,4 @@ using sqlite::operator|;
 
 }
 
-export namespace G { Data::External::Database Database; }
+export namespace GW2Viewer::G { Data::External::Database Database; }

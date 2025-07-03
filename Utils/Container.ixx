@@ -17,7 +17,7 @@ static_assert(ValueOnlyContainer<std::list<int>>);
 static_assert(ValueOnlyContainer<std::set<int>>);
 static_assert(KeyValueContainer<std::map<int, int>>);
 
-export namespace Utils::Container
+export namespace GW2Viewer::Utils::Container
 {
 
 template<KeyValueContainer Map, typename T>

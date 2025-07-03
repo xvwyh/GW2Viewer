@@ -96,7 +96,7 @@ void StripPNGMetadata(std::filesystem::path const& path)
     }
 }
 
-namespace Data::Media::Texture
+namespace GW2Viewer::Data::Media::Texture
 {
 
 std::unique_ptr<Texture> Manager::Create(uint32 width, uint32 height, void const* data)
@@ -213,7 +213,7 @@ std::unique_ptr<Manager::BoxedImage> Manager::GetTextureRGBAImage(TextureEntry& 
 
     auto image = std::make_unique<ScratchImage>();
     TexMetadata info { };
-    switch (std::byteswap(*(uint32_t*)data.data()))
+    switch (std::byteswap(*(uint32*)data.data()))
     {
         case 'DDS ':
         {
@@ -239,13 +239,13 @@ std::unique_ptr<Manager::BoxedImage> Manager::GetTextureRGBAImage(TextureEntry& 
         {
             struct HeaderATEX
             {
-                uint32_t FourCC;
-                uint32_t Format;
-                uint16_t Width;
-                uint16_t Height;
+                uint32 FourCC;
+                uint32 Format;
+                uint16 Width;
+                uint16 Height;
             } &header = *(HeaderATEX*)data.data();
             DXGI_FORMAT format;
-            uint32_t miscFlags2 = 0;
+            uint32 miscFlags2 = 0;
             //Format = std::format("{}/{}", std::string_view((char*)data.data(), 4), std::string_view((char*)&header.Format, 4));
             gw2b::DatFile datFile { };
             gw2b::ImageReader const imageReader(data, datFile, gw2b::ANetFileType::ANFT_ATEX);

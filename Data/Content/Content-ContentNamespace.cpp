@@ -7,7 +7,7 @@ import :ContentObject;
 import GW2Viewer.User.Config;
 import std;
 
-namespace Data::Content
+namespace GW2Viewer::Data::Content
 {
 
 bool ContentNamespace::HasCustomName() const

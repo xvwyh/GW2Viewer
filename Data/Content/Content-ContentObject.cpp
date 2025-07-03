@@ -10,7 +10,7 @@ import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.Format;
 import std;
 
-namespace Data::Content
+namespace GW2Viewer::Data::Content
 {
 
 void ContentObject::AddReference(ContentObject& target, Reference::Types type)

@@ -3,10 +3,11 @@ module;
 
 export module GW2Viewer.UI.Windows.Window;
 
-export namespace UI::Windows { struct Window; }
-export namespace G::Windows { auto& GetAllWindows() { static std::list<UI::Windows::Window*> instance; return instance; }; }
+export namespace GW2Viewer::UI::Windows { struct Window; }
 
-export namespace UI::Windows
+export namespace GW2Viewer::G::Windows { auto& GetAllWindows() { static std::list<UI::Windows::Window*> instance; return instance; } }
+
+export namespace GW2Viewer::UI::Windows
 {
 
 struct Window

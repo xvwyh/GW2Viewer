@@ -3,7 +3,7 @@ import GW2Viewer.Common;
 import GW2Viewer.UI.Viewers.Viewer;
 import std;
 
-export namespace UI::Viewers
+export namespace GW2Viewer::UI::Viewers
 {
 
 struct ConversationViewer : Viewer

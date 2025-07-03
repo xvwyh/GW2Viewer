@@ -4,7 +4,7 @@ module;
 export module GW2Viewer.Data.Encryption;
 import std;
 
-namespace Data::Encryption
+namespace GW2Viewer::Data::Encryption
 {
 
 export enum class Status

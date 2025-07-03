@@ -16,6 +16,9 @@ import GW2Viewer.UI.Viewers.FileViewer;
 import GW2Viewer.Utils.Encoding;
 import std;
 
+namespace GW2Viewer
+{
+
 std::string* g_writeTokensTargets;
 std::string* g_writeStringsTargets;
 
@@ -539,7 +542,9 @@ template<fcc FourCC> bool RegisterPackFileChunkPreview<FourCC>::Register()
     return [] { return GetPackFileChunkPreviewRegistry().emplace(FourCC, []<typename... Args>(Args&&... args) { return new PackFileChunkPreview<FourCC>(std::forward<Args>(args)...); }).second; }();
 }
 
-export namespace UI::Viewers
+}
+
+export namespace GW2Viewer::UI::Viewers
 {
 
 struct PackFileViewer : FileViewer

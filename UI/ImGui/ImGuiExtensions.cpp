@@ -4,6 +4,8 @@
 
 import std;
 
+using GW2Viewer::byte;
+
 static constexpr auto cihash = [](std::string_view const& key)
 {
     return std::hash<std::string>()({ std::from_range, key | std::views::transform(tolower) });

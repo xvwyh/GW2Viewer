@@ -6,7 +6,7 @@ import GW2Viewer.UI.Windows.Window;
 import GW2Viewer.User.Config;
 import std;
 
-export namespace UI::Windows
+export namespace GW2Viewer::UI::Windows
 {
 
 struct Settings : Window
@@ -33,4 +33,4 @@ struct Settings : Window
 
 }
 
-export namespace G::Windows { UI::Windows::Settings Settings; }
+export namespace GW2Viewer::G::Windows { UI::Windows::Settings Settings; }

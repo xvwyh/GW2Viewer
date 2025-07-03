@@ -12,7 +12,7 @@ import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.String;
 import std;
 
-namespace Data::Content
+namespace GW2Viewer::Data::Content
 {
 
 STATIC(TypeInfo::Symbol::CurrentContext) { };

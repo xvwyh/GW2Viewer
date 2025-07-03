@@ -2,7 +2,7 @@ export module GW2Viewer.Data.Encryption.RC4;
 import GW2Viewer.Common;
 import std;
 
-export namespace Data::Encryption
+export namespace GW2Viewer::Data::Encryption
 {
 
 struct RC4
@@ -24,11 +24,11 @@ struct RC4
     }
     void Crypt(std::span<byte> data)
     {
-        for (byte& byte : data)
+        for (byte& b : data)
         {
             y += m[++x];
             std::swap(m[x], m[y]);
-            byte ^= m[(::byte)(m[x] + m[y])];
+            b ^= m[(byte)(m[x] + m[y])];
         }
     }
 

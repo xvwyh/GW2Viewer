@@ -11,12 +11,15 @@ import GW2Viewer.UI.Viewers.ListViewer;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Exception;
 
-std::string UI::Viewers::ContentViewer::Title()
+namespace GW2Viewer::UI::Viewers
+{
+
+std::string ContentViewer::Title()
 {
     return Utils::Encoding::ToUTF8(std::format(L"<c=#4>{}</c> {}", Content.Type->GetDisplayName(), Content.GetDisplayName()));
 }
 
-void UI::Viewers::ContentViewer::Draw()
+void ContentViewer::Draw()
 {
     auto _ = Utils::Exception::SEHandler::Create();
 
@@ -881,4 +884,6 @@ void UI::Viewers::ContentViewer::Draw()
         if (!open)
             viewUniqueValues.reset();
     }
+}
+
 }

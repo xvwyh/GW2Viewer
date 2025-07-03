@@ -2,11 +2,11 @@ export module GW2Viewer.Data.Archive.Manager;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Archive;
 import GW2Viewer.Data.Pack.PackFile;
-import GW2Viewer.Utils.ProgressBarContext;
+import GW2Viewer.Utils.Async.ProgressBarContext;
 import std;
 import <boost/container/static_vector.hpp>;
 
-export namespace Data::Archive
+export namespace GW2Viewer::Data::Archive
 {
 
 class Manager
@@ -66,7 +66,7 @@ public:
 
     void Add(Kind kind, std::filesystem::path const& path);
 
-    void Load(ProgressBarContext& progress)
+    void Load(Utils::Async::ProgressBarContext& progress)
     {
         if (m_loaded)
             return;

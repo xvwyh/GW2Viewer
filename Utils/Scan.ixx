@@ -6,6 +6,9 @@ import GW2Viewer.Utils.ConstString;
 import <algorithm>;
 import <variant>;
 
+namespace GW2Viewer
+{
+
 template<typename Result>
 struct ResultBase
 {
@@ -20,7 +23,9 @@ struct ResultBase
     bool FullMatchIgnoringWhitespace() const { return FullMatch() || PartialMatch() && std::ranges::all_of(WrappedResult.subrange(), isspace); }
 };
 
-export namespace Utils::Scan
+}
+
+export namespace GW2Viewer::Utils::Scan
 {
 
 template<typename Range>

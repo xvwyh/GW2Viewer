@@ -16,10 +16,10 @@ import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.String;
 import std;
 
-static auto& context = Data::Content::TypeInfo::Symbol::CurrentContext;
-
-namespace Data::Content::Symbols
+namespace GW2Viewer::Data::Content::Symbols
 {
+
+static auto& context = TypeInfo::Symbol::CurrentContext;
 
 TypeInfo::SymbolType const* GetByName(std::string_view name)
 {
@@ -155,7 +155,7 @@ template<typename T, size_t N> void Point<T, N>::Draw(byte const* data, TypeInfo
         if (scoped::WithColorVar(ImGuiCol_Text, I::ColorConvertU32ToFloat4(color)))
             I::InputTextReadOnly(std::format("##Input{}", index).c_str(), std::format("{}", value));
     }
-    
+
     I::SameLine(0, 0);
     if (I::Button(ICON_FA_GLOBE))
         ; // TOOD: Open world map to world-space coods
@@ -171,7 +171,7 @@ std::string GUID::GetDisplayText(byte const* data) const
 {
     if (auto const* object = *GetContent(data))
         return Utils::Encoding::ToUTF8(object->GetDisplayName(false, true));
-    return std::format("{}", *(::GUID const*)data);
+    return std::format("{}", *(GW2Viewer::GUID const*)data);
 }
 std::optional<uint32> GUID::GetIcon(byte const* data) const
 {
@@ -187,7 +187,7 @@ std::optional<ContentObject*> GUID::GetMap(byte const* data) const
 }
 std::optional<ContentObject*> GUID::GetContent(byte const* data) const
 {
-    if (auto const object = G::Game.Content.GetByGUID(*(::GUID const*)data))
+    if (auto const object = G::Game.Content.GetByGUID(*(GW2Viewer::GUID const*)data))
     {
         object->Finalize();
         return object;
@@ -196,7 +196,7 @@ std::optional<ContentObject*> GUID::GetContent(byte const* data) const
 }
 void GUID::Draw(byte const* data, TypeInfo::Symbol& symbol) const
 {
-    I::InputTextReadOnly("##Input", std::format("{}", *(::GUID const*)data));
+    I::InputTextReadOnly("##Input", std::format("{}", *(GW2Viewer::GUID const*)data));
 
     if (auto* object = *GetContent(data); object && object != context.Content)
     {
@@ -399,11 +399,11 @@ void ArrayContent::Draw(byte const* data, TypeInfo::Symbol& symbol) const
         I::PopStyleColor();
 }
 
-std::tuple<TypeInfo::SymbolType const*, uint32> GetSymbolTypeForContentType(::Content::EContentTypes type)
+std::tuple<TypeInfo::SymbolType const*, uint32> GetSymbolTypeForContentType(GW2Viewer::Content::EContentTypes type)
 {
     switch (type)
     {
-        using enum ::Content::EContentTypes;
+        using enum GW2Viewer::Content::EContentTypes;
         case CONTENT_TYPE_BOOLEAN: return { GetByName("bool"), 1 };
         case CONTENT_TYPE_ENUM: return { GetByName("int8"), 1 };
         case CONTENT_TYPE_FLAGS: return { GetByName("int16"), 1 };
@@ -438,7 +438,7 @@ std::strong_ordering ParamValue::CompareDataForSearch(byte const* dataA, byte co
         {
             if (auto const result = typeInfo->CompareDataForSearch(pA, pB); result != std::strong_ordering::equal)
                 return result;
-            
+
             pA += typeInfo->Size();
             pB += typeInfo->Size();
         }
@@ -505,7 +505,7 @@ void ParamValue::Draw(byte const* data, TypeInfo::Symbol& symbol) const
         I::SameLine();
         I::Text("<c=#F00>Unhandled basic type</c>");
     }
-    if (param.GUID != ::GUID::Empty)
+    if (param.GUID != GW2Viewer::GUID::Empty)
         GetByName("GUID")->Draw((byte const*)&param.GUID, symbol);
 }
 

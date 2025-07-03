@@ -8,8 +8,8 @@ import GW2Viewer.Data.Content;
 import GW2Viewer.Data.Pack;
 import GW2Viewer.Data.Pack.PackFile;
 import GW2Viewer.User.Config;
+import GW2Viewer.Utils.Async.ProgressBarContext;
 import GW2Viewer.Utils.Container;
-import GW2Viewer.Utils.ProgressBarContext;
 import std;
 import <cassert>;
 import <cstring>;
@@ -18,7 +18,7 @@ import <cstring>;
 
 #ifdef NATIVE
 #pragma pack(push, 1)
-namespace Data::Content
+namespace GW2Viewer::Data::Content
 {
 
 struct PackContentTypeInfo
@@ -84,13 +84,13 @@ struct PackContent
 #pragma pack(pop)
 #endif
 
-export namespace Data::Content
+export namespace GW2Viewer::Data::Content
 {
 
 class Manager
 {
 public:
-    void Load(Archive::Source& source, ProgressBarContext& progress)
+    void Load(Archive::Source& source, Utils::Async::ProgressBarContext& progress)
     {
         m_loadedContentFiles.resize(m_numContentFiles);
         uint32 fileID = m_firstContentFileID;
@@ -103,7 +103,7 @@ public:
 
         Process(progress);
     }
-    void Process(ProgressBarContext& progress)
+    void Process(Utils::Async::ProgressBarContext& progress)
     {
         std::array<std::tuple<PostProcessStage, char const*>, 3> STAGES
         { {
@@ -138,7 +138,7 @@ public:
     [[nodiscard]] uint32 GetNumTypes() const { return m_typeInfos.size(); }
     [[nodiscard]] auto& GetTypes() const { return m_typeInfos; }
     [[nodiscard]] ContentTypeInfo* GetType(uint32 index) const { return m_typeInfos.at(index).get(); }
-    [[nodiscard]] ContentTypeInfo* GetType(::Content::EContentTypes type) const
+    [[nodiscard]] ContentTypeInfo* GetType(GW2Viewer::Content::EContentTypes type) const
     {
         if (auto const itr = std::ranges::find(G::Config.TypeInfo, type, [](auto const& pair) { return pair.second.ContentType; }); itr != G::Config.TypeInfo.end())
             if (itr->first < m_typeInfos.size())
@@ -157,7 +157,7 @@ public:
     [[nodiscard]] ContentObject* GetByIndex(uint32 index) const { return m_objects.at(index); }
     [[nodiscard]] ContentObject* GetByGUID(GUID const& guid) const { if (auto const object = Utils::Container::Find(m_objectsByGUID, guid)) return *object; return nullptr; }
     [[nodiscard]] ContentObject* GetByDataPointer(byte const* ptr) const { if (auto const object = Utils::Container::Find(m_objectsByDataPointer, ptr)) return *object; return nullptr; }
-    [[nodiscard]] ContentObject* GetByDataID(::Content::EContentTypes type, uint32 dataID) const
+    [[nodiscard]] ContentObject* GetByDataID(GW2Viewer::Content::EContentTypes type, uint32 dataID) const
     {
         if (auto const typeInfo = GetType(type))
         {
@@ -220,7 +220,7 @@ private:
         auto& chunk = file.GetFirstChunk();
         assert(chunk.Header.HeaderSize == sizeof(chunk.Header));
         auto& content = (PackContent&)chunk.Data;
-        assert(!(content.flags & ::Content::CONTENT_FLAG_ENCRYPTED)); // TODO: RC4 encrypted
+        assert(!(content.flags & GW2Viewer::Content::CONTENT_FLAG_ENCRYPTED)); // TODO: RC4 encrypted
 
         if (!m_rootContentFile)
             m_rootContentFile = &content;
@@ -228,7 +228,7 @@ private:
         auto const content = loaded.File->QueryChunk(fcc::Main);
         if (!m_rootContentFile)
             m_rootContentFile.emplace(content);
-        
+
         assert(!((uint32)content["flags"] & ::Content::CONTENT_FLAG_ENCRYPTED)); // TODO: RC4 encrypted
 
         auto const data = content["content[]"];

@@ -2,7 +2,7 @@ export module GW2Viewer.Utils.Async;
 import GW2Viewer.Common;
 import std;
 
-export namespace Utils::Async
+export namespace GW2Viewer::Utils::Async
 {
 
 struct Scheduler

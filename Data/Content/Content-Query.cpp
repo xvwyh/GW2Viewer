@@ -5,7 +5,7 @@ import GW2Viewer.Data.Game;
 import GW2Viewer.User.Config;
 import std;
 
-namespace Data::Content
+namespace GW2Viewer::Data::Content
 {
 
 template<typename T>

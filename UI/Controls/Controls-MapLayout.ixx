@@ -18,7 +18,10 @@ import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Math;
 import <boost/container/small_vector.hpp>;
 
-using Data::Content::ContentObject;
+using GW2Viewer::Data::Content::ContentObject;
+
+namespace GW2Viewer
+{
 
 bool IsPointInsidePolygon(std::span<ImVec2 const> polygon, ImVec2 const& point)
 {
@@ -33,7 +36,9 @@ bool IsPointInsidePolygon(std::span<ImVec2 const> polygon, ImVec2 const& point)
     return result;
 }
 
-export namespace UI::Controls
+}
+
+export namespace GW2Viewer::UI::Controls
 {
 
 struct MapLayout

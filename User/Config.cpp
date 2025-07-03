@@ -3,7 +3,7 @@ import GW2Viewer.Common.JSON;
 
 static std::filesystem::path const path = R"(.\config.json)";
 
-namespace User
+namespace GW2Viewer::User
 {
 
 void Config::Load()

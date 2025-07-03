@@ -1,6 +1,6 @@
 export module GW2Viewer.Data.Encryption.Asset;
 
-export namespace Data::Encryption
+export namespace GW2Viewer::Data::Encryption
 {
 
 enum class AssetType

@@ -4,7 +4,10 @@ import std;
 import <cctype>;
 import <boost/container/small_vector.hpp>;
 
-export class Token64
+export namespace GW2Viewer
+{
+
+class Token64
 {
     uint64 m_data;
 
@@ -56,3 +59,5 @@ public:
         return token;
     }
 };
+
+}

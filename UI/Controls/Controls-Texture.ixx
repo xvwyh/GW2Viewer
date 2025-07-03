@@ -6,7 +6,7 @@ import GW2Viewer.Common;
 import GW2Viewer.Data.Game;
 import GW2Viewer.Data.Media.Texture;
 
-export namespace UI::Controls
+export namespace GW2Viewer::UI::Controls
 {
 
 struct TextureOptions

@@ -12,7 +12,7 @@ import GW2Viewer.Utils.Async;
 import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Scan;
 
-export namespace UI::Viewers
+export namespace GW2Viewer::UI::Viewers
 {
 
 struct EventListViewer : ListViewer<EventListViewer>

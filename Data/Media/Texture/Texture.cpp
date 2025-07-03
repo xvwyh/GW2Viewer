@@ -3,7 +3,7 @@
 
 module GW2Viewer.Data.Media.Texture;
 
-namespace Data::Media::Texture
+namespace GW2Viewer::Data::Media::Texture
 {
 
 Texture::~Texture()

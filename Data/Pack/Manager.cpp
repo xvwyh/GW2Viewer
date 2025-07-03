@@ -3,7 +3,10 @@
 
 module GW2Viewer.Data.Pack.Manager;
 
-void Data::Pack::Manager::Load(std::filesystem::path const& path, ProgressBarContext& progress)
+namespace GW2Viewer::Data::Pack
+{
+
+void Manager::Load(std::filesystem::path const& path, Utils::Async::ProgressBarContext& progress)
 {
     progress.Start(std::format("Parsing PackFile layouts from {}", path.filename().string()));
     using namespace Layout;
@@ -164,4 +167,6 @@ void Data::Pack::Manager::Load(std::filesystem::path const& path, ProgressBarCon
     }
 
     m_loaded = true;
+}
+
 }

@@ -3,7 +3,7 @@ import GW2Viewer.Common;
 import GW2Viewer.Common.GUID;
 import std;
 
-export namespace Data::Content
+export namespace GW2Viewer::Data::Content
 {
 
 struct ContentFilter

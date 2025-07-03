@@ -6,7 +6,7 @@ export module GW2Viewer.Data.Encryption.Text;
 import GW2Viewer.Common;
 import std;
 
-export namespace Data::Encryption
+export namespace GW2Viewer::Data::Encryption
 {
 
 struct TextKeyInfo

@@ -4,7 +4,7 @@ import GW2Viewer.Data.Archive;
 import GW2Viewer.UI.Viewers.Viewer;
 import std;
 
-export namespace UI::Viewers
+export namespace GW2Viewer::UI::Viewers
 {
 
 struct FileViewer : Viewer

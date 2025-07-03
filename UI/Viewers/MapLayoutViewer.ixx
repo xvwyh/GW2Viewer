@@ -7,7 +7,7 @@ import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Viewers.Viewer;
 
-export namespace UI::Viewers
+export namespace GW2Viewer::UI::Viewers
 {
 
 struct MapLayoutViewer : Viewer

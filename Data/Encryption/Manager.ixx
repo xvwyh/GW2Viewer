@@ -5,7 +5,7 @@ import GW2Viewer.Data.Encryption.Asset;
 import GW2Viewer.Data.Encryption.Text;
 import std;
 
-export namespace Data::Encryption
+export namespace GW2Viewer::Data::Encryption
 {
 
 class Manager

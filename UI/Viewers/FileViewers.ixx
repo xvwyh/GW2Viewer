@@ -5,7 +5,7 @@ import GW2Viewer.UI.Viewers.FileViewer;
 import GW2Viewer.UI.Viewers.PackFileViewer;
 import std;
 
-export namespace UI::Viewers
+export namespace GW2Viewer::UI::Viewers
 {
 
 struct FileViewers

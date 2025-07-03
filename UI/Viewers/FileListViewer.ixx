@@ -13,7 +13,7 @@ import GW2Viewer.UI.Windows.ContentSearch;
 import GW2Viewer.Utils.Scan;
 import std;
 
-export namespace UI::Viewers
+export namespace GW2Viewer::UI::Viewers
 {
 
 struct FileListViewer : ListViewer<FileListViewer>

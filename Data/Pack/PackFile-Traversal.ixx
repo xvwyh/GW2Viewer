@@ -12,9 +12,14 @@ import GW2Viewer.Utils.Scan;
 import <boost/container/small_vector.hpp>;
 import <experimental/generator>;
 
-std::map<uint32, Data::Pack::Layout::Type const*> const* GetChunk(std::string_view name);
+namespace GW2Viewer::Data::Pack::Layout::Traversal
+{
 
-export namespace Data::Pack::Layout::Traversal
+std::map<uint32, Type const*> const* GetChunk(std::string_view name);
+
+}
+
+export namespace GW2Viewer::Data::Pack::Layout::Traversal
 {
 
 class FieldIterator

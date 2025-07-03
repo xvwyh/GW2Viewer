@@ -20,7 +20,7 @@ import <ctype.h>;
 
 using namespace std::chrono_literals;
 
-export namespace UI::Viewers
+export namespace GW2Viewer::UI::Viewers
 {
 
 struct StringListViewer : ListViewer<StringListViewer>

@@ -13,7 +13,7 @@ import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Scan;
 import std;
 
-export namespace UI::Viewers
+export namespace GW2Viewer::UI::Viewers
 {
 
 struct ConversationListViewer : ListViewer<ConversationListViewer>

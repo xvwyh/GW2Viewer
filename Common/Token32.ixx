@@ -3,7 +3,10 @@ import GW2Viewer.Common;
 import std;
 import <boost/container/small_vector.hpp>;
 
-export class Token32
+export namespace GW2Viewer
+{
+
+class Token32
 {
     static constexpr std::string_view alphabet = "abcdefghiklmnopvrstuwxy";
     uint32 m_data;
@@ -50,3 +53,5 @@ public:
         return token + 0x30000000;
     }
 };
+
+}

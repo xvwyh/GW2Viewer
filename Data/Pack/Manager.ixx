@@ -1,11 +1,11 @@
 export module GW2Viewer.Data.Pack.Manager;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Pack.PackFile;
+import GW2Viewer.Utils.Async.ProgressBarContext;
 import GW2Viewer.Utils.Container;
-import GW2Viewer.Utils.ProgressBarContext;
 import std;
 
-export namespace Data::Pack
+export namespace GW2Viewer::Data::Pack
 {
 
 class Manager
@@ -13,7 +13,7 @@ class Manager
 public:
     auto GetChunk(std::string_view name) const { return Utils::Container::Find(m_chunks, name); }
 
-    void Load(std::filesystem::path const& path, ProgressBarContext& progress);
+    void Load(std::filesystem::path const& path, Utils::Async::ProgressBarContext& progress);
     bool IsLoaded() const { return m_loaded; }
 
 private:

@@ -8,7 +8,7 @@ import <gsl/util>;
 
 using namespace std::chrono_literals;
 
-export namespace Data::Media::Texture
+export namespace GW2Viewer::Data::Media::Texture
 {
 
 class Manager

@@ -13,12 +13,15 @@ import GW2Viewer.Utils.String;
 import std;
 import <gsl/gsl>;
 
-void UI::Viewers::ConversationViewer::Draw()
+namespace GW2Viewer::UI::Viewers
+{
+
+void ConversationViewer::Draw()
 {
     // OLD: static constexpr uint32 icons[] { 156129, 156127, 156131, 156137, 156145, 156146, 156132, 156128, 156139, 156138, 156148, 156149, 156126, 156130, 156133, 156134, 156135, 156136, 567512, 567513, 156143, 156144, 156147, 156150, 156151, 156153, 1228228, 1973946, 0 };
     // NEW: static constexpr uint32 iconFileIDs[] { 156127, 156128, 156129, 156131, 156137, 156138, 156139, 156145, 156146, 156132, 156148, 156149, 156126, 156130, 156133, 156134, 156135, 156136, 567512, 567513, 156143, 156144, 3621055, 156147, 156150, 156151, 156153, 1228228, 1973946, 0 };
     static constexpr uint32 iconToIconInfoIndex[] { 2, 0, 3, 4, 7, 8, 9, 1, 6, 5, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 21, 23, 24, 25, 26, 27, 28, 29 };
-    static constexpr struct 
+    static constexpr struct
     {
         uint32 FileID;
         std::string_view Wiki;
@@ -289,7 +292,7 @@ void UI::Viewers::ConversationViewer::Draw()
                     Utils::String::ReplaceAll(text, "\r\n", "<br>");
                     Utils::String::ReplaceAll(text, "\r", "<br>");
                     Utils::String::ReplaceAll(text, "\n", "<br>");
-                    
+
                     std::format_to(wiki, "{{{{dialogue icon|{}}}}} ''{}''\r\n", iconInfo[iconToIconInfoIndex[transition.Icon]].Wiki, text);
                 }
 
@@ -331,7 +334,7 @@ void UI::Viewers::ConversationViewer::Draw()
                 I::AlignTextToFramePadding();
                 I::Text("%s%s%s",
                     drawTextID ? std::format("<c=#CCF>({})</c> ", transition.TextID).c_str() : "",
-                    drawEncryptionStatus ? GetStatusText(status) : "", 
+                    drawEncryptionStatus ? GetStatusText(status) : "",
                     text.c_str());
 
                 if (isScriptedStartState)
@@ -391,7 +394,7 @@ void UI::Viewers::ConversationViewer::Draw()
         }
         I::TreePop();
     };
-    
+
     std::set<uint32> visitedStates;
     uint32 nextExpectedStateID = 0;
     if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, { I::GetStyle().FramePadding.x, 0 }))
@@ -419,4 +422,6 @@ void UI::Viewers::ConversationViewer::Draw()
         wikiBuffer.append(1, '\0');
         I::SetClipboardText(wikiBuffer.c_str());
     }
+}
+
 }

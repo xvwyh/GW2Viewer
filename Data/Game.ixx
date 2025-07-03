@@ -10,7 +10,7 @@ import std;
 import <cassert>;
 import GW2Viewer.Common.GUID;
 
-export namespace Data
+export namespace GW2Viewer::Data
 {
 
 struct Game
@@ -48,4 +48,4 @@ struct Game
 
 }
 
-export namespace G { Data::Game Game; }
+export namespace GW2Viewer::G { Data::Game Game; }

@@ -15,7 +15,7 @@ import GW2Viewer.Utils.Visitor;
 import std;
 import <experimental/generator>;
 
-export namespace UI::Windows
+export namespace GW2Viewer::UI::Windows
 {
 
 struct Demangle : Window
@@ -452,4 +452,4 @@ struct Demangle : Window
 
 }
 
-export namespace G::Windows { UI::Windows::Demangle Demangle; }
+export namespace GW2Viewer::G::Windows { UI::Windows::Demangle Demangle; }

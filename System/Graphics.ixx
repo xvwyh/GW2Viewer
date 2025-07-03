@@ -1,7 +1,7 @@
 export module GW2Viewer.System.Graphics;
 import <d3d11.h>;
 
-export namespace G
+export namespace GW2Viewer::G
 {
     ID3D11Device* GraphicsDevice = nullptr;
     IDXGISwapChain* SwapChain = nullptr;

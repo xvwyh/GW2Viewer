@@ -2,8 +2,11 @@ export module GW2Viewer.Common.Token;
 import GW2Viewer.Common;
 import std;
 
+export namespace GW2Viewer
+{
+
 #pragma pack(push, 8)
-export struct Token
+struct Token
 {
     enum Types
     {
@@ -18,7 +21,8 @@ export struct Token
     };
 };
 #pragma pack(pop)
-export Token& operator+=(Token& a, Token b)
+
+Token& operator+=(Token& a, Token b)
 {
     if (a.Type == Token::TypeFloat)
     {
@@ -46,4 +50,6 @@ export Token& operator+=(Token& a, Token b)
         }
     }
     return a;
+}
+
 }

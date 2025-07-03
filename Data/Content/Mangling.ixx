@@ -6,7 +6,7 @@ import <boost/archive/iterators/base64_from_binary.hpp>;
 import <boost/archive/iterators/binary_from_base64.hpp>;
 import <boost/archive/iterators/transform_width.hpp>;
 
-export namespace Data::Content
+export namespace GW2Viewer::Data::Content
 {
 enum
 {

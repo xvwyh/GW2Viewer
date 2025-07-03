@@ -1,6 +1,6 @@
 export module GW2Viewer.Content;
 
-export namespace Content
+export namespace GW2Viewer::Content
 {
 
 enum

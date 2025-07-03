@@ -3,7 +3,10 @@
 
 module GW2Viewer.Utils.Exception;
 
-Utils::Exception::SEHandler Utils::Exception::SEHandler::Create()
+namespace GW2Viewer::Utils::Exception
+{
+
+SEHandler SEHandler::Create()
 {
     return { [](unsigned int u, _EXCEPTION_POINTERS* pointers)
     {
@@ -11,4 +14,6 @@ Utils::Exception::SEHandler Utils::Exception::SEHandler::Create()
             throw std::exception(std::format("Access violation at 0x{:x}", (uintptr_t)pointers->ExceptionRecord->ExceptionAddress).c_str());
         throw std::exception(std::format("SEH exception 0x{:X}", u).c_str());
     } };
+}
+
 }

@@ -1,7 +1,7 @@
 ﻿export module GW2Viewer.Utils.String;
 import std;
 
-export namespace Utils::String
+export namespace GW2Viewer::Utils::String
 {
 
 inline void ReplaceAll(std::string& str, std::string_view from, std::string_view to)

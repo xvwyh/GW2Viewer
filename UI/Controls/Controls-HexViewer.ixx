@@ -11,6 +11,9 @@ import GW2Viewer.Data.Pack;
 import GW2Viewer.Utils.Encoding;
 import std;
 
+namespace GW2Viewer
+{
+
 struct ValueRepBase
 {
     virtual ~ValueRepBase() { }
@@ -108,10 +111,10 @@ struct ValueRepToken32 : ValueRepBase
 {
     void Draw(byte const* dataPtr, uint32 available) override
     {
-        if (available < sizeof(Token32))
+        if (available < sizeof(GW2Viewer::Token32))
             return;
 
-        auto const& token = *(Token32 const*)dataPtr;
+        auto const& token = *(GW2Viewer::Token32 const*)dataPtr;
         if (token.empty())
             return;
 
@@ -125,10 +128,10 @@ struct ValueRepToken64 : ValueRepBase
 {
     void Draw(byte const* dataPtr, uint32 available) override
     {
-        if (available < sizeof(Token64))
+        if (available < sizeof(GW2Viewer::Token64))
             return;
 
-        auto const& token = *(Token64 const*)dataPtr;
+        auto const& token = *(GW2Viewer::Token64 const*)dataPtr;
         if (token.empty())
             return;
 
@@ -159,10 +162,10 @@ struct ValueRepFileReference : ValueRepBase
 {
     void Draw(byte const* dataPtr, uint32 available) override
     {
-        if (available < sizeof(Data::Pack::FileReference))
+        if (available < sizeof(GW2Viewer::Data::Pack::FileReference))
             return;
 
-        auto const fileID = ((Data::Pack::FileReference const*)dataPtr)->GetFileID();
+        auto const fileID = ((GW2Viewer::Data::Pack::FileReference const*)dataPtr)->GetFileID();
         if (!G::Game.Archive.ContainsFile(fileID))
             return;
 
@@ -246,7 +249,9 @@ inline auto& GetValueReps()
     return instance;
 }
 
-export namespace UI::Controls
+}
+
+export namespace GW2Viewer::UI::Controls
 {
 
 struct HexViewerCellInfo
@@ -354,7 +359,7 @@ void HexViewer(std::span<byte const> data, HexViewerOptions& options)
                     size_t to = std::min(byteOffset + 4, (int)data.size() - 1);
                     numPrintableCharsAround = std::ranges::any_of(std::ranges::subrange(&data[from], std::unreachable_sentinel) | std::views::take(to - from) | std::views::slide(4), [](auto const& range)
                     {
-                        return std::ranges::all_of(range, [](::byte c) { return isprint(c) || isspace(c); });
+                        return std::ranges::all_of(range, [](GW2Viewer::byte c) { return isprint(c) || isspace(c); });
                     }) ? 999 : 0;
                 }
 
@@ -412,8 +417,8 @@ void HexViewer(std::span<byte const> data, HexViewerOptions& options)
                     if (data.size() - byteOffset >= sizeof(int32))
                         if (auto offset = *(int32 const*)&data[byteOffset])
                             options.OutHighlightOffset = absoluteOffset + offset;
-                    if (data.size() - byteOffset >= sizeof(::byte*))
-                        if (auto ptr = *(::byte* const*)&data[byteOffset])
+                    if (data.size() - byteOffset >= sizeof(GW2Viewer::byte*))
+                        if (auto ptr = *(GW2Viewer::byte* const*)&data[byteOffset])
                             options.OutHighlightPointer = ptr;
                     options.OutHoveredInfo = { absoluteOffset, cursor, BYTE_SIZE, tableCursor, tableSize };
                 }

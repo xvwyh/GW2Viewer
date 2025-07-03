@@ -14,7 +14,7 @@ auto defaultComplexSortComparison(Index const a, Index const b, ComplexIndex con
     #undef COMPARE
 }
 
-export namespace UI::Viewers
+export namespace GW2Viewer::UI::Viewers
 {
 
 struct ListViewerBase : Viewer
@@ -42,9 +42,9 @@ struct ListViewerBase : Viewer
 
 }
 
-export namespace G::Viewers { template<typename T> std::list<T*> ListViewers; }
+export namespace GW2Viewer::G::Viewers { template<typename T> std::list<T*> ListViewers; }
 
-export namespace UI::Viewers
+export namespace GW2Viewer::UI::Viewers
 {
 
 template<typename T>
@@ -61,4 +61,3 @@ struct ListViewer : ListViewerBase
 };
 
 }
-

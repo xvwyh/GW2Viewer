@@ -13,7 +13,7 @@ import GW2Viewer.Utils.Exception;
 import GW2Viewer.Utils.Format;
 import magic_enum;
 
-namespace UI::Viewers
+namespace GW2Viewer::UI::Viewers
 {
 
 void EventViewer::Cache::Data::StoreHeight()
@@ -829,7 +829,7 @@ void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cach
     if (static uint32 persist = 0; persist != objectivex.EventUID)
     {
         persist = objectivex.EventUID;
-        objective = 
+        objective =
         {
             .Type = 24,
             .Flags = (uint32)(rand() % 2),
@@ -837,7 +837,7 @@ void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cach
             .ExtraGUID = *(*std::next(G::Game.Content.GetType(std::ranges::find_if(G::Config.TypeInfo, [](auto const& pair) { return pair.second.Name == "WvwObjectiveUpgradeLineDef"; })->first)->Objects.begin(), rand() % 10))->GetGUID(),
             .ExtraGUID2 = *(*std::next(G::Game.Content.GetType(std::ranges::find_if(G::Config.TypeInfo, [](auto const& pair) { return pair.second.Name == "WvwObjectiveDef"; })->first)->Objects.begin(), rand() % 10))->GetGUID(),
         };
-        objective = 
+        objective =
         {
             .Type = 28,
         };

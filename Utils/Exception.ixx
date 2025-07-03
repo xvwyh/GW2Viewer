@@ -2,7 +2,7 @@ export module GW2Viewer.Utils.Exception;
 import std;
 import <eh.h>;
 
-export namespace Utils::Exception
+export namespace GW2Viewer::Utils::Exception
 {
 
 class SEHandler

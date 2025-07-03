@@ -10,7 +10,7 @@ import GW2Viewer.User.Config;
 import std;
 import magic_enum;
 
-export namespace UI::Windows
+export namespace GW2Viewer::UI::Windows
 {
 
 struct MigrateContentTypes : Window
@@ -103,4 +103,4 @@ struct MigrateContentTypes : Window
 
 }
 
-export namespace G::Windows { UI::Windows::MigrateContentTypes MigrateContentTypes; }
+export namespace GW2Viewer::G::Windows { UI::Windows::MigrateContentTypes MigrateContentTypes; }

@@ -6,7 +6,7 @@ import GW2Viewer.Common.Token64;
 import GW2Viewer.Content;
 import std;
 
-export namespace Data::Content::Symbols
+export namespace GW2Viewer::Data::Content::Symbols
 {
 
 TypeInfo::SymbolType const* GetByName(std::string_view name);
@@ -108,14 +108,14 @@ struct GUID : TypeInfo::SymbolType
     [[nodiscard]] bool IsContent() const override { return true; }
     [[nodiscard]] std::optional<ContentObject*> GetContent(byte const* data) const override;
     [[nodiscard]] bool IsInline() const override { return false; }
-    [[nodiscard]] uint32 Size() const override { return sizeof(::GUID); }
+    [[nodiscard]] uint32 Size() const override { return sizeof(GW2Viewer::GUID); }
     void Draw(byte const* data, TypeInfo::Symbol& symbol) const override;
 };
 struct Token32 : TypeInfo::SymbolType
 {
     Token32() : SymbolType("Token32") { }
 
-    [[nodiscard]] static auto GetDecoded(byte const* data) { return ((::Token32 const*)data)->GetString(); }
+    [[nodiscard]] static auto GetDecoded(byte const* data) { return ((GW2Viewer::Token32 const*)data)->GetString(); }
 
     [[nodiscard]] std::strong_ordering CompareDataForSearch(byte const* dataA, byte const* dataB) const override;
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(byte const* data) const override { return *(uint32 const*)data; }
@@ -127,7 +127,7 @@ struct Token64 : TypeInfo::SymbolType
 {
     Token64() : SymbolType("Token64") { }
 
-    [[nodiscard]] static auto GetDecoded(byte const* data) { return ((::Token64 const*)data)->GetString(); }
+    [[nodiscard]] static auto GetDecoded(byte const* data) { return ((GW2Viewer::Token64 const*)data)->GetString(); }
 
     [[nodiscard]] std::strong_ordering CompareDataForSearch(byte const* dataA, byte const* dataB) const override;
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(byte const* data) const override { return *(uint64 const*)data; }
@@ -207,21 +207,21 @@ struct ArrayContent : ArrayT
 struct ParamValue : TypeInfo::SymbolType
 {
     ParamValue() : SymbolType("ParamValue") { }
-    
+
     struct Struct
     {
-        ::Content::EContentTypes ContentType;
+        GW2Viewer::Content::EContentTypes ContentType;
         union
         {
             byte* Content;
             struct { int32 X, Y; } Integer;
             struct { float X, Y, Z; } Number;
             struct { wchar_t* String; uint32 Hash; } String;
-            ::Token32 Token32;
-            ::Token64 Token64;
+            GW2Viewer::Token32 Token32;
+            GW2Viewer::Token64 Token64;
             byte Raw[24];
         };
-        ::GUID GUID;
+        GW2Viewer::GUID GUID;
     };
     static_assert(sizeof(Struct) == 4 + 4 + 24 + 16);
     [[nodiscard]] static Struct const& GetStruct(byte const* data) { return *(Struct const*)data; }
@@ -257,4 +257,5 @@ struct ParamDeclare : TypeInfo::SymbolType
 };
 
 std::vector<TypeInfo::SymbolType const*>& GetTypes();
+
 }

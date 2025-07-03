@@ -2,7 +2,7 @@ export module GW2Viewer.Data.Media.Texture;
 import GW2Viewer.Common;
 import std;
 
-export namespace Data::Media::Texture
+export namespace GW2Viewer::Data::Media::Texture
 {
 
 struct Texture

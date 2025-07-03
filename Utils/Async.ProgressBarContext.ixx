@@ -1,7 +1,10 @@
-export module GW2Viewer.Utils.ProgressBarContext;
+export module GW2Viewer.Utils.Async.ProgressBarContext;
 import std;
 
-export class ProgressBarContext
+export namespace GW2Viewer::Utils::Async
+{
+
+class ProgressBarContext
 {
     std::string m_description;
     size_t m_current = 0;
@@ -57,3 +60,5 @@ public:
         m_task = std::async(std::launch::async, std::move(func), std::ref(*this));
     }
 };
+
+}

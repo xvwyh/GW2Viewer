@@ -12,7 +12,7 @@ void FixupString(std::wstring& string)
     std::wstring result;
     result.resize(string.size());
     auto writeDest = result.data();
-    uint32 sex = 2;
+    GW2Viewer::Sex sex = GW2Viewer::Sex::None;
     bool plural = false;
     auto const pStart = string.data();
     auto const pEnd = pStart + string.size();
@@ -45,9 +45,9 @@ void FixupString(std::wstring& string)
             else if (fixup == L"plur")
                 plural = true;
             else if (fixup == L"m")
-                sex = 0;
+                sex = GW2Viewer::Sex::Male;
             else if (fixup == L"f")
-                sex = 1;
+                sex = GW2Viewer::Sex::Female;
             else if (fixup == L"s")
             {
                 if (plural)
@@ -64,7 +64,7 @@ void FixupString(std::wstring& string)
             }
             else if (fixup.starts_with(L"f:\"") && fixup.ends_with('"'))
             {
-                if (sex == 1)
+                if (sex == GW2Viewer::Sex::Female)
                 {
                     writeDest = &result[std::wstring_view { result.data(), writeDest }.find_last_of(L' ') + 1];
                     std::fill(writeDest, result.data() + result.size(), L'\0');
@@ -88,7 +88,7 @@ void FixupString(std::wstring& string)
     string = std::move(result);
 }
 
-export namespace Data::Media::Text
+export namespace GW2Viewer::Data::Media::Text
 {
 
 enum

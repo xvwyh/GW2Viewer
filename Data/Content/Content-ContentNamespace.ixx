@@ -2,7 +2,7 @@ export module GW2Viewer.Data.Content:ContentNamespace;
 import GW2Viewer.Common;
 import std;
 
-export namespace Data::Content
+export namespace GW2Viewer::Data::Content
 {
 struct ContentFilter;
 struct ContentObject;

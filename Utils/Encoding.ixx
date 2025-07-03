@@ -3,7 +3,7 @@ import std;
 
 thread_local static std::wstring_convert<std::codecvt_utf8<wchar_t>> convert;
 
-export namespace Utils::Encoding
+export namespace GW2Viewer::Utils::Encoding
 {
 
 std::string ToUTF8(std::wstring_view wstr)

@@ -12,7 +12,7 @@ import GW2Viewer.Utils.ConstString;
 import GW2Viewer.Utils.Scan;
 import GW2Viewer.Utils.Visitor;
 
-export namespace UI::Windows
+export namespace GW2Viewer::UI::Windows
 {
 
 struct Parse : Window
@@ -164,4 +164,4 @@ struct Parse : Window
 
 }
 
-export namespace G::Windows { UI::Windows::Parse Parse; }
+export namespace GW2Viewer::G::Windows { UI::Windows::Parse Parse; }

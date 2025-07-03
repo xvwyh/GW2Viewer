@@ -1,7 +1,7 @@
 ﻿export module GW2Viewer.Utils.Math;
 import std;
 
-export namespace Utils::Math
+export namespace GW2Viewer::Utils::Math
 {
 
 template<typename T>

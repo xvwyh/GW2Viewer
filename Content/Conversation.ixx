@@ -7,7 +7,7 @@ import GW2Viewer.Data.Game;
 import GW2Viewer.Utils.String;
 import std;
 
-export namespace Content
+export namespace GW2Viewer::Content
 {
 
 struct Conversation

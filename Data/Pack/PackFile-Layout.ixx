@@ -3,7 +3,7 @@ import GW2Viewer.Common;
 import GW2Viewer.Data.Pack;
 import std;
 
-export namespace Data::Pack
+export namespace GW2Viewer::Data::Pack
 {
 template<typename PointerType> using GenericPtr = PtrBase<byte, PointerType>;
 template<typename SizeType, typename PointerType> using GenericArray = ArrayBase<byte, SizeType, PointerType>;
@@ -21,7 +21,7 @@ template<typename PointerType> using GenericByteTypedArray = GenericTypedArray<b
 template<typename PointerType> struct GenericFileReference : FileReference { private: uint16 padding; };
 }
 
-export namespace Data::Pack::Layout
+export namespace GW2Viewer::Data::Pack::Layout
 {
 
 enum class UnderlyingTypes : uint16
@@ -136,7 +136,7 @@ uint32 Field::CalculateSize(bool x64) const
         case UnderlyingTypes::Ptr: return GetPackFileTypeSize<GenericPtr>(x64);
         case UnderlyingTypes::WString: return GetPackFileTypeSize<WString>(x64);
         case UnderlyingTypes::String: return GetPackFileTypeSize<String>(x64);
-        case UnderlyingTypes::InlineStruct: 
+        case UnderlyingTypes::InlineStruct:
         case UnderlyingTypes::InlineStruct2: return ElementType->Size(x64);
         case UnderlyingTypes::Variant: return GetPackFileTypeSize<Variant>(x64);
         case UnderlyingTypes::WordArray: return GetPackFileTypeSize<GenericWordArray>(x64);

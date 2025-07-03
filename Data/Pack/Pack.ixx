@@ -1,7 +1,7 @@
 export module GW2Viewer.Data.Pack;
 import GW2Viewer.Common;
 
-export namespace Data::Pack
+export namespace GW2Viewer::Data::Pack
 {
 
 #pragma pack(push, 1)

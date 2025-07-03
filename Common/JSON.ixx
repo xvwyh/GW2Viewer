@@ -67,8 +67,8 @@ export
 template<>
 struct nlohmann::adl_serializer<std::wstring>
 {
-    static void to_json(auto& j, std::wstring const& str) { j = Utils::Encoding::ToUTF8(str); }
-    static void from_json(auto const& j, std::wstring& str) { str = Utils::Encoding::FromUTF8(j.template get<std::string>()); }
+    static void to_json(auto& j, std::wstring const& str) { j = GW2Viewer::Utils::Encoding::ToUTF8(str); }
+    static void from_json(auto const& j, std::wstring& str) { str = GW2Viewer::Utils::Encoding::FromUTF8(j.template get<std::string>()); }
 };
 
 template<>
@@ -84,10 +84,10 @@ struct scn::scanner<std::wstring> : empty_parser
     template<typename Context>
     error scan(std::wstring& wstring, Context& ctx)
     {
-        static constexpr ConstString format = "{}";
+        static constexpr GW2Viewer::ConstString format = "{}";
         std::string utf8;
         auto result = scan_usertype(ctx, format.get<typename Context::char_type>(), utf8);
-        wstring = Utils::Encoding::FromUTF8(utf8);
+        wstring = GW2Viewer::Utils::Encoding::FromUTF8(utf8);
         return result;
     }
 };
@@ -133,7 +133,7 @@ struct std::formatter<std::wstring, char>
     constexpr auto parse(auto& ctx) { return ctx.begin(); }
     auto format(std::wstring const& wstring, auto& ctx) const
     {
-        return format_to(ctx.out(), "{}", Utils::Encoding::ToUTF8(wstring));
+        return format_to(ctx.out(), "{}", GW2Viewer::Utils::Encoding::ToUTF8(wstring));
     }
 };
 

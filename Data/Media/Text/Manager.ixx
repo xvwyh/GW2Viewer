@@ -5,20 +5,20 @@ import GW2Viewer.Data.Archive;
 import GW2Viewer.Data.Encryption;
 import GW2Viewer.Data.Encryption.RC4;
 import GW2Viewer.Data.Pack.PackFile;
-import GW2Viewer.Utils.ProgressBarContext;
 import GW2Viewer.User.Config;
+import GW2Viewer.Utils.Async.ProgressBarContext;
 import std;
 import <boost/container/static_vector.hpp>;
 import <boost/thread/locks.hpp>;
 import <boost/thread/shared_mutex.hpp>;
 
-export namespace Data::Media::Text
+export namespace GW2Viewer::Data::Media::Text
 {
 
 class Manager
 {
 public:
-    void Load(Archive::Source& source, ProgressBarContext& progress)
+    void Load(Archive::Source& source, Utils::Async::ProgressBarContext& progress)
     {
         progress.Start("Loading text manifest");
         if (auto const file = source.Archive.GetPackFile(110865))
@@ -225,14 +225,14 @@ private:
     };
     std::map<Language, std::vector<StringsFile>> g_stringsFiles;
     StringsFile::TCache const& GetStringImpl(uint32 stringID);
-    static std::wstring DecryptString(std::span<uint8_t const> const encryptedText, uint64_t const key, uint16_t const decryptionOffset, uint32_t const bitsPerSymbol)
+    static std::wstring DecryptString(std::span<byte const> const encryptedText, uint64 const key, uint16 const decryptionOffset, uint32 const bitsPerSymbol)
     {
         std::vector packedText(encryptedText.begin(), encryptedText.end());
         Encryption::RC4(Encryption::RC4::MakeKey(key)).Crypt(packedText);
 
         static constexpr std::wstring_view alphabet = L"0123456strnum()[]<>%#/:-'\" ,.!\n\0";
-        uint32_t accumulator = 0;
-        uint32_t bitsLeft = 0;
+        uint32 accumulator = 0;
+        uint32 bitsLeft = 0;
         std::wstring result(8 * packedText.size() / bitsPerSymbol, L'\0');
         for (auto itr = packedText.begin(); auto& c : result)
         {
@@ -240,7 +240,7 @@ private:
                 if (itr != packedText.end())
                     accumulator |= *itr++ << bitsLeft;
 
-            uint32_t const value = accumulator & ((1 << bitsPerSymbol) - 1);
+            uint32 const value = accumulator & ((1 << bitsPerSymbol) - 1);
             bitsLeft -= bitsPerSymbol;
             accumulator >>= bitsPerSymbol;
 
@@ -249,7 +249,7 @@ private:
             else if (value - 1 < alphabet.size())
                 c = alphabet[value - 1];
             else
-                c = value + decryptionOffset - (uint32_t)alphabet.size();
+                c = value + decryptionOffset - (uint32)alphabet.size();
         }
         if (auto const trim = result.find_last_not_of(L'\0'); trim != std::wstring::npos && trim + 1 != result.size())
             result.resize(trim + 1);

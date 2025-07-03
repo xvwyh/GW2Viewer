@@ -1,6 +1,9 @@
 export module GW2Viewer.Common.FourCC;
 import GW2Viewer.Common;
 
+namespace GW2Viewer
+{
+
 consteval uint32 makefcc(char const (&magic)[4])
 {
     return magic[0] << 0 | magic[1] << 8 | magic[2] << 16;
@@ -91,3 +94,5 @@ export enum class fcc : uint32
     FourCC(BIDX),
 };
 #undef FourCC
+
+}

@@ -2,6 +2,9 @@ export module GW2Viewer.Utils.Enum;
 import GW2Viewer.Utils.ConstString;
 import std;
 
+namespace GW2Viewer
+{
+
 template<const auto& PairArray,
     typename K = decltype(std::begin(PairArray)->first),
     typename V = decltype(std::begin(PairArray)->second)>
@@ -18,7 +21,9 @@ constexpr V ConstPairArrayLookup(K const key, V const defaultValue = V())
     return table[(size_t)key];
 }
 
-export
+}
+
+export namespace GW2Viewer
 {
 
 template<typename T>
@@ -54,21 +59,21 @@ template<ScopedEnumeration E> constexpr E& operator|=(E& lhs, E rhs) noexcept { 
 template<ScopedEnumeration E> constexpr E& operator&=(E& lhs, E rhs) noexcept { return lhs = lhs & rhs; }
 template<ScopedEnumeration E> constexpr E& operator^=(E& lhs, E rhs) noexcept { return lhs = lhs ^ rhs; }
 
-template<Enumeration T, typename CharT>
+}
+
+template<GW2Viewer::Enumeration T, typename CharT>
 constexpr std::pair<T const, CharT const* const> EnumNames[];
 
-template<Enumeration T, typename CharT>
+template<GW2Viewer::Enumeration T, typename CharT>
 struct std::formatter<T, CharT>
 {
     constexpr auto parse(auto& ctx) { return ctx.begin(); }
     auto format(T const& e, auto& ctx) const
     {
-        static constexpr ConstString format = "{}";
+        static constexpr GW2Viewer::ConstString format = "{}";
         auto const name = ConstPairArrayLookup<EnumNames<T, /*TODO: CharT*/ char>>(e, {});
         if (!*name)
             return std::format_to(ctx.out(), format.get<CharT>(), std::to_underlying(e));
         return ranges::transform(std::string_view(name), ctx.out(), [](auto const c) -> wchar_t { return c; }).out;
     }
 };
-
-}

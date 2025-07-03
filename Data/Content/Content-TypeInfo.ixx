@@ -12,7 +12,7 @@ import GW2Viewer.Utils.Scan;
 import std;
 import <cassert>;
 
-export namespace Data::Content
+export namespace GW2Viewer::Data::Content
 {
 struct ContentObject;
 struct ContentTypeInfo;
@@ -203,7 +203,7 @@ struct TypeInfo
     };
 
     std::string Name;
-    ::Content::EContentTypes ContentType { };
+    GW2Viewer::Content::EContentTypes ContentType { };
     StructLayout Layout;
     std::vector<std::string> NameFields;
     std::vector<std::string> IconFields;

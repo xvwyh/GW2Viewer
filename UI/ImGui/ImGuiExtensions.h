@@ -107,15 +107,15 @@ auto InputTextUTF8(char const* label, auto& container, auto const& key, std::wst
     static std::string utf8;
     auto itr = container.find(key);
     if (itr != container.end())
-        utf8 = Utils::Encoding::ToUTF8(itr->second);
+        utf8 = GW2Viewer::Utils::Encoding::ToUTF8(itr->second);
     else
         utf8.clear();
-    if (InputTextWithHint(label, Utils::Encoding::ToUTF8(placeholder).c_str(), &utf8))
+    if (InputTextWithHint(label, GW2Viewer::Utils::Encoding::ToUTF8(placeholder).c_str(), &utf8))
     {
         if (itr != container.end())
-            itr->second = Utils::Encoding::FromUTF8(utf8);
+            itr->second = GW2Viewer::Utils::Encoding::FromUTF8(utf8);
         else
-            container.emplace(key, Utils::Encoding::FromUTF8(utf8)).first;
+            container.emplace(key, GW2Viewer::Utils::Encoding::FromUTF8(utf8)).first;
         return true;
     }
     return false;

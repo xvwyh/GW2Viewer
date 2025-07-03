@@ -4,7 +4,7 @@ module;
 export module GW2Viewer.UI.Controls:CopyButton;
 import GW2Viewer.Utils.Format;
 
-export namespace UI::Controls
+export namespace GW2Viewer::UI::Controls
 {
 
 void CopyButton(char const* name, std::string const& data, bool condition = true)

@@ -10,7 +10,7 @@ import GW2Viewer.UI.Manager;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Format;
 
-export namespace UI::Controls
+export namespace GW2Viewer::UI::Controls
 {
 
 struct VoiceButtonOptions

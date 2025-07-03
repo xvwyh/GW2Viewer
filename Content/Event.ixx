@@ -6,7 +6,7 @@ import GW2Viewer.Data.Game;
 import GW2Viewer.Utils.Enum;
 import std;
 
-export namespace Content
+export namespace GW2Viewer::Content
 {
 
 struct EventID

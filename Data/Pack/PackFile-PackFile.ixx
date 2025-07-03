@@ -6,7 +6,7 @@ import std;
 import <cstddef>;
 import <cstring>;
 
-export namespace Data::Pack
+export namespace GW2Viewer::Data::Pack
 {
 namespace Layout::Traversal
 {

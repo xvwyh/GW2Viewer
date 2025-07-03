@@ -6,7 +6,7 @@ import :Texture;
 import GW2Viewer.Data.Content;
 import GW2Viewer.UI.Manager;
 
-export namespace UI::Controls
+export namespace GW2Viewer::UI::Controls
 {
 
 struct ContentButtonOptions

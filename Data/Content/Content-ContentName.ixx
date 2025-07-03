@@ -1,6 +1,6 @@
 export module GW2Viewer.Data.Content:ContentName;
 
-export namespace Data::Content
+export namespace GW2Viewer::Data::Content
 {
 
 struct ContentName

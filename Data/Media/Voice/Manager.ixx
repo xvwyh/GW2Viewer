@@ -5,17 +5,17 @@ import GW2Viewer.Data.Archive;
 import GW2Viewer.Data.Encryption;
 import GW2Viewer.Data.Encryption.RC4;
 import GW2Viewer.Data.Pack.PackFile;
-import GW2Viewer.Utils.ProgressBarContext;
+import GW2Viewer.Utils.Async.ProgressBarContext;
 import std;
 import <cassert>;
 
-export namespace Data::Media::Voice
+export namespace GW2Viewer::Data::Media::Voice
 {
 
 class Manager
 {
 public:
-    void Load(Archive::Source& source, ProgressBarContext& progress)
+    void Load(Archive::Source& source, Utils::Async::ProgressBarContext& progress)
     {
         progress.Start("Loading sound bank index");
         if (auto const file = source.Archive.GetPackFile(184774))

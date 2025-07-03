@@ -2,7 +2,7 @@ export module GW2Viewer.Data.Content:Query;
 import :TypeInfo;
 import <experimental/generator>;
 
-export namespace Data::Content
+export namespace GW2Viewer::Data::Content
 {
 struct ContentObject;
 

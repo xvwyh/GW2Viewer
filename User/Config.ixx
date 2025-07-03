@@ -9,7 +9,7 @@ import GW2Viewer.Common.JSON;
 import GW2Viewer.Data.Content;
 import std;
 
-export namespace User
+export namespace GW2Viewer::User
 {
 
 struct Config
@@ -85,4 +85,4 @@ struct Config
 
 }
 
-export namespace G { User::Config Config; }
+export namespace GW2Viewer::G { User::Config Config; }

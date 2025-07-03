@@ -7,7 +7,7 @@ import :Query;
 import GW2Viewer.Common;
 import std;
 
-export namespace Data::Content
+export namespace GW2Viewer::Data::Content
 {
 struct ContentTypeInfo;
 struct ContentNamespace;

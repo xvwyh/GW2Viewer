@@ -4,11 +4,11 @@ module;
 export module GW2Viewer.Data.Archive;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Pack.PackFile;
-import GW2Viewer.Utils.ProgressBarContext;
+import GW2Viewer.Utils.Async.ProgressBarContext;
 import std;
 import <gw2dattools/compression/inflateDatFileBuffer.h>;
 
-export namespace Data::Archive
+export namespace GW2Viewer::Data::Archive
 {
 
 #pragma pack(push, 1)
@@ -105,7 +105,7 @@ public:
     std::multimap<uint32, uint32> MftEntryIndexToFileId;
     uint32 MaxFileID = 0;
 
-    bool Open(std::filesystem::path const& path, ProgressBarContext& progress)
+    bool Open(std::filesystem::path const& path, Utils::Async::ProgressBarContext& progress)
     {
         std::string const prefix = std::format("Loading {}: ", path.filename().string());
 

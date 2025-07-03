@@ -16,8 +16,8 @@ struct formatter<optional<T>, CharT>
     constexpr auto parse(auto& ctx) { return ctx.begin(); }
     auto format(optional<T> const& opt, auto& ctx) const
     {
-        static constexpr ConstString empty = "<empty>";
-        static constexpr ConstString format = "{}";
+        static constexpr GW2Viewer::ConstString empty = "<empty>";
+        static constexpr GW2Viewer::ConstString format = "{}";
         if (!opt.has_value())
             return format_to(ctx.out(), format.get<CharT>(), empty.get<CharT>());
         return format_to(ctx.out(), format.get<CharT>(), *opt);
@@ -41,7 +41,7 @@ struct formatter<u8string, wchar_t>
     constexpr auto parse(auto& ctx) { return ctx.begin(); }
     auto format(u8string const& str, auto& ctx) const
     {
-        return format_to(ctx.out(), L"{}", Utils::Encoding::FromUTF8(str));
+        return format_to(ctx.out(), L"{}", GW2Viewer::Utils::Encoding::FromUTF8(str));
     }
 };
 
@@ -52,7 +52,7 @@ struct formatter<wstring_view, char>
     constexpr auto parse(auto& ctx) { return ctx.begin(); }
     auto format(wstring_view const& wstring, auto& ctx) const
     {
-        return format_to(ctx.out(), "{}", Utils::Encoding::ToUTF8(wstring));
+        return format_to(ctx.out(), "{}", GW2Viewer::Utils::Encoding::ToUTF8(wstring));
     }
 };
 
@@ -62,7 +62,7 @@ struct formatter<wstring, char>
     constexpr auto parse(auto& ctx) { return ctx.begin(); }
     auto format(wstring const& wstring, auto& ctx) const
     {
-        return format_to(ctx.out(), "{}", Utils::Encoding::ToUTF8(wstring));
+        return format_to(ctx.out(), "{}", GW2Viewer::Utils::Encoding::ToUTF8(wstring));
     }
 };
 
@@ -93,7 +93,7 @@ template <class... _Args, typename = enable_if_t<!conjunction_v<is_const<_Args>>
 
 }
 
-export namespace Utils::Format
+export namespace GW2Viewer::Utils::Format
 {
 
 template<typename Rep, typename Period>

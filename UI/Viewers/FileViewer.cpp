@@ -7,14 +7,17 @@ import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.Utils.Exception;
 
-std::string UI::Viewers::FileViewer::Title()
+namespace GW2Viewer::UI::Viewers
+{
+
+std::string FileViewer::Title()
 {
     if (&File.Source.get().Archive != G::Game.Archive.GetArchive())
         return std::format("<c=#4>File #</c>{}<c=#4> ({})</c>", File.ID, File.Source.get().Path.filename().string());
     return std::format("<c=#4>File #</c>{}", File.ID);
 }
 
-void UI::Viewers::FileViewer::Draw()
+void FileViewer::Draw()
 {
     auto _ = Utils::Exception::SEHandler::Create();
 
@@ -86,8 +89,9 @@ void UI::Viewers::FileViewer::Draw()
     }
 }
 
-void UI::Viewers::FileViewer::DrawPreview()
+void FileViewer::DrawPreview()
 {
     Controls::Texture(File.ID, { .Data = &RawData });
 }
 
+}

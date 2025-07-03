@@ -115,7 +115,6 @@
     <ClCompile Include="Data\Encryption\RC4.ixx" />
     <ClCompile Include="Data\Encryption\Text.ixx" />
     <ClCompile Include="Data\Game.ixx" />
-    <ClCompile Include="Data\External\Database.cpp" />
     <ClCompile Include="Data\External\Database.ixx" />
     <ClCompile Include="Data\Media\Texture\Texture.cpp" />
     <ClCompile Include="Data\Media\Texture\Texture.ixx" />
@@ -206,7 +205,7 @@
     <ClCompile Include="Utils\Exception.ixx" />
     <ClCompile Include="Utils\Utils.ixx" />
     <ClCompile Include="Utils\Math.ixx" />
-    <ClCompile Include="Utils\ProgressBarContext.ixx" />
+    <ClCompile Include="Utils\Async.ProgressBarContext.ixx" />
     <ClCompile Include="Utils\Scan.ixx" />
     <ClCompile Include="Utils\String.ixx" />
     <ClCompile Include="Utils\Visitor.ixx" />
