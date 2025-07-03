@@ -377,13 +377,13 @@ private:
                 I::TextUnformatted("Bruteforce Demangle Name:");
                 I::SameLine();
                 if (ns.Parent && I::Button("This"))
-                    G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", ns.Parent->GetFullDisplayName()), nullptr, true, false, true);
+                    G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", ns.Parent->GetFullDisplayName(false, true)), nullptr, true, false, true);
                 I::SameLine();
                 if (I::Button("Children"))
-                    G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", ns.GetFullDisplayName()), nullptr, true, false, true);
+                    G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", ns.GetFullDisplayName(false, true)), nullptr, true, false, true);
                 I::SameLine();
                 if (I::Button("Recursively"))
-                    G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", ns.GetFullDisplayName()), &ns, true, false, true);
+                    G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", ns.GetFullDisplayName(false, true)), &ns, true, false, true);
             }
             if (open && ContentFilter && (!ContentFilter.FilteredNamespaces.empty() || !ContentFilter.FilteredObjects.empty()))
             {
@@ -511,12 +511,12 @@ private:
                     I::SameLine();
                     Controls::CopyButton("Full Mangled Name", entry.GetFullName(), entry.GetName());
 
-                    Controls::CopyButton("Name", entry.GetDisplayName(false, true));
+                    Controls::CopyButton("Name", I::StripMarkup(entry.GetDisplayName(false, true)));
                     I::SameLine();
-                    Controls::CopyButton("Full Name", entry.GetFullDisplayName(false, true));
+                    Controls::CopyButton("Full Name", I::StripMarkup(entry.GetFullDisplayName(false, true)));
 
                     if (entry.Namespace && I::Button("Bruteforce Demangle Name"))
-                        G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", entry.Namespace->GetFullDisplayName()), nullptr, true, true, false);
+                        G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", entry.Namespace->GetFullDisplayName(false, true)), nullptr, true, true, false);
 
                     if (I::Button("Search for Content References"))
                         G::Windows::ContentSearch.SearchForSymbolValue("Content*", (Data::Content::TypeInfo::Condition::ValueType)entry.Data.data());

@@ -122,6 +122,10 @@ auto InputTextUTF8(char const* label, auto& container, auto const& key, std::wst
 };
 
 std::string StripMarkup(std::string const& str);
+inline std::wstring StripMarkup(std::wstring const& str)
+{
+    return GW2Viewer::Utils::Encoding::FromUTF8(StripMarkup(GW2Viewer::Utils::Encoding::ToUTF8(str)));
+}
 
 inline bool InputTextReadOnly(const char* label, std::string const& str, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr)
 {
