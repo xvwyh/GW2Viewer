@@ -202,7 +202,7 @@ private:
                 wchar_t String[];
             };
 
-            [[nodiscard]] bool IsEncrypted() const { return header.rangeBase && header.rangeBits != 8 * sizeof(wchar_t); }
+            [[nodiscard]] bool IsEncrypted() const { return header.rangeBase || header.rangeBits != 8 * sizeof(wchar_t); }
             [[nodiscard]] std::wstring Get(std::optional<uint64> decryptionKey = { }) const
             {
                 return IsEncrypted()
