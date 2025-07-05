@@ -183,7 +183,7 @@ void EventViewer::DrawEvent(Content::EventID eventID)
                 Controls::Texture(state.FileIconID ? state.FileIconID : 102388, { .Size = { 32, 32 }, .ReserveSpace = true });
 
         if (scoped::Table("Title", 3, ImGuiTableFlags_NoSavedSettings | ImGuiTableFlags_Hideable, { -FLT_MIN, 0 }))
-        if (scoped::Font(G::UI.Fonts.GameHeading))
+        if (scoped::Font(G::UI.Fonts.GameHeading, 18.0f))
         {
             I::TableSetupColumn("Title", ImGuiTableColumnFlags_WidthStretch);
             I::TableSetupColumn("Padding", ImGuiTableColumnFlags_WidthFixed, 5);
@@ -215,7 +215,7 @@ void EventViewer::DrawEvent(Content::EventID eventID)
         }
 
         if (state.MetaTextTextID)
-            if (scoped::Font(G::UI.Fonts.GameText))
+            if (scoped::Font(G::UI.Fonts.GameText, 14.725f))
                 I::TextWrapped("%s", Utils::Encoding::ToUTF8(FormatString(state.MetaTextTextID)).c_str());
 
         cache.Event.StoreHeight();
@@ -895,7 +895,7 @@ void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cach
     if (auto const itrType = G::Config.SharedEnums.find("ObjectiveType"); itrType != G::Config.SharedEnums.end())
         if (auto const itrValue = itrType->second.Values.find(objective.Type); itrValue != itrType->second.Values.end())
             if (auto const itrDraw = std::ranges::find_if(drawObjectiveType, [name = itrValue->second](auto const& pair) { return std::ranges::contains(pair.first, name); }); itrDraw != drawObjectiveType.end())
-                if (scoped::Font(G::UI.Fonts.GameText))
+                if (scoped::Font(G::UI.Fonts.GameText, 14.725f))
                     itrDraw->second({ .Objective = objective, .Viewer = *this, .Cache = cache });
 
     if (!cache.Height)

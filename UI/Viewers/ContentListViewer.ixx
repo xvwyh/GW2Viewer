@@ -522,7 +522,7 @@ private:
                         G::Windows::ContentSearch.SearchForSymbolValue("Content*", (Data::Content::TypeInfo::Condition::ValueType)entry.Data.data());
                 }
 
-                I::SameLine(0, I::GetStyle().FramePadding.x * 2); // TODO: Align paddings better
+                I::SameLine(0, 0);
                 if (open && ContentFilter && !ContentFilter.FilteredObjects.empty())
                 {
                     if (std::ranges::any_of(entry.Entries, [this](auto const& child) { return !ContentFilter.FilteredObjects[child->Index]; }))

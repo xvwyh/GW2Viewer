@@ -58,30 +58,37 @@ void Manager::Load()
 {
     ImGuiIO& io = I::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+    io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    io.ConfigErrorRecoveryEnableAssert = false;
     //io.ConfigWindowsMoveFromTitleBarOnly = true;
 
     io.Fonts->AddFontDefault();
-    ImFontConfig config;
-    config.MergeMode = true;
-    config.PixelSnapH = true;
-    config.GlyphMinAdvanceX = 10.0f;
-    ImVector<ImWchar> ranges;
-    ImFontGlyphRangesBuilder builder;
-    builder.AddRanges(io.Fonts->GetGlyphRangesDefault());
-    builder.AddRanges(io.Fonts->GetGlyphRangesChineseFull());
-    builder.AddRanges(std::array<ImWchar, 3> { 0x2000, 0x2100, 0 }.data());
-    builder.BuildRanges(&ranges);
     auto loadFont = [&](const char* filename, float size)
     {
         static constexpr ImWchar faRanges[] { ICON_MIN_FA, ICON_MAX_FA, 0 };
-        auto font = io.Fonts->AddFontFromFileTTF(std::format(R"(Resources\Fonts\{})", filename).c_str(), size, nullptr, ranges.Data);
-        io.Fonts->AddFontFromFileTTF(R"(Resources\Fonts\NotoSansSC-Regular.ttf)", size, &config, ranges.Data); // Fallback for Simplified Chinese
-        io.Fonts->AddFontFromFileTTF(R"(Resources\Fonts\)" FONT_ICON_FILE_NAME_FAS, 10.0f, &config, faRanges);
-        return font;
+        {
+            ImFontConfig config;
+            config.GlyphExcludeRanges = faRanges;
+            io.Fonts->AddFontFromFileTTF(std::format(R"(Resources\Fonts\{})", filename).c_str(), size, &config);
+        }
+        {
+            ImFontConfig config;
+            config.MergeMode = true;
+            config.GlyphExcludeRanges = faRanges;
+            io.Fonts->AddFontFromFileTTF(R"(Resources\Fonts\NotoSansSC-Regular.ttf)", size, &config); // Fallback for Simplified Chinese
+        }
+        {
+            ImFontConfig config;
+            config.MergeMode = true;
+            config.PixelSnapH = true;
+            config.GlyphMinAdvanceX = 10.0f;
+            return io.Fonts->AddFontFromFileTTF(R"(Resources\Fonts\)" FONT_ICON_FILE_NAME_FAS, 10.0f, &config);
+        }
     };
     Fonts.Default = loadFont("Roboto-Regular.ttf", 15.0f);
-    Fonts.GameText = loadFont("trebuc.ttf", 15.5f);
-    Fonts.GameTextItalic = loadFont("trebucit.ttf", 15.5f);
+    Fonts.GameText = loadFont("trebuc.ttf", 14.725f);
+    Fonts.GameTextItalic = loadFont("trebucit.ttf", 14.725f);
     Fonts.GameHeading = loadFont("menomonia.ttf", 18.0f);
     Fonts.GameHeadingItalic = loadFont("menomonia-italic.ttf", 18.0f);
     io.Fonts->Build();
@@ -225,7 +232,7 @@ void Manager::Update()
             }
             if (scoped::Menu("View"))
             {
-                I::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+                I::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
                 if (I::MenuItem("Show Original Names", nullptr, &G::Config.ShowOriginalNames))
                     G::Viewers::Notify(&Viewers::ContentListViewer::ClearCache);
                 I::MenuItem("Show <c=#CCF>Valid Raw Pointers</c>", nullptr, &G::Config.ShowValidRawPointers);
@@ -241,7 +248,7 @@ void Manager::Update()
             }
             if (scoped::Menu("Language"))
             {
-                I::PushItemFlag(ImGuiItemFlags_SelectableDontClosePopup, true);
+                I::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
                 for (auto const lang : magic_enum::enum_values<Language>())
                 {
                     if (I::MenuItem(magic_enum::enum_name(lang).data(), nullptr, G::Config.Language == lang))

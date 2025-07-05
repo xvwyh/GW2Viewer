@@ -186,6 +186,7 @@ bool ParseMarkup(const char*& s, size_t avail, MarkupState& state)
     return false;
 }
 
+float BuildLoadGlyphGetAdvanceOrFallback(ImFontBaked* baked, unsigned int codepoint);
 // Wrapping skips upcoming blanks
 static inline const char* CalcWordWrapNextLineStartA(const char* text, const char* text_end)
 {
@@ -197,7 +198,7 @@ static inline const char* CalcWordWrapNextLineStartA(const char* text, const cha
 }
 
 MarkupState stateCalcWordWrapPositionA;
-const char* ImFont::CalcWordWrapPositionA(float scale, const char* text, const char* text_end, float wrap_width) const
+const char* ImFont::CalcWordWrapPosition(float size, const char* text, const char* text_end, float wrap_width)
 {
     // For references, possible wrap point marked with ^
     //  "aaa bbb, ccc,ddd. eee   fff. ggg!"
@@ -210,6 +211,10 @@ const char* ImFont::CalcWordWrapPositionA(float scale, const char* text, const c
 
     // Cut words that cannot possibly fit within one line.
     // e.g.: "The tropical fish" with ~5 characters worth of width --> "The tr" "opical" "fish"
+
+    ImFontBaked* baked = GetFontBaked(size);
+    const float scale = size / baked->Size;
+
     float line_width = 0.0f;
     float word_width = 0.0f;
     float blank_width = 0.0f;
@@ -249,7 +254,11 @@ const char* ImFont::CalcWordWrapPositionA(float scale, const char* text, const c
             }
         }
 
-        const float char_width = ((int)c < IndexAdvanceX.Size ? IndexAdvanceX.Data[c] : FallbackAdvanceX);
+        // Optimized inline version of 'float char_width = GetCharAdvance((ImWchar)c);'
+        float char_width = (c < (unsigned int)baked->IndexAdvanceX.Size) ? baked->IndexAdvanceX.Data[c] : -1.0f;
+        if (char_width < 0.0f)
+            char_width = BuildLoadGlyphGetAdvanceOrFallback(baked, c);
+
         if (ImCharIsBlankW(c))
         {
             if (inside_word)
@@ -276,7 +285,7 @@ const char* ImFont::CalcWordWrapPositionA(float scale, const char* text, const c
             }
 
             // Allow wrapping after punctuation.
-            inside_word = (c != '.' && c != ',' && c != ';' && c != '!' && c != '?' && c != '\"');
+            inside_word = (c != '.' && c != ',' && c != ';' && c != '!' && c != '?' && c != '\"' && c != 0x3001 && c != 0x3002);
         }
 
         // We ignore blank width at the end of the line (they can be skipped)
@@ -294,17 +303,18 @@ const char* ImFont::CalcWordWrapPositionA(float scale, const char* text, const c
     // Wrap_width is too small to fit anything. Force displaying 1 character to minimize the height discontinuity.
     // +1 may not be a character start point in UTF-8 but it's ok because caller loops use (text >= word_wrap_eol).
     if (s == text && text < text_end)
-        return s + 1;
+        return s + ImTextCountUtf8BytesFromChar(s, text_end);
     return s;
 }
 
-ImVec2 ImFont::CalcTextSizeA(float size, float max_width, float wrap_width, const char* text_begin, const char* text_end, const char** remaining) const
+ImVec2 ImFont::CalcTextSizeA(float size, float max_width, float wrap_width, const char* text_begin, const char* text_end, const char** remaining)
 {
     if (!text_end)
-        text_end = text_begin + strlen(text_begin); // FIXME-OPT: Need to avoid this.
+        text_end = text_begin + ImStrlen(text_begin); // FIXME-OPT: Need to avoid this.
 
     const float line_height = size;
-    const float scale = size / FontSize;
+    ImFontBaked* baked = GetFontBaked(size);
+    const float scale = size / baked->Size;
 
     ImVec2 text_size = ImVec2(0, 0);
     float line_width = 0.0f;
@@ -325,7 +335,7 @@ ImVec2 ImFont::CalcTextSizeA(float size, float max_width, float wrap_width, cons
             if (!word_wrap_eol)
             {
                 stateCalcWordWrapPositionA = state;
-                word_wrap_eol = CalcWordWrapPositionA(scale, s, text_end, wrap_width - line_width);
+                word_wrap_eol = CalcWordWrapPosition(size, s, text_end, wrap_width - line_width);
             }
 
             if (s >= word_wrap_eol)
@@ -361,7 +371,12 @@ ImVec2 ImFont::CalcTextSizeA(float size, float max_width, float wrap_width, cons
                 continue;
         }
 
-        const float char_width = ((int)c < IndexAdvanceX.Size ? IndexAdvanceX.Data[c] : FallbackAdvanceX) * scale;
+        // Optimized inline version of 'float char_width = GetCharAdvance((ImWchar)c);'
+        float char_width = (c < (unsigned int)baked->IndexAdvanceX.Size) ? baked->IndexAdvanceX.Data[c] : -1.0f;
+        if (char_width < 0.0f)
+            char_width = BuildLoadGlyphGetAdvanceOrFallback(baked, c);
+        char_width *= scale;
+
         if (line_width + char_width >= max_width)
         {
             s = prev_s;
@@ -384,20 +399,23 @@ ImVec2 ImFont::CalcTextSizeA(float size, float max_width, float wrap_width, cons
 }
 
 // Note: as with every ImDrawList drawing function, this expects that the font atlas texture is bound.
-void ImFont::RenderText(ImDrawList* draw_list, float size, const ImVec2& pos, ImU32 col, const ImVec4& clip_rect, const char* text_begin, const char* text_end, float wrap_width, bool cpu_fine_clip) const
+void ImFont::RenderText(ImDrawList* draw_list, float size, const ImVec2& pos, ImU32 col, const ImVec4& clip_rect, const char* text_begin, const char* text_end, float wrap_width, bool cpu_fine_clip)
 {
-    if (!text_end)
-        text_end = text_begin + strlen(text_begin); // ImGui:: functions generally already provides a valid text_end, so this is merely to handle direct calls.
-    
     // Align to be pixel perfect
+begin:
     float x = IM_TRUNC(pos.x);
     float y = IM_TRUNC(pos.y);
     if (y > clip_rect.w)
         return;
 
-    const float start_x = x;
-    const float scale = size / FontSize;
-    const float line_height = FontSize * scale;
+    if (!text_end)
+        text_end = text_begin + ImStrlen(text_begin); // ImGui:: functions generally already provides a valid text_end, so this is merely to handle direct calls.
+
+    const float line_height = size;
+    ImFontBaked* baked = GetFontBaked(size);
+
+    const float scale = size / baked->Size;
+    const float origin_x = x;
     const bool word_wrap_enabled = (wrap_width > 0.0f);
 
     // Fast-forward to first visible line
@@ -407,13 +425,13 @@ void ImFont::RenderText(ImDrawList* draw_list, float size, const ImVec2& pos, Im
     if (y + line_height < clip_rect.y)
         while (y + line_height < clip_rect.y && s < text_end)
         {
-            const char* line_end = (const char*)memchr(s, '\n', text_end - s);
+            const char* line_end = (const char*)ImMemchr(s, '\n', text_end - s);
             if (word_wrap_enabled)
             {
-                // FIXME-OPT: This is not optimal as do first do a search for \n before calling CalcWordWrapPositionA().
-                // If the specs for CalcWordWrapPositionA() were reworked to optionally return on \n we could combine both.
+                // FIXME-OPT: This is not optimal as do first do a search for \n before calling CalcWordWrapPosition().
+                // If the specs for CalcWordWrapPosition() were reworked to optionally return on \n we could combine both.
                 // However it is still better than nothing performing the fast-forward!
-                s = CalcWordWrapPositionA(scale, s, line_end ? line_end : text_end, wrap_width);
+                s = CalcWordWrapPosition(size, s, line_end ? line_end : text_end, wrap_width);
                 s = CalcWordWrapNextLineStartA(s, text_end);
             }
             else
@@ -432,7 +450,7 @@ void ImFont::RenderText(ImDrawList* draw_list, float size, const ImVec2& pos, Im
         float y_end = y;
         while (y_end < clip_rect.w && s_end < text_end)
         {
-            s_end = (const char*)memchr(s_end, '\n', text_end - s_end);
+            s_end = (const char*)ImMemchr(s_end, '\n', text_end - s_end);
             s_end = s_end ? s_end + 1 : text_end;
             y_end += line_height;
         }
@@ -446,9 +464,10 @@ void ImFont::RenderText(ImDrawList* draw_list, float size, const ImVec2& pos, Im
     const int idx_count_max = (int)(text_end - s) * 6 * 2;
     const int idx_expected_size = draw_list->IdxBuffer.Size + idx_count_max;
     draw_list->PrimReserve(idx_count_max, vtx_count_max);
-    ImDrawVert* vtx_write = draw_list->_VtxWritePtr;
-    ImDrawIdx* idx_write = draw_list->_IdxWritePtr;
+    ImDrawVert*  vtx_write = draw_list->_VtxWritePtr;
+    ImDrawIdx*   idx_write = draw_list->_IdxWritePtr;
     unsigned int vtx_index = draw_list->_VtxCurrentIdx;
+    const int cmd_count = draw_list->CmdBuffer.Size;
 
     ImU32 col_untinted = col | ~IM_COL32_A_MASK;
     const char* word_wrap_eol = NULL;
@@ -499,13 +518,15 @@ void ImFont::RenderText(ImDrawList* draw_list, float size, const ImVec2& pos, Im
             if (!word_wrap_eol)
             {
                 stateCalcWordWrapPositionA = state;
-                word_wrap_eol = CalcWordWrapPositionA(scale, s, text_end, wrap_width - (x - start_x));
+                word_wrap_eol = CalcWordWrapPosition(size, s, text_end, wrap_width - (x - origin_x));
             }
 
             if (s >= word_wrap_eol)
             {
-                x = start_x;
+                x = origin_x;
                 y += line_height;
+                if (y > clip_rect.w)
+                    break; // break out of main loop
                 word_wrap_eol = NULL;
                 s = CalcWordWrapNextLineStartA(s, text_end); // Wrapping skips upcoming blanks
                 continue;
@@ -523,7 +544,7 @@ void ImFont::RenderText(ImDrawList* draw_list, float size, const ImVec2& pos, Im
         {
             if (c == '\n')
             {
-                x = start_x;
+                x = origin_x;
                 y += line_height;
                 if (y > clip_rect.w)
                     break; // break out of main loop
@@ -533,9 +554,9 @@ void ImFont::RenderText(ImDrawList* draw_list, float size, const ImVec2& pos, Im
                 continue;
         }
 
-        const ImFontGlyph* glyph = FindGlyph((ImWchar)c);
-        if (glyph == NULL)
-            continue;
+        const ImFontGlyph* glyph = baked->FindGlyph((ImWchar)c);
+        //if (glyph == NULL)
+        //    continue;
 
         float char_width = glyph->AdvanceX * scale;
         if (glyph->Visible)
@@ -616,6 +637,20 @@ void ImFont::RenderText(ImDrawList* draw_list, float size, const ImVec2& pos, Im
             }
         }
         x += char_width;
+    }
+
+    // Edge case: calling RenderText() with unloaded glyphs triggering texture change. It doesn't happen via ImGui:: calls because CalcTextSize() is always used.
+    if (cmd_count != draw_list->CmdBuffer.Size) //-V547
+    {
+        IM_ASSERT(draw_list->CmdBuffer[draw_list->CmdBuffer.Size - 1].ElemCount == 0);
+        draw_list->CmdBuffer.pop_back();
+        draw_list->PrimUnreserve(idx_count_max, vtx_count_max);
+        draw_list->AddDrawCmd();
+        //IMGUI_DEBUG_LOG("RenderText: cancel and retry to missing glyphs.\n"); // [DEBUG]
+        //draw_list->AddRectFilled(pos, pos + ImVec2(10, 10), IM_COL32(255, 0, 0, 255)); // [DEBUG]
+        goto begin;
+        //RenderText(draw_list, size, pos, col, clip_rect, text_begin, text_end, wrap_width, cpu_fine_clip); // FIXME-OPT: Would a 'goto begin' be better for code-gen?
+        //return;
     }
 
     // Give back unused vertices (clipped ones, blanks) ~ this is essentially a PrimUnreserve() action.

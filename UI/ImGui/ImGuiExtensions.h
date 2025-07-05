@@ -131,7 +131,7 @@ inline std::wstring StripMarkup(std::wstring const& str)
 inline bool InputTextReadOnly(const char* label, std::string const& str, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr)
 {
     auto size = CalcTextSize(str.c_str(), str.c_str() + str.size()) + GetStyle().FramePadding * 2;
-    if (GImGui->NextItemData.Flags & ImGuiNextItemDataFlags_HasWidth)
+    if (GImGui->NextItemData.ItemFlags & ImGuiNextItemDataFlags_HasWidth)
         size.x = CalcItemWidth();
     auto const avail = GetContentRegionAvail();
     if (size.x > avail.x)
@@ -191,12 +191,13 @@ bool DragCoerceBehaviorT(ImGuiDataType data_type, TYPE* v, float v_speed, const 
 {
     ImGuiContext& g = *GImGui;
     const ImGuiAxis axis = (flags & ImGuiSliderFlags_Vertical) ? ImGuiAxis_Y : ImGuiAxis_X;
-    const bool is_clamped = (v_min < v_max);
+    const bool is_bounded = (v_min < v_max) || ((v_min == v_max) && (v_min != 0.0f || (flags & ImGuiSliderFlags_ClampZeroRange)));
+    const bool is_wrapped = is_bounded && (flags & ImGuiSliderFlags_WrapAround);
     const bool is_logarithmic = (flags & ImGuiSliderFlags_Logarithmic) != 0;
     const bool is_floating_point = (data_type == ImGuiDataType_Float) || (data_type == ImGuiDataType_Double);
 
     // Default tweak speed
-    if (v_speed == 0.0f && is_clamped && (v_max - v_min < FLT_MAX))
+    if (v_speed == 0.0f && is_bounded && (v_max - v_min < FLT_MAX))
         v_speed = (float)((v_max - v_min) * g.DragSpeedDefaultRatio);
 
     // Inputs accumulates into g.DragCurrentAccum, which is flushed into the current value as soon as it makes a difference with our precision settings
@@ -204,9 +205,9 @@ bool DragCoerceBehaviorT(ImGuiDataType data_type, TYPE* v, float v_speed, const 
     if (g.ActiveIdSource == ImGuiInputSource_Mouse && IsMousePosValid() && IsMouseDragPastThreshold(0, g.IO.MouseDragThreshold * 0.50f))
     {
         adjust_delta = g.IO.MouseDelta[axis];
-        if (g.IO.KeyAlt)
+        if (g.IO.KeyAlt && !(flags & ImGuiSliderFlags_NoSpeedTweaks))
             adjust_delta *= 1.0f / 100.0f;
-        if (g.IO.KeyShift)
+        if (g.IO.KeyShift && !(flags & ImGuiSliderFlags_NoSpeedTweaks))
             adjust_delta *= 10.0f;
     }
     else if (g.ActiveIdSource == ImGuiInputSource_Keyboard || g.ActiveIdSource == ImGuiInputSource_Gamepad)
@@ -214,7 +215,7 @@ bool DragCoerceBehaviorT(ImGuiDataType data_type, TYPE* v, float v_speed, const 
         const int decimal_precision = is_floating_point ? ImParseFormatPrecision(format, 3) : 0;
         const bool tweak_slow = IsKeyDown((g.NavInputSource == ImGuiInputSource_Gamepad) ? ImGuiKey_NavGamepadTweakSlow : ImGuiKey_NavKeyboardTweakSlow);
         const bool tweak_fast = IsKeyDown((g.NavInputSource == ImGuiInputSource_Gamepad) ? ImGuiKey_NavGamepadTweakFast : ImGuiKey_NavKeyboardTweakFast);
-        const float tweak_factor = tweak_slow ? 1.0f / 1.0f : tweak_fast ? 10.0f : 1.0f;
+        const float tweak_factor = (flags & ImGuiSliderFlags_NoSpeedTweaks) ? 1.0f : tweak_slow ? 1.0f / 10.0f : tweak_fast ? 10.0f : 1.0f;
         adjust_delta = GetNavTweakPressedAmount(axis) * tweak_factor;
         v_speed = ImMax(v_speed, GetMinimumStepAtDecimalPrecision(decimal_precision));
     }
@@ -230,8 +231,8 @@ bool DragCoerceBehaviorT(ImGuiDataType data_type, TYPE* v, float v_speed, const 
 
     // Clear current value on activation
     // Avoid altering values and clamping when we are _already_ past the limits and heading in the same direction, so e.g. if range is 0..255, current value is 300 and we are pushing to the right side, keep the 300.
-    bool is_just_activated = g.ActiveIdIsJustActivated;
-    bool is_already_past_limits_and_pushing_outward = is_clamped && ((*v >= v_max && adjust_delta > 0.0f) || (*v <= v_min && adjust_delta < 0.0f));
+    const bool is_just_activated = g.ActiveIdIsJustActivated;
+    const bool is_already_past_limits_and_pushing_outward = is_bounded && !is_wrapped && ((*v >= v_max && adjust_delta > 0.0f) || (*v <= v_min && adjust_delta < 0.0f));
     if (is_just_activated || is_already_past_limits_and_pushing_outward)
     {
         g.DragCurrentAccum = 0.0f;
@@ -291,13 +292,24 @@ bool DragCoerceBehaviorT(ImGuiDataType data_type, TYPE* v, float v_speed, const 
     if (v_cur == (TYPE)-0)
         v_cur = (TYPE)0;
 
-    // Clamp values (+ handle overflow/wrap-around for integer types)
-    if (*v != v_cur && is_clamped)
+    if (*v != v_cur && is_bounded)
     {
-        if (v_cur < v_min || (v_cur > *v && adjust_delta < 0.0f && !is_floating_point))
-            v_cur = v_min;
-        if (v_cur > v_max || (v_cur < *v && adjust_delta > 0.0f && !is_floating_point))
-            v_cur = v_max;
+        if (is_wrapped)
+        {
+            // Wrap values
+            if (v_cur < v_min)
+                v_cur += v_max - v_min + (is_floating_point ? 0 : 1);
+            if (v_cur > v_max)
+                v_cur -= v_max - v_min + (is_floating_point ? 0 : 1);
+        }
+        else
+        {
+            // Clamp values + handle overflow/wrap-around for integer types.
+            if (v_cur < v_min || (v_cur > *v && adjust_delta < 0.0f && !is_floating_point))
+                v_cur = v_min;
+            if (v_cur > v_max || (v_cur < *v && adjust_delta > 0.0f && !is_floating_point))
+                v_cur = v_max;
+        }
     }
 
     // Apply result
@@ -311,7 +323,7 @@ template<ImGuiDataType_ data_type, typename COERCE>
 bool DragCoerceBehavior(ImGuiID id, void* p_v, float v_speed, const void* p_min, const void* p_max, const char* format, ImGuiSliderFlags flags, COERCE&& coerce)
 {
     // Read imgui.cpp "API BREAKING CHANGES" section for 1.78 if you hit this assert.
-    IM_ASSERT((flags == 1 || (flags & ImGuiSliderFlags_InvalidMask_) == 0) && "Invalid ImGuiSliderFlags flags! Has the 'float power' argument been mistakenly cast to flags? Call function with ImGuiSliderFlags_Logarithmic flags instead.");
+    IM_ASSERT((flags == 1 || (flags & ImGuiSliderFlags_InvalidMask_) == 0) && "Invalid ImGuiSliderFlags flags! Has the legacy 'float power' argument been mistakenly cast to flags? Call function with ImGuiSliderFlags_Logarithmic flags instead.");
 
     ImGuiContext& g = *GImGui;
     if (g.ActiveId == id)
@@ -324,7 +336,7 @@ bool DragCoerceBehavior(ImGuiID id, void* p_v, float v_speed, const void* p_min,
     }
     if (g.ActiveId != id)
         return false;
-    if ((g.LastItemData.InFlags & ImGuiItemFlags_ReadOnly) || (flags & ImGuiSliderFlags_ReadOnly))
+    if ((g.LastItemData.ItemFlags & ImGuiItemFlags_ReadOnly) || (flags & ImGuiSliderFlags_ReadOnly))
         return false;
 
     static_assert(data_type != ImGuiDataType_COUNT);
@@ -369,12 +381,12 @@ bool DragCoerceScalar(const char* label, void* p_data, float v_speed = 1.0f, con
     if (format == NULL)
         format = DataTypeGetInfo(data_type)->PrintFmt;
 
-    const bool hovered = ItemHoverable(frame_bb, id, g.LastItemData.InFlags);
+    const bool hovered = ItemHoverable(frame_bb, id, g.LastItemData.ItemFlags);
     bool temp_input_is_active = temp_input_allowed && TempInputIsActive(id);
     if (!temp_input_is_active)
     {
-        // Tabbing or CTRL-clicking on Drag turns it into an InputText
-        const bool clicked = hovered && IsMouseClicked(0, id);
+        // Tabbing or CTRL+click on Drag turns it into an InputText
+        const bool clicked = hovered && IsMouseClicked(0, ImGuiInputFlags_None, id);
         const bool double_clicked = (hovered && g.IO.MouseClickedCount[0] == 2 && TestKeyOwner(ImGuiKey_MouseLeft, id));
         const bool make_active = (clicked || double_clicked || g.NavActivateId == id);
         if (make_active && (clicked || double_clicked))
@@ -392,6 +404,10 @@ bool DragCoerceScalar(const char* label, void* p_data, float v_speed = 1.0f, con
                 temp_input_is_active = true;
             }
 
+        // Store initial value (not used by main lib but available as a convenience but some mods e.g. to revert)
+        if (make_active)
+            memcpy(&g.ActiveIdValueOnActivation, p_data, DataTypeGetInfo(data_type)->Size);
+
         if (make_active && !temp_input_is_active)
         {
             SetActiveID(id, window);
@@ -403,14 +419,22 @@ bool DragCoerceScalar(const char* label, void* p_data, float v_speed = 1.0f, con
 
     if (temp_input_is_active)
     {
-        // Only clamp CTRL+Click input when ImGuiSliderFlags_AlwaysClamp is set
-        const bool is_clamp_input = (flags & ImGuiSliderFlags_AlwaysClamp) != 0 && (p_min == NULL || p_max == NULL || DataTypeCompare(data_type, p_min, p_max) < 0);
-        return TempInputScalar(frame_bb, id, label, data_type, p_data, format, is_clamp_input ? p_min : NULL, is_clamp_input ? p_max : NULL);
+        // Only clamp CTRL+Click input when ImGuiSliderFlags_ClampOnInput is set (generally via ImGuiSliderFlags_AlwaysClamp)
+        bool clamp_enabled = false;
+        if ((flags & ImGuiSliderFlags_ClampOnInput) && (p_min != NULL || p_max != NULL))
+        {
+            const int clamp_range_dir = (p_min != NULL && p_max != NULL) ? DataTypeCompare(data_type, p_min, p_max) : 0; // -1 when *p_min < *p_max, == 0 when *p_min == *p_max
+            if (p_min == NULL || p_max == NULL || clamp_range_dir < 0)
+                clamp_enabled = true;
+            else if (clamp_range_dir == 0)
+                clamp_enabled = DataTypeIsZero(data_type, p_min) ? ((flags & ImGuiSliderFlags_ClampZeroRange) != 0) : true;
+        }
+        return TempInputScalar(frame_bb, id, label, data_type, p_data, format, clamp_enabled ? p_min : NULL, clamp_enabled ? p_max : NULL);
     }
 
     // Draw frame
     const ImU32 frame_col = GetColorU32(g.ActiveId == id ? ImGuiCol_FrameBgActive : hovered ? ImGuiCol_FrameBgHovered : ImGuiCol_FrameBg);
-    RenderNavHighlight(frame_bb, id);
+    RenderNavCursor(frame_bb, id);
     RenderFrame(frame_bb.Min, frame_bb.Max, frame_col, true, style.FrameRounding);
 
     // Drag behavior
@@ -477,7 +501,7 @@ namespace dear
     };
     struct Font : ScopeWrapper<Font>
     {
-        Font(ImFont* font) noexcept : ScopeWrapper(true) { ImGui::PushFont(font); }
+        Font(ImFont* font, float size) noexcept : ScopeWrapper(true) { ImGui::PushFont(font); }
         static void dtor() noexcept { ImGui::PopFont(); }
     };
     struct PopupContextItem : ScopeWrapper<PopupContextItem>

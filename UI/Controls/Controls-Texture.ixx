@@ -45,7 +45,7 @@ bool Texture(uint32 textureFileID, TextureOptions const& options = { })
         I::ItemAdd(bb, 0);
         if (auto& draw = *I::GetWindowDrawList(); options.UV2 && options.Color.w > 0)
         {
-            const bool push_texture_id = texture->Texture->Handle != draw._CmdHeader.TextureId;
+            const bool push_texture_id = texture->Texture->Handle != draw._CmdHeader.TexRef;
             if (push_texture_id)
                 draw.PushTextureID(texture->Texture->Handle);
 

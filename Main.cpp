@@ -143,6 +143,13 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
         G::GraphicsDeviceContext->ClearRenderTargetView(G::RenderTargetView, (float*)&clear_col);
         ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
 
+        // Update and Render additional Platform Windows
+        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+        {
+            ImGui::UpdatePlatformWindows();
+            ImGui::RenderPlatformWindowsDefault();
+        }
+
         G::SwapChain->Present(1, 0); // Present with vsync
         //g_pSwapChain->Present(0, 0); // Present without vsync
 
