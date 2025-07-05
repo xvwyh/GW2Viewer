@@ -5,12 +5,13 @@ import std;
 
 export namespace GW2Viewer::Data::Content
 {
+struct ContentTypeInfo;
 
 struct ContentFilter
 {
     static constexpr size_t UNCACHED_RESULT = std::numeric_limits<size_t>::max();
 
-    int32 TypeIndex = -1;
+    ContentTypeInfo const* Type { };
     std::wstring NameSearch;
     std::optional<GUID> GUIDSearch;
     std::optional<std::pair<uint32, uint32>> UIDSearch;
@@ -19,7 +20,7 @@ struct ContentFilter
     std::vector<size_t> FilteredNamespaces;
     std::vector<size_t> FilteredObjects;
 
-    operator bool() const { return TypeIndex != -1 || !NameSearch.empty() || GUIDSearch || UIDSearch || DataIDSearch; }
+    operator bool() const { return Type || !NameSearch.empty() || GUIDSearch || UIDSearch || DataIDSearch; }
 };
 
 }

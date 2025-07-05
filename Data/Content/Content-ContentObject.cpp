@@ -195,7 +195,7 @@ bool ContentObject::MatchesFilter(ContentFilter& filter) const
         result =
             !filter ||
             std::ranges::any_of(Entries, std::bind_back(&ContentObject::MatchesFilter, std::ref(filter))) ||
-            (filter.TypeIndex < 0 || Type->Index == filter.TypeIndex) &&
+            (!filter.Type || Type == filter.Type) &&
             (filter.NameSearch.empty()
                 || (name = GetName(), name && name->Name && *name->Name && std::ranges::search(std::wstring_view(*name->Name), filter.NameSearch, std::ranges::equal_to(), std::towupper, std::towupper))
                 || (displayName = GetDisplayName(), std::ranges::search(displayName, filter.NameSearch, std::ranges::equal_to(), std::towupper, std::towupper))) &&

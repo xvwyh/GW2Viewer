@@ -5,6 +5,7 @@ export module GW2Viewer.UI.Windows.MigrateContentTypes;
 import GW2Viewer.Common;
 import GW2Viewer.Content;
 import GW2Viewer.Data.Game;
+import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Windows.Window;
 import GW2Viewer.User.Config;
 import std;
@@ -94,7 +95,7 @@ struct MigrateContentTypes : Window
 
                     I::TableNextColumn();
                     I::SetNextItemWidth(-FLT_MIN);
-                    I::ComboWithFilter("##ContentType", (int*)&itr->second.ContentType, { std::from_range, magic_enum::enum_names<Content::EContentTypes>() | std::views::transform([](std::string_view e) { return std::string(e); }) });
+                    Controls::FilteredComboBox("##ContentType", itr->second.ContentType, magic_enum::enum_values<Content::EContentTypes>());
                 }
             }
         }

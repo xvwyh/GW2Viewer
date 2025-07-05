@@ -34,7 +34,7 @@ struct ContentListViewer : ListViewer<ContentListViewer>
     Data::Content::ContentFilter ContentFilter;
     Utils::Async::Scheduler AsyncFilter { true };
 
-    int32 FilterType = 0;
+    Data::Content::ContentTypeInfo const* FilterType { };
     std::string FilterString;
     std::string FilterName;
     std::optional<GUID> FilterGUID;
@@ -154,7 +154,7 @@ struct ContentListViewer : ListViewer<ContentListViewer>
 
         AsyncFilter.Run([this, delayed, filter = Data::Content::ContentFilter
         {
-            .TypeIndex = FilterType - 1,
+            .Type = FilterType,
             .NameSearch = Utils::Encoding::FromUTF8(FilterName),
             .GUIDSearch = FilterGUID,
             .UIDSearch = FilterUID.first != (uint32)-1 ? std::optional(FilterUID) : std::nullopt,
@@ -239,15 +239,27 @@ struct ContentListViewer : ListViewer<ContentListViewer>
             I::TableSetupColumn("Collapse", ImGuiTableColumnFlags_WidthFixed);
             I::TableNextColumn();
             I::SetNextItemWidth(-FLT_MIN);
-            std::vector<std::string> items;
-            items.reserve(G::Game.Content.GetNumTypes() + 1);
-            items.emplace_back(std::format("<c=#8>{0} {2}</c>", ICON_FA_FILTER, -1, "Any Type"));
-            items.append_range(G::Game.Content.GetTypes() | std::views::transform([](auto const& type)
+            std::vector<Data::Content::ContentTypeInfo const*> values(1, nullptr);
+            values.append_range(G::Game.Content.GetTypes() | std::views::transform([](auto const& ptr) { return ptr.get(); }));
+            if (Controls::FilteredComboBox("##Type", FilterType, values,
             {
-                auto const itr = G::Config.TypeInfo.find(type->Index);
-                return std::format("<c=#8>{0}</c> {2}  <c=#4>#{1}</c>", ICON_FA_FILTER, type->Index, itr != G::Config.TypeInfo.end() && !itr->second.Name.empty() ? itr->second.Name : "");
-            }));
-            if (I::ComboWithFilter("##Type", &FilterType, items))
+                .MaxHeight = 500,
+                .Formatter = [](auto const& type) -> std::string
+                {
+                    if (!type)
+                        return std::format("<c=#8>{0} {2}</c>", ICON_FA_FILTER, -1, "Any Type");
+
+                    auto const itr = G::Config.TypeInfo.find(type->Index);
+                    return std::format("<c=#8>{0}</c> {2}  <c=#4>#{1}</c>", ICON_FA_FILTER, type->Index, itr != G::Config.TypeInfo.end() && !itr->second.Name.empty() ? itr->second.Name : "");
+                },
+                .Filter = [](auto const& type, auto const& filter, auto const& options)
+                {
+                    if (!type)
+                        return filter.Filters.empty();
+
+                    return filter.PassFilter(std::format("{}", type->Index).c_str()) || filter.PassFilter(Utils::Encoding::ToUTF8(type->GetDisplayName()).c_str());
+                },
+            }))
                 UpdateFilter();
             if (I::TableNextColumn(); I::Button(ICON_FA_FOLDER_OPEN))
                 context.ExpandAll = true;
