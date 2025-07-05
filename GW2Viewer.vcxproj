@@ -156,6 +156,7 @@
     <ClCompile Include="dep\nlohmann.json.ixx" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="System\Graphics.ixx" />
+    <ClCompile Include="UI\Controls\Controls-AsyncProgressBar.ixx" />
     <ClCompile Include="UI\Controls\Controls-ContentButton.ixx" />
     <ClCompile Include="UI\Controls\Controls-CopyButton.ixx" />
     <ClCompile Include="UI\Controls\Controls-HexViewer.ixx" />

@@ -63,19 +63,7 @@ struct ContentSearch : Window
         I::SetNextItemWidth(-FLT_MIN);
         if (scoped::Disabled(true))
             I::InputText("##Description", (char*)std::format("Content that contains {} fields with value: {}", Symbol->Name, Value).c_str(), 9999);
-        if (auto context = Async.Current())
-        {
-            I::SetCursorScreenPos(I::GetCurrentContext()->LastItemData.Rect.Min);
-            if (scoped::WithColorVar(ImGuiCol_FrameBg, 0))
-            if (scoped::WithColorVar(ImGuiCol_Border, 0))
-            if (scoped::WithColorVar(ImGuiCol_BorderShadow, 0))
-            if (scoped::WithColorVar(ImGuiCol_Text, 0))
-            if (scoped::WithColorVar(ImGuiCol_PlotHistogram, 0x20FFFFFF))
-                if (context.IsIndeterminate())
-                    I::IndeterminateProgressBar(I::GetCurrentContext()->LastItemData.Rect.GetSize());
-                else
-                    I::ProgressBar(context.Progress(), I::GetCurrentContext()->LastItemData.Rect.GetSize());
-        }
+        Controls::AsyncProgressBar(Async);
         if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
         if (scoped::Child("Content", { }, 0, ImGuiWindowFlags_AlwaysVerticalScrollbar))
             for (auto const& object : Results)

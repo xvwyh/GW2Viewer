@@ -187,19 +187,7 @@ struct StringListViewer : ListViewer<StringListViewer>
             I::SetKeyboardFocusHere();
         if (I::InputTextWithHint("##Search", ICON_FA_MAGNIFYING_GLASS " Search...", &FilterString))
             UpdateSearch();
-        if (auto context = AsyncFilter.Current())
-        {
-            I::SetCursorScreenPos(I::GetCurrentContext()->LastItemData.Rect.Min);
-            if (scoped::WithColorVar(ImGuiCol_FrameBg, 0))
-            if (scoped::WithColorVar(ImGuiCol_Border, 0))
-            if (scoped::WithColorVar(ImGuiCol_BorderShadow, 0))
-            if (scoped::WithColorVar(ImGuiCol_Text, 0))
-            if (scoped::WithColorVar(ImGuiCol_PlotHistogram, 0x20FFFFFF))
-                if (context.IsIndeterminate())
-                    I::IndeterminateProgressBar(I::GetCurrentContext()->LastItemData.Rect.GetSize());
-                else
-                    I::ProgressBar(context.Progress(), I::GetCurrentContext()->LastItemData.Rect.GetSize());
-        }
+        Controls::AsyncProgressBar(AsyncFilter);
         I::SameLine();
         auto now = G::UI.GetTime();
         static bool trackClipboard = false;
