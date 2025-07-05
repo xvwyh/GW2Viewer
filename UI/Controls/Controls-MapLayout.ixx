@@ -530,7 +530,7 @@ float4 main(PS_INPUT input) : SV_Target
             if (IsPointInsidePolygon(sector.Points, unproject(I::GetMousePos())))
             {
                 auto const size = I::GetWindowDrawList()->_Path.Size;
-                I::GetWindowDrawList()->PathFillConvex(0x10FFFFFF);
+                I::GetWindowDrawList()->PathFillConcave(0x10FFFFFF);
                 I::GetWindowDrawList()->_Path.Size = size;
             }
             I::GetWindowDrawList()->PathStroke(0x40FFFFFF, ImDrawFlags_None, 2);
