@@ -280,7 +280,7 @@ void Manager::Update()
                     if (progress.IsIndeterminate())
                     {
                         I::SetCursorPosY(I::GetCursorPosY() + 2);
-                        I::IndeterminateProgressBar({ 100, 16 });
+                        I::ProgressBar(-I::GetTime(), { 100, 16 });
                         I::SameLine();
                         I::TextUnformatted(progress.GetDescription().c_str());
                     }
