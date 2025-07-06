@@ -548,11 +548,11 @@ private:
                 I::TableNextColumn(); if (auto* guid = entry.GetGUID()) { I::TextUnformatted(std::format("{}", *guid).c_str()); I::SetItemTooltip(std::format("{}", *guid).c_str()); }
                 I::TableNextColumn(); if (!entry.IncomingReferences.empty()) I::TextColored({ 0, 1, 0, 1 }, ICON_FA_ARROW_LEFT "%u", (uint32)entry.IncomingReferences.size());
             }
-            else if (hasEntries)
+            else
             {
                 auto const id = I::GetCurrentWindow()->GetID(&entry);
                 context.storeFocusedParentInfo(namespaceIndex, id);
-                if ((open = (I::TreeNodeUpdateNextOpen(id, 0) || context.CollapseAll) && hasEntries))
+                if (hasEntries && (open = I::TreeNodeUpdateNextOpen(id, 0) || context.CollapseAll))
                     I::TreePushOverrideID(id);
             }
 
