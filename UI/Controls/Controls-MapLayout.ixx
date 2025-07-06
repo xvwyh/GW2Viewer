@@ -1,7 +1,7 @@
 module;
-#include "imgui_impl_dx11.h"
 #include "Utils.h"
 #include "UI/ImGui/ImGui.h"
+#include <imgui_impl_dx11.h>
 
 export module GW2Viewer.UI.Controls:MapLayout;
 import :ContentButton;
@@ -427,7 +427,7 @@ float4 main(PS_INPUT input) : SV_Target
     {
         ImGui_ImplDX11_SetPixelShader(shader);
         ImGui_ImplDX11_SetPixelShaderShaderResource(1, cmd->UserCallbackData);
-    }, ExploredMaskTexture->Handle);
+    }, (void*)ExploredMaskTexture->Handle.GetTexID());
     for (auto const* backdrops : { &UnexploredBackdrops, &ExploredBackdrops })
     {
         bool first = true;
@@ -557,7 +557,7 @@ float4 main(PS_INPUT input) : SV_Target
 
     // Draw UI
     if (scoped::WithCursorPos(0, 0))
-    if (scoped::Child("Settings", { 200, -FLT_MIN }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX))
+    if (scoped::Child("Settings", { 200, -FLT_MIN }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX))
     {
         pixelBuffer.DisplaySize = I::GetIO().DisplaySize;
         pixelBuffer.MousePosition = I::GetIO().MousePos;

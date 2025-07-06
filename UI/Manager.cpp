@@ -91,7 +91,6 @@ void Manager::Load()
     Fonts.GameTextItalic = loadFont("trebucit.ttf", 14.725f);
     Fonts.GameHeading = loadFont("menomonia.ttf", 18.0f);
     Fonts.GameHeadingItalic = loadFont("menomonia-italic.ttf", 18.0f);
-    io.Fonts->Build();
     io.FontDefault = Fonts.Default;
 
     ImVec4* colors = I::GetStyle().Colors;
@@ -130,9 +129,9 @@ void Manager::Load()
     colors[ImGuiCol_ResizeGripActive] = ImVec4(0.40f, 0.44f, 0.47f, 1.00f);
     colors[ImGuiCol_Tab] = ImVec4(0.00f, 0.00f, 0.00f, 0.52f);
     colors[ImGuiCol_TabHovered] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-    colors[ImGuiCol_TabActive] = ImVec4(0.20f, 0.20f, 0.20f, 0.36f);
-    colors[ImGuiCol_TabUnfocused] = ImVec4(0.00f, 0.00f, 0.00f, 0.52f);
-    colors[ImGuiCol_TabUnfocusedActive] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
+    colors[ImGuiCol_TabSelected] = ImVec4(0.20f, 0.20f, 0.20f, 0.36f);
+    colors[ImGuiCol_TabDimmed] = ImVec4(0.00f, 0.00f, 0.00f, 0.52f);
+    colors[ImGuiCol_TabDimmedSelected] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
     //colors[ImGuiCol_DockingPreview] = ImVec4(0.33f, 0.67f, 0.86f, 1.00f);
     //colors[ImGuiCol_DockingEmptyBg] = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
     colors[ImGuiCol_PlotLines] = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
@@ -146,7 +145,7 @@ void Manager::Load()
     colors[ImGuiCol_TableRowBgAlt] = ImVec4(1.00f, 1.00f, 1.00f, 0.06f);
     colors[ImGuiCol_TextSelectedBg] = ImVec4(0.20f, 0.22f, 0.23f, 1.00f);
     colors[ImGuiCol_DragDropTarget] = ImVec4(0.33f, 0.67f, 0.86f, 1.00f);
-    colors[ImGuiCol_NavHighlight] = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
+    colors[ImGuiCol_NavCursor] = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
     colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 0.00f, 0.00f, 0.70f);
     colors[ImGuiCol_NavWindowingDimBg] = ImVec4(1.00f, 0.00f, 0.00f, 0.20f);
     colors[ImGuiCol_ModalWindowDimBg] = ImVec4(1.00f, 0.00f, 0.00f, 0.35f);
@@ -297,7 +296,7 @@ void Manager::Update()
                 }
             }
         }
-        if (scoped::Child("SourcesPane", { 250, 0 }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX))
+        if (scoped::Child("SourcesPane", { 250, 0 }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX))
         {
             if (scoped::TabBar("Tabs", ImGuiTabBarFlags_FittingPolicyResizeDown | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_Reorderable))
             {
@@ -353,7 +352,7 @@ void Manager::Update()
                 }
             }
         }
-        if (I::SameLine(); scoped::Child("ViewerPane", { }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Border))
+        if (I::SameLine(); scoped::Child("ViewerPane", { }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Borders))
         {
             if (scoped::TabBar("Tabs", ImGuiTabBarFlags_TabListPopupButton/* | ImGuiTabBarFlags_AutoSelectNewTabs*/ | ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_Reorderable))
             {

@@ -69,7 +69,7 @@ void ConversationViewer::Draw()
     std::string wikiBuffer;
     auto wiki = std::back_inserter(wikiBuffer);
     static bool drawStateTypeIcons = true, drawStateTypeText = false, drawSpeakerName = false, drawEncryptionStatus = false, drawTextID = false, drawEncounterInfo = false;
-    if (scoped::Child(I::GetSharedScopeID("ConversationViewer"), { }, ImGuiChildFlags_Border | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+    if (scoped::Child(I::GetSharedScopeID("ConversationViewer"), { }, ImGuiChildFlags_Borders | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
     {
         DrawHistoryButtons();
         I::SameLine();

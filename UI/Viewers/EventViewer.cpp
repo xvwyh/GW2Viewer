@@ -31,7 +31,7 @@ std::string EventViewer::Title()
 
 void EventViewer::Draw()
 {
-    if (scoped::Child(I::GetSharedScopeID("EventViewer"), { }, ImGuiChildFlags_Border | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+    if (scoped::Child(I::GetSharedScopeID("EventViewer"), { }, ImGuiChildFlags_Borders | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
     {
         DrawHistoryButtons();
         I::SameLine();
@@ -47,7 +47,7 @@ void EventViewer::Draw()
 
     std::shared_lock _(Content::eventsLock);
 
-    if (scoped::Child("###EventViewer-Table", { 400, 0 }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Border | ImGuiChildFlags_ResizeX))
+    if (scoped::Child("###EventViewer-Table", { 400, 0 }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX))
     {
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2(0, 2)))
         if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
@@ -61,7 +61,7 @@ void EventViewer::Draw()
             DrawEvent(EventID);
         }
     }
-    if (I::SameLine(); scoped::Child("###EventViewer-Details", { }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Border))
+    if (I::SameLine(); scoped::Child("###EventViewer-Details", { }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Borders))
     {
         if (Selected)
         {

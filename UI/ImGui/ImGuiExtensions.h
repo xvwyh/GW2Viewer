@@ -124,9 +124,9 @@ inline bool InputTextReadOnly(const char* label, std::string const& str, ImGuiIn
     auto clicked = ImGuiButtonFlags_None;
     if (GetCurrentContext()->NavActivateId == item.ID)
     {
-        if (GetIO().KeyCtrl || IsKeyDown(ImGuiKey_LeftCtrl) || IsKeyDown(ImGuiKey_RightCtrl) || IsKeyDown(ImGuiKey_ModCtrl))
+        if (GetIO().KeyCtrl || IsKeyDown(ImGuiKey_LeftCtrl) || IsKeyDown(ImGuiKey_RightCtrl) || IsKeyDown(ImGuiMod_Ctrl))
             clicked |= ImGuiButtonFlags_MouseButtonMiddle;
-        else if (GetIO().KeyAlt || IsKeyDown(ImGuiKey_LeftAlt) || IsKeyDown(ImGuiKey_RightAlt) || IsKeyDown(ImGuiKey_ModAlt))
+        else if (GetIO().KeyAlt || IsKeyDown(ImGuiKey_LeftAlt) || IsKeyDown(ImGuiKey_RightAlt) || IsKeyDown(ImGuiMod_Alt))
             clicked |= ImGuiButtonFlags_MouseButtonRight;
         else
             clicked |= ImGuiButtonFlags_MouseButtonLeft;
@@ -473,7 +473,7 @@ namespace dear
     };
     struct Font : ScopeWrapper<Font>
     {
-        Font(ImFont* font, float size) noexcept : ScopeWrapper(true) { ImGui::PushFont(font); }
+        Font(ImFont* font, float size) noexcept : ScopeWrapper(true) { ImGui::PushFont(font, size); }
         static void dtor() noexcept { ImGui::PopFont(); }
     };
     struct PopupContextItem : ScopeWrapper<PopupContextItem>

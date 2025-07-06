@@ -25,7 +25,7 @@ bool Texture(uint32 textureFileID, TextureOptions const& options = { })
 {
     if (auto const texture = G::Game.Texture.Get(textureFileID); !texture || texture->TextureLoadingState == Data::Media::Texture::TextureEntry::TextureLoadingStates::NotLoaded)
         G::Game.Texture.Load(textureFileID, { .DataSource = options.Data });
-    else if (texture && texture->Texture && texture->Texture->Handle)
+    else if (texture && texture->Texture && texture->Texture->Handle.GetTexID())
     {
         ImVec2 const fullSize { (float)texture->Texture->Width, (float)texture->Texture->Height };
         ImVec2 offset { };
@@ -47,7 +47,7 @@ bool Texture(uint32 textureFileID, TextureOptions const& options = { })
         {
             const bool push_texture_id = texture->Texture->Handle != draw._CmdHeader.TexRef;
             if (push_texture_id)
-                draw.PushTextureID(texture->Texture->Handle);
+                draw.PushTexture(texture->Texture->Handle);
 
             draw.PrimReserve(6, 4);
             draw.PrimRectUV(bb.Min + offset, bb.Max - offset, options.UV.Min, options.UV.Max, I::ColorConvertFloat4ToU32(options.Color));
@@ -57,7 +57,7 @@ bool Texture(uint32 textureFileID, TextureOptions const& options = { })
             draw._VtxWritePtr[-1].uv2 = options.UV2->GetBL();
 
             if (push_texture_id)
-                draw.PopTextureID();
+                draw.PopTexture();
         }
         else
             draw.AddImage(texture->Texture->Handle, bb.Min + offset, bb.Max - offset, options.UV.Min, options.UV.Max, I::ColorConvertFloat4ToU32(options.Color));

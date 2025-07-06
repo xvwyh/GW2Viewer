@@ -354,7 +354,7 @@ private:
         {
             static constexpr char const* DOMAINS[] { "System", "Game", "Common", "Template", "World", "Continent", "Region", "Map", "Section", "Tool" };
             I::TableNextRow();
-            I::TableNextColumn(); I::SetNextItemAllowOverlap(); open = I::TreeNodeEx(&ns, ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_NavLeftJumpsBackHere, ICON_FA_FOLDER " %s", Utils::Encoding::ToUTF8(ns.GetDisplayName(G::Config.ShowOriginalNames)).c_str());
+            I::TableNextColumn(); I::SetNextItemAllowOverlap(); open = I::TreeNodeEx(&ns, ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_NavLeftJumpsToParent, ICON_FA_FOLDER " %s", Utils::Encoding::ToUTF8(ns.GetDisplayName(G::Config.ShowOriginalNames)).c_str());
             context.storeFocusedParentInfo(parentNamespaceIndex);
             if (context.navigateLeft() && namespaceIndex == context.focusedParentNamespaceIndex)
                 I::NavMoveRequestResolveWithLastItem(&I::GetCurrentContext()->NavMoveResultLocal);

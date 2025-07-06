@@ -303,8 +303,8 @@ void HexViewer(std::span<byte const> data, HexViewerOptions& options)
         rows = std::min<int>(rows, (data.size() + cols - 1) / cols);
         tableSize = { offsetColumnWidth + BYTE_SIZE.x * cols, BYTE_SIZE.y * (rows + (options.ShowHeaderRow ? 1 : 0)) };
     }
-    I::PushFont(I::GetIO().Fonts->Fonts[0]);
     auto tableCursor = I::GetCursorScreenPos();
+    if (scoped::Font(I::GetIO().Fonts->Fonts.front(), 13))
     if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
     if (scoped::WithColorVar(ImGuiCol_FrameBg, 0xFF040404))
     if (scoped::WithColorVar(ImGuiCol_TableRowBgAlt, I::GetColorU32(ImGuiCol_TableRowBg)))
@@ -455,8 +455,6 @@ void HexViewer(std::span<byte const> data, HexViewerOptions& options)
 
     for (uint32 i = 1; i < cols / 4; ++i)
         I::GetWindowDrawList()->AddLine(tableCursor + ImVec2(offsetColumnWidth + BYTE_SIZE.x * i * 4, 0), tableCursor + ImVec2(offsetColumnWidth + BYTE_SIZE.x * i * 4, tableSize.y), 0x10FFFFFF);
-
-    I::PopFont();
 }
 
 }

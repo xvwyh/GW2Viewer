@@ -560,7 +560,7 @@ struct PackFileViewer : FileViewer
     void DrawOutline() override
     {
         g_writeTokensTargets = nullptr;
-        if (static ImGuiID sharedScope = 3; scoped::Child(sharedScope, { }, ImGuiChildFlags_Border | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+        if (static ImGuiID sharedScope = 3; scoped::Child(sharedScope, { }, ImGuiChildFlags_Borders | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
         {
             if (scoped::TabBar("Tabs", ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_NoTabListScrollingButtons))
             {

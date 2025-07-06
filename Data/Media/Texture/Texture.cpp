@@ -8,8 +8,8 @@ namespace GW2Viewer::Data::Media::Texture
 
 Texture::~Texture()
 {
-    if (Handle)
-        ((ID3D11ShaderResourceView*)Handle)->Release();
+    if (Handle.GetTexID())
+        ((ID3D11ShaderResourceView*)Handle.GetTexID())->Release();
 }
 
 }

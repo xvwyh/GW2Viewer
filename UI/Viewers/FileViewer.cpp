@@ -39,7 +39,7 @@ void FileViewer::Draw()
     bool drawHex = false;
     bool drawOutline = false;
     bool drawPreview = false;
-    if (scoped::Child(I::GetSharedScopeID("FileViewer"), { }, ImGuiChildFlags_Border | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+    if (scoped::Child(I::GetSharedScopeID("FileViewer"), { }, ImGuiChildFlags_Borders | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
     {
         DrawHistoryButtons();
 

@@ -1,3 +1,6 @@
+module;
+#include "UI/ImGui/ImGui.h"
+
 export module GW2Viewer.Data.Media.Texture;
 import GW2Viewer.Common;
 import std;
@@ -7,7 +10,7 @@ export namespace GW2Viewer::Data::Media::Texture
 
 struct Texture
 {
-    Texture(void* handle, uint32 width, uint32 height) : Handle(handle), Width(width), Height(height) { }
+    Texture(ImTextureRef handle, uint32 width, uint32 height) : Handle(handle), Width(width), Height(height) { }
     ~Texture();
 
     Texture(Texture const&) = delete;
@@ -15,7 +18,7 @@ struct Texture
     Texture& operator=(Texture const&) = delete;
     Texture& operator=(Texture&&) = delete;
 
-    void* const Handle;
+    ImTextureRef const Handle;
     uint32 const Width;
     uint32 const Height;
 };

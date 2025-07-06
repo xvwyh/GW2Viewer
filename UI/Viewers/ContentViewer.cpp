@@ -27,7 +27,7 @@ void ContentViewer::Draw()
     typeInfo.Initialize(*Content.Type);
 
     auto tabScopeID = I::GetCurrentWindow()->IDStack.back();
-    if (scoped::Child(I::GetSharedScopeID("ContentViewer"), { }, ImGuiChildFlags_Border | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
+    if (scoped::Child(I::GetSharedScopeID("ContentViewer"), { }, ImGuiChildFlags_Borders | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
     {
         DrawHistoryButtons();
 

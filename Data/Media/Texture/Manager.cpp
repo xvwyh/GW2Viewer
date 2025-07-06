@@ -137,7 +137,7 @@ std::unique_ptr<Texture> Manager::Create(uint32 width, uint32 height, void const
     if (device->CreateShaderResourceView(tex, &srvDesc, &ptr) != S_OK || !ptr)
         return nullptr;
 
-    return std::make_unique<Texture>(ptr, width, height);
+    return std::make_unique<Texture>((uintptr_t)ptr, width, height);
 }
 
 void Manager::Load(uint32 fileID, LoadTextureOptions const& options)
