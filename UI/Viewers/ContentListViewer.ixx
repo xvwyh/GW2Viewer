@@ -171,7 +171,7 @@ struct ContentListViewer : ListViewer<ContentListViewer>
             }
 
             context->SetIndeterminate();
-            while (!G::Game.Content.IsLoaded())
+            while (!G::Game.Content.AreObjectsLoaded())
             {
                 std::this_thread::sleep_for(50ms);
                 CHECK_ASYNC;
@@ -240,7 +240,8 @@ struct ContentListViewer : ListViewer<ContentListViewer>
             I::TableNextColumn();
             I::SetNextItemWidth(-FLT_MIN);
             std::vector<Data::Content::ContentTypeInfo const*> values(1, nullptr);
-            values.append_range(G::Game.Content.GetTypes() | std::views::transform([](auto const& ptr) { return ptr.get(); }));
+            if (G::Game.Content.AreTypesLoaded())
+                values.append_range(G::Game.Content.GetTypes() | std::views::transform([](auto const& ptr) { return ptr.get(); }));
             if (Controls::FilteredComboBox("##Type", FilterType, values,
             {
                 .MaxHeight = 500,
@@ -299,7 +300,7 @@ struct ContentListViewer : ListViewer<ContentListViewer>
 
             // Virtualizing tree
 
-            if (G::Game.Content.IsLoaded())
+            if (G::Game.Content.AreObjectsLoaded())
             {
                 I::GetCurrentWindow()->SkipItems = false; // Workaround for bug with Expand/Collapse buttons not working if the last column is hidden
                 if (auto* root = G::Game.Content.GetNamespaceRoot())

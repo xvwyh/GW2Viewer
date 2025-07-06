@@ -121,7 +121,7 @@ public:
             }
         }
 
-        m_loaded = true;
+        m_loadedObjects = true;
 
         progress.Start("Processing all references", m_references.size());
         for (auto const& [source, targets] : m_references)
@@ -131,10 +131,13 @@ public:
                 sourceObject->AddReference(*GetByDataPointer(target), ContentObject::Reference::Types::All);
             ++progress;
         }
+
+        m_loaded = true;
     }
     [[nodiscard]] bool IsLoaded() const { return m_loaded; }
     [[nodiscard]] auto GetFileIDs() const { return std::views::iota(m_firstContentFileID) | std::views::take(m_numContentFiles); }
 
+    [[nodiscard]] bool AreTypesLoaded() const { return m_loadedTypes; }
     [[nodiscard]] uint32 GetNumTypes() const { return m_typeInfos.size(); }
     [[nodiscard]] auto& GetTypes() const { return m_typeInfos; }
     [[nodiscard]] ContentTypeInfo* GetType(uint32 index) const { return m_typeInfos.at(index).get(); }
@@ -147,10 +150,12 @@ public:
         return nullptr;
     }
 
+    [[nodiscard]] bool AreNamespacesLoaded() const { return m_loadedNamespaces; }
     [[nodiscard]] auto& GetNamespaces() const { return m_namespaces; }
     [[nodiscard]] ContentNamespace* GetNamespaceRoot() const { return m_root; }
     [[nodiscard]] ContentNamespace* GetNamespace(uint32 index) const { return m_namespaces.at(index); }
 
+    [[nodiscard]] bool AreObjectsLoaded() const { return m_loadedObjects; }
     [[nodiscard]] auto& GetObjects() const { return m_objects; }
     [[nodiscard]] auto& GetRootedObjects() const { return m_rootedObjects; }
     [[nodiscard]] auto& GetUnrootedObjects() const { return m_unrootedObjects; }
@@ -180,11 +185,14 @@ private:
     uint32 m_firstContentFileID = 1282830;
     uint32 m_numContentFiles = 32;
 
+    bool m_loadedTypes = false;
     std::vector<std::unique_ptr<ContentTypeInfo>> m_typeInfos;
 
+    bool m_loadedNamespaces = false;
     ContentNamespace* m_root = nullptr;
     std::vector<ContentNamespace*> m_namespaces;
 
+    bool m_loadedObjects = false;
     std::vector<ContentObject*> m_objects;
     std::vector<ContentObject*> m_rootedObjects;
     std::vector<ContentObject*> m_unrootedObjects;
@@ -356,6 +364,8 @@ private:
                             #endif
                         });
                     }
+
+                    m_loadedTypes = true;
                 }
 
                 // Read namespaces (root content file only)
@@ -409,6 +419,8 @@ private:
                             m_root = current;
                         }
                     }
+
+                    m_loadedNamespaces = true;
                 }
 
                 // Read entries
