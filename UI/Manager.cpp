@@ -4,23 +4,11 @@
 #include "dep/fmod/fmod.hpp"
 
 module GW2Viewer.UI.Manager;
-import GW2Viewer.Common.FourCC;
-import GW2Viewer.Common.GUID;
-import GW2Viewer.Common.Hash;
-import GW2Viewer.Common.Token32;
-import GW2Viewer.Common.Token64;
 import GW2Viewer.Content;
-import GW2Viewer.Content.Conversation;
-import GW2Viewer.Content.Event;
-import GW2Viewer.Data.Content;
-import GW2Viewer.Data.Content.Mangling;
-import GW2Viewer.Data.Encryption;
 import GW2Viewer.Data.Encryption.Asset;
 import GW2Viewer.Data.Encryption.RC4;
 import GW2Viewer.Data.External.Database;
 import GW2Viewer.Data.Game;
-import GW2Viewer.Data.Pack;
-import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Viewers.ContentListViewer;
 import GW2Viewer.UI.Viewers.ConversationListViewer;
 import GW2Viewer.UI.Viewers.EventListViewer;
@@ -36,19 +24,10 @@ import GW2Viewer.UI.Windows.Parse;
 import GW2Viewer.UI.Windows.Settings;
 import GW2Viewer.UI.Windows.Window;
 import GW2Viewer.User.Config;
-import GW2Viewer.Utils.Async;
 import GW2Viewer.Utils.Base64;
-import GW2Viewer.Utils.ConstString;
-import GW2Viewer.Utils.Encoding;
-import GW2Viewer.Utils.Exception;
-import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Scan;
-import GW2Viewer.Utils.String;
-import GW2Viewer.Utils.Visitor;
 import std;
 import magic_enum;
-import <experimental/generator>;
-import <gsl/gsl>;
 
 using namespace std::chrono_literals;
 

@@ -38,16 +38,6 @@ struct ListViewerBase : Viewer
 {
     using Viewer::Viewer;
 
-    struct CompareResult
-    {
-        CompareResult(std::strong_ordering result) : m_result(result) { }
-        operator bool() const { return m_result != std::strong_ordering::equal; }
-        operator std::strong_ordering() const { return m_result; }
-    private:
-        std::strong_ordering m_result;
-    };
-    static constexpr CompareResult Compare(auto&& a, auto&& b) { return a <=> b; }
-
     template<typename Range, typename Index = typename Range::value_type, typename Transform, typename ComplexIndex = decltype(Transform{}(Index{})), typename Comparison = bool(Index, Index, ComplexIndex const&, ComplexIndex const&)>
     static constexpr void ComplexSort(Range& data, bool invert, Transform const& transform, Comparison const& function = defaultComplexSortComparison)
     {

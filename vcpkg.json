@@ -2,8 +2,8 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
   "dependencies": [
     "boost-multiprecision",
-    "boost-thread",
     "boost-serialization",
+    "boost-thread",
     "cpp-base64",
     "concurrentqueue",
     "directxtex",
