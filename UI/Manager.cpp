@@ -186,6 +186,13 @@ void Manager::Load()
         viewer->SetSelected = dynamic_cast<Viewers::StringListViewer*>(viewer.get());
 }
 
+void Manager::Unload()
+{
+    m_currentViewer = nullptr;
+    m_viewers.clear();
+    m_listViewers.clear();
+}
+
 void Manager::Update()
 {
     m_now = std::chrono::high_resolution_clock::now();

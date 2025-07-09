@@ -26,6 +26,7 @@ public:
     } Fonts;
 
     void Load();
+    void Unload();
 
     void Update();
 

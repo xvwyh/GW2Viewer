@@ -157,6 +157,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
             Sleep(100);
     }
 
+    G::UI.Unload();
     G::Config.Save();
 
     G::Game.Texture.StopLoading();

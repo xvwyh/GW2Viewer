@@ -70,7 +70,7 @@ void ContentViewer::Draw()
                 if (scoped::Group())
                 {
                     if (I::InputTextUTF8("Content Name", G::Config.ContentObjectNames, *Content.GetGUID(), Content.GetName() && Content.GetName()->Name && *Content.GetName()->Name ? *Content.GetName()->Name : Content.GetDisplayName()))
-                        std::ranges::for_each(G::Viewers::ListViewers<ContentListViewer>, &ContentListViewer::ClearCache);
+                        G::Viewers::Notify(&ContentListViewer::ClearCache);
                     I::InputTextUTF8("Namespace Name", G::Config.ContentNamespaceNames, Content.Namespace->GetFullName(), Content.Namespace->Name);
                     I::InputTextWithHint("Type Name", Utils::Encoding::ToUTF8(Content.Type->GetDisplayName()).c_str(), &typeInfo.Name);
                 }
