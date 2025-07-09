@@ -9,6 +9,7 @@ import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Viewers.ConversationViewer;
 import GW2Viewer.UI.Viewers.ListViewer;
+import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.Utils.Async;
 import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Scan;
@@ -17,9 +18,9 @@ import std;
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct ConversationListViewer : ListViewer<ConversationListViewer>
+struct ConversationListViewer : ListViewer<ConversationListViewer, { ICON_FA_COMMENT_CHECK " Conversations", "Conversations", Category::ListViewer }>
 {
-    ConversationListViewer(uint32 id, bool newTab) : ListViewer(id, newTab) { }
+    ConversationListViewer(uint32 id, bool newTab) : Base(id, newTab) { }
 
     std::shared_mutex Lock;
     std::vector<uint32> FilteredList;
@@ -131,7 +132,6 @@ struct ConversationListViewer : ListViewer<ConversationListViewer>
         });
     }
 
-    std::string Title() override { return ICON_FA_COMMENT_CHECK " Conversations"; }
     void Draw() override
     {
         I::SetNextItemWidth(-(I::GetStyle().ItemSpacing.x + 60));

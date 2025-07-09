@@ -11,6 +11,7 @@ import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Viewers.ContentViewer;
 import GW2Viewer.UI.Viewers.ListViewer;
+import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.UI.Windows.ContentSearch;
 import GW2Viewer.UI.Windows.Demangle;
 import GW2Viewer.User.Config;
@@ -26,9 +27,9 @@ using namespace std::chrono_literals;
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct ContentListViewer : ListViewer<ContentListViewer>
+struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE " Content", "Content", Category::ListViewer }>
 {
-    ContentListViewer(uint32 id, bool newTab) : ListViewer(id, newTab) { }
+    ContentListViewer(uint32 id, bool newTab) : Base(id, newTab) { }
 
     std::shared_mutex Lock;
     Data::Content::ContentFilter ContentFilter;
@@ -220,7 +221,6 @@ struct ContentListViewer : ListViewer<ContentListViewer>
         });
     }
 
-    std::string Title() override { return ICON_FA_FOLDER_TREE " Content"; }
     void Draw() override
     {
         ProcessContext context;

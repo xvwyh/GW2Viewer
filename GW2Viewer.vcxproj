@@ -168,6 +168,7 @@
     <ClCompile Include="UI\ImGui\ImGuiExtensions.cpp" />
     <ClCompile Include="UI\Manager.cpp" />
     <ClCompile Include="UI\Manager.ixx" />
+    <ClCompile Include="UI\Viewers\BookmarkListViewer.ixx" />
     <ClCompile Include="UI\Viewers\ContentListViewer.ixx" />
     <ClCompile Include="UI\Viewers\ContentViewer.cpp" />
     <ClCompile Include="UI\Viewers\ContentViewer.ixx" />
@@ -186,6 +187,7 @@
     <ClCompile Include="UI\Viewers\PackFileViewer.ixx" />
     <ClCompile Include="UI\Viewers\StringListViewer.ixx" />
     <ClCompile Include="UI\Viewers\Viewer.ixx" />
+    <ClCompile Include="UI\Viewers\ViewerRegistry.ixx" />
     <ClCompile Include="UI\Viewers\ViewerWithHistory.ixx" />
     <ClCompile Include="UI\Windows\ContentSearch.ixx" />
     <ClCompile Include="UI\Windows\Demangle.ixx" />

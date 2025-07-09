@@ -9,6 +9,7 @@ import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Viewers.ListViewer;
+import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.UI.Windows.ContentSearch;
 import GW2Viewer.Utils.Async;
 import GW2Viewer.Utils.Encoding;
@@ -23,7 +24,7 @@ using namespace std::chrono_literals;
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct StringListViewer : ListViewer<StringListViewer>
+struct StringListViewer : ListViewer<StringListViewer, { ICON_FA_TEXT " Strings", "Strings", Category::ListViewer }>
 {
     StringListViewer(uint32 id, bool newTab) : ListViewer(id, newTab) { }
 
@@ -179,7 +180,6 @@ struct StringListViewer : ListViewer<StringListViewer>
     }
     auto UpdateFilter() { UpdateSearch(); }
 
-    std::string Title() override { return ICON_FA_TEXT " Strings"; }
     void Draw() override
     {
         I::SetNextItemWidth(-(I::GetStyle().ItemSpacing.x + I::GetFrameHeight() + I::GetFrameHeight() + I::GetStyle().ItemSpacing.x + 60));

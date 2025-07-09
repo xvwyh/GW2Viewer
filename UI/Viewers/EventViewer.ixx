@@ -1,14 +1,18 @@
-﻿export module GW2Viewer.UI.Viewers.EventViewer;
+module;
+#include "UI/ImGui/ImGui.h"
+
+export module GW2Viewer.UI.Viewers.EventViewer;
 import GW2Viewer.Common;
 import GW2Viewer.Content.Event;
 import GW2Viewer.Data.Content;
+import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.UI.Viewers.ViewerWithHistory;
 import std;
 
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct EventViewer : ViewerWithHistory<EventViewer, Content::EventID>
+struct EventViewer : ViewerWithHistory<EventViewer, Content::EventID, { ICON_FA_SEAL " Event", "Event", Category::ObjectViewer }>
 {
     TargetType EventID;
 

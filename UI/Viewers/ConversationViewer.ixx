@@ -1,12 +1,16 @@
+module;
+#include "UI/ImGui/ImGui.h"
+
 export module GW2Viewer.UI.Viewers.ConversationViewer;
 import GW2Viewer.Common;
+import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.UI.Viewers.ViewerWithHistory;
 import std;
 
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct ConversationViewer : ViewerWithHistory<ConversationViewer, uint32>
+struct ConversationViewer : ViewerWithHistory<ConversationViewer, uint32, { ICON_FA_COMMENT_CHECK " Conversation", "Conversation", Category::ObjectViewer }>
 {
     TargetType ConversationID;
 
@@ -20,7 +24,7 @@ struct ConversationViewer : ViewerWithHistory<ConversationViewer, uint32>
 
     std::string Title() override
     {
-        return std::format("<c=#4>Conversation #</c>{}", ConversationID);
+        return std::format("<c=#4>{} #</c>{}", Base::Title(), ConversationID);
     }
     void Draw() override;
 };

@@ -26,7 +26,7 @@ void EventViewer::Cache::Data::StoreHeight()
 std::string EventViewer::Title()
 {
     std::shared_lock _(Content::eventsLock);
-    return std::format("<c=#4>Event </c>{}", Utils::Encoding::ToUTF8(Content::events.at(EventID).Title()));
+    return std::format("<c=#4>{} </c>{}", Base::Title(), Utils::Encoding::ToUTF8(Content::events.at(EventID).Title()));
 }
 
 void EventViewer::Draw()

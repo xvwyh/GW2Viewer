@@ -1,14 +1,18 @@
+module;
+#include "UI/ImGui/ImGui.h"
+
 export module GW2Viewer.UI.Viewers.FileViewer;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Archive;
 import GW2Viewer.UI.Viewers.Viewer;
+import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.UI.Viewers.ViewerWithHistory;
 import std;
 
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct FileViewer : ViewerWithHistory<FileViewer, Data::Archive::File>
+struct FileViewer : ViewerWithHistory<FileViewer, Data::Archive::File, { ICON_FA_FILE " File", "File", Category::ObjectViewer }>
 {
     static bool Is(Viewer const* viewer, Data::Archive::File const& file)
     {
@@ -27,15 +31,13 @@ struct FileViewer : ViewerWithHistory<FileViewer, Data::Archive::File>
 
     virtual void Initialize() { }
 
-    virtual std::string Title();
-    virtual void Draw();
+    std::string Title() override;
+    void Draw() override;
     virtual void DrawOutline() { }
     virtual void DrawPreview();
 
-protected:
     static std::unique_ptr<ViewerType> Create(HistoryType target, OpenViewerOptions const& options);
     static void Recreate(ViewerType*& viewer, HistoryType target, OpenViewerOptions const& options);
-    friend Base;
 };
 
 }

@@ -1,6 +1,7 @@
 export module GW2Viewer.UI.Viewers.ListViewer;
 import GW2Viewer.Common;
 import GW2Viewer.UI.Viewers.Viewer;
+import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.Utils.Scan;
 import std;
 
@@ -56,17 +57,21 @@ struct ListViewerBase : Viewer
     }
 };
 
-template<typename T>
-struct ListViewer : ListViewerBase
+template<typename Self, ViewerRegistry::Info Info>
+struct ListViewer : ListViewerBase, RegisterViewer<Self, Info>
 {
+    using Base = ListViewer;
+
     ListViewer(uint32 id, bool newTab) : ListViewerBase(id, newTab)
     {
-        G::Viewers::ListViewers<T>.emplace_back((T*)this);
+        G::Viewers::ListViewers<Self>.emplace_back((Self*)this);
     }
     ~ListViewer() override
     {
-        G::Viewers::ListViewers<T>.remove((T*)this);
+        G::Viewers::ListViewers<Self>.remove((Self*)this);
     }
+
+    std::string Title() override { return this->ViewerInfo.Title; }
 };
 
 }

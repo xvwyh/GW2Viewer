@@ -9,6 +9,7 @@ import GW2Viewer.Data.Pack;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Viewers.FileViewer;
 import GW2Viewer.UI.Viewers.ListViewer;
+import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.UI.Windows.ContentSearch;
 import GW2Viewer.Utils.Scan;
 import std;
@@ -16,9 +17,9 @@ import std;
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct FileListViewer : ListViewer<FileListViewer>
+struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Files", Category::ListViewer }>
 {
-    FileListViewer(uint32 id, bool newTab) : ListViewer(id, newTab) { }
+    FileListViewer(uint32 id, bool newTab) : Base(id, newTab) { }
 
     std::vector<Data::Archive::File> FilteredList;
     std::span<Data::Archive::File> SearchedList;
@@ -51,7 +52,6 @@ struct FileListViewer : ListViewer<FileListViewer>
         UpdateSearch();
     }
 
-    std::string Title() override { return ICON_FA_FILE " Files"; }
     void Draw() override
     {
         I::SetNextItemWidth(-60);

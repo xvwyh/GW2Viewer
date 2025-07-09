@@ -28,6 +28,7 @@ import GW2Viewer.UI.Viewers.FileListViewer;
 import GW2Viewer.UI.Viewers.ListViewer;
 import GW2Viewer.UI.Viewers.MapLayoutViewer;
 import GW2Viewer.UI.Viewers.StringListViewer;
+import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.UI.Windows.Demangle;
 import GW2Viewer.UI.Windows.MigrateContentTypes;
 import GW2Viewer.UI.Windows.Notes;
@@ -131,10 +132,11 @@ void Manager::Load()
     colors[ImGuiCol_Tab] = ImVec4(0.00f, 0.00f, 0.00f, 0.52f);
     colors[ImGuiCol_TabHovered] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
     colors[ImGuiCol_TabSelected] = ImVec4(0.20f, 0.20f, 0.20f, 0.36f);
+    colors[ImGuiCol_TabSelectedOverline] = ImVec4(1.00f, 1.00f, 1.00f, 0.25f);
     colors[ImGuiCol_TabDimmed] = ImVec4(0.00f, 0.00f, 0.00f, 0.52f);
     colors[ImGuiCol_TabDimmedSelected] = ImVec4(0.14f, 0.14f, 0.14f, 1.00f);
-    //colors[ImGuiCol_DockingPreview] = ImVec4(0.33f, 0.67f, 0.86f, 1.00f);
-    //colors[ImGuiCol_DockingEmptyBg] = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
+    colors[ImGuiCol_DockingPreview] = ImVec4(1.00f, 1.00f, 1.00f, 0.10f);
+    colors[ImGuiCol_DockingEmptyBg] = ImVec4(0.00f, 0.00f, 0.00f, 1.00f);
     colors[ImGuiCol_PlotLines] = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
     colors[ImGuiCol_PlotLinesHovered] = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
     colors[ImGuiCol_PlotHistogram] = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
@@ -147,9 +149,9 @@ void Manager::Load()
     colors[ImGuiCol_TextSelectedBg] = ImVec4(0.20f, 0.22f, 0.23f, 1.00f);
     colors[ImGuiCol_DragDropTarget] = ImVec4(0.33f, 0.67f, 0.86f, 1.00f);
     colors[ImGuiCol_NavCursor] = ImVec4(1.00f, 0.00f, 0.00f, 1.00f);
-    colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 0.00f, 0.00f, 0.70f);
-    colors[ImGuiCol_NavWindowingDimBg] = ImVec4(1.00f, 0.00f, 0.00f, 0.20f);
-    colors[ImGuiCol_ModalWindowDimBg] = ImVec4(1.00f, 0.00f, 0.00f, 0.35f);
+    colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.50f);
+    colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.75f);
+    colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.75f);
 
     colors[ImGuiCol_PlotHistogram] = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
 
@@ -177,11 +179,8 @@ void Manager::Load()
     style.LogSliderDeadzone = 4;
     style.TabRounding = 4;
 
-    m_listViewers.emplace_back(std::make_unique<Viewers::FileListViewer>(m_nextViewerID++, false));
-    m_listViewers.emplace_back(std::make_unique<Viewers::StringListViewer>(m_nextViewerID++, false));
-    m_listViewers.emplace_back(std::make_unique<Viewers::ContentListViewer>(m_nextViewerID++, false));
-    m_listViewers.emplace_back(std::make_unique<Viewers::ConversationListViewer>(m_nextViewerID++, false));
-    m_listViewers.emplace_back(std::make_unique<Viewers::EventListViewer>(m_nextViewerID++, false));
+    for (auto const name : { "Files", "Strings", "Content", "Conversations", "Events", "Bookmarks" })
+        m_listViewers.emplace_back(Viewers::ViewerRegistry::GetByName(name)->Constructor(m_nextViewerID++, false));
 
     for (auto const& viewer : m_listViewers)
         viewer->SetSelected = dynamic_cast<Viewers::StringListViewer*>(viewer.get());
@@ -202,7 +201,7 @@ void Manager::Update()
 
     static bool needInitialSettings = G::Config.GameExePath.empty() || G::Config.GameDatPath.empty();
 
-    ImGuiID dockspace = I::DockSpaceOverViewport();
+    ImGuiID dockspace = I::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_NoCloseButton);
     static ImGuiWindowClass windowClassViewer;
     static ImGuiID left, center;
     static bool dockSpaceInited = [dockspace]
@@ -233,6 +232,26 @@ void Manager::Update()
                 G::Config.Load();
             if (I::MenuItem("Save"))
                 G::Config.Save();
+        }
+        if (scoped::Menu("Viewers"))
+        {
+            using Viewer = Viewers::ViewerRegistry::RegisteredViewer;
+            static auto viewers = []
+            {
+                std::vector<std::reference_wrapper<Viewer const>> viewers { std::from_range, Viewers::ViewerRegistry::GetRegistry() | std::views::filter(&Viewer::Constructor) };
+                std::ranges::sort(viewers, [](Viewer const& a, Viewer const& b) { return std::string_view(a.Info.Name) < b.Info.Name; });
+                return viewers;
+            }();
+            for (Viewer const& viewer : viewers)
+            {
+                if (I::MenuItem(std::format("<c=#8>New</c> {} <c=#8>Viewer</c>", viewer.Info.Title).c_str()))
+                {
+                    if (viewer.Info.Category == Viewers::Category::ListViewer)
+                        m_listViewers.emplace_back(viewer.Constructor(m_nextViewerID++, false));
+                    else
+                        AddViewer(viewer.Constructor(m_nextViewerID++, false));
+                }
+            }
         }
         if (scoped::Menu("View"))
         {
@@ -270,8 +289,6 @@ void Manager::Update()
         }
         if (scoped::Menu("Tools"))
         {
-            if (I::MenuItem(ICON_FA_GLOBE " World Map"))
-                OpenWorldMap();
             if (I::MenuItem("Export Content Files"))
                 for (auto const fileID : G::Game.Content.GetFileIDs())
                     if (auto data = G::Game.Archive.GetFile(fileID); !data.empty())
@@ -303,7 +320,7 @@ void Manager::Update()
         }
     }
 
-    auto drawViewers = [this](std::list<std::unique_ptr<Viewers::Viewer>>& viewers, ImGuiID defaultDock, bool canClose)
+    auto drawViewers = [this](std::list<std::unique_ptr<Viewers::Viewer>>& viewers, ImGuiID defaultDock)
     {
         std::unique_ptr<Viewers::Viewer> const* toRemove = nullptr;
         ImGuiWindow* focusWindow = nullptr;
@@ -318,7 +335,7 @@ void Manager::Update()
             }
             I::SetNextWindowDockID(dock, ImGuiCond_Once);
             I::SetNextWindowClass(&windowClassViewer);
-            if (scoped::Window(std::format("{}###Viewer-{}", viewer->Title(), viewer->ID).c_str(), canClose ? &open : nullptr, ImGuiWindowFlags_NoFocusOnAppearing))
+            if (scoped::Window(std::format("{}###Viewer-{}", viewer->Title(), viewer->ID).c_str(), &open, ImGuiWindowFlags_NoFocusOnAppearing))
             {
                 viewer->ImGuiWindow = I::GetCurrentWindow();
                 if (viewer->SetAfterCurrent && I::GetWindowDockNode())
@@ -358,8 +375,8 @@ void Manager::Update()
                 I::FocusWindow(old);
         }
     };
-    drawViewers(m_listViewers, left, false /*TODO: true*/);
-    drawViewers(m_viewers, center, true);
+    drawViewers(m_listViewers, left);
+    drawViewers(m_viewers, center);
 
     G::Game.Texture.UploadToGPU();
     static bool firstTime = [&]

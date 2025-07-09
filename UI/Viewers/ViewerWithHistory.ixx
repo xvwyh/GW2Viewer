@@ -5,6 +5,7 @@ export module GW2Viewer.UI.Viewers.ViewerWithHistory;
 import GW2Viewer.Common;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Viewers.Viewer;
+import GW2Viewer.UI.Viewers.ViewerRegistry;
 import std;
 
 template<typename T> struct ViewerHistoryType { using Type = T; };
@@ -13,8 +14,8 @@ template<typename T> requires std::is_reference_v<T> struct ViewerHistoryType<T>
 export namespace GW2Viewer::UI::Viewers
 {
 
-template<typename Self, typename Target>
-struct ViewerWithHistory : Viewer
+template<typename Self, typename Target, ViewerRegistry::Info Info>
+struct ViewerWithHistory : Viewer, RegisterViewer<Self, Info>
 {
     using Base = ViewerWithHistory;
     using ViewerType = Self;
@@ -25,6 +26,8 @@ struct ViewerWithHistory : Viewer
     std::stack<HistoryType> HistoryNext;
 
     using Viewer::Viewer;
+
+    std::string Title() override { return this->ViewerInfo.Title; }
 
     virtual TargetType GetCurrent() const = 0;
     virtual bool IsCurrent(TargetType target) const = 0;

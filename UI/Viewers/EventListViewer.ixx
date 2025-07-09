@@ -9,6 +9,7 @@ import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Viewers.EventViewer;
 import GW2Viewer.UI.Viewers.ListViewer;
+import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.Utils.Async;
 import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Scan;
@@ -16,9 +17,9 @@ import GW2Viewer.Utils.Scan;
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct EventListViewer : ListViewer<EventListViewer>
+struct EventListViewer : ListViewer<EventListViewer, { ICON_FA_SEAL " Events", "Events", Category::ListViewer }>
 {
-    EventListViewer(uint32 id, bool newTab) : ListViewer(id, newTab) { }
+    EventListViewer(uint32 id, bool newTab) : Base(id, newTab) { }
 
     std::shared_mutex Lock;
     std::vector<Content::EventID> FilteredList;
@@ -164,7 +165,6 @@ struct EventListViewer : ListViewer<EventListViewer>
     }
     void UpdateFilter() { UpdateSearch(); }
 
-    std::string Title() override { return ICON_FA_SEAL " Events"; }
     void Draw() override
     {
         I::SetNextItemWidth(-(I::GetStyle().ItemSpacing.x + 60));

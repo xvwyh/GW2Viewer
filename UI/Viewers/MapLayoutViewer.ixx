@@ -6,11 +6,12 @@ import GW2Viewer.Common.GUID;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Viewers.Viewer;
+import GW2Viewer.UI.Viewers.ViewerRegistry;
 
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct MapLayoutViewer : Viewer
+struct MapLayoutViewer : Viewer, RegisterViewer<MapLayoutViewer, { ICON_FA_GLOBE " World Map", "World Map", Category::Uncategorized }>
 {
     Controls::MapLayout MapLayout;
 
@@ -21,7 +22,7 @@ struct MapLayoutViewer : Viewer
         MapLayout.Initialize();
     }
 
-    std::string Title() override { return ICON_FA_GLOBE " World Map"; }
+    std::string Title() override { return ViewerInfo.Title; }
     void Draw() override
     {
         MapLayout.Draw();

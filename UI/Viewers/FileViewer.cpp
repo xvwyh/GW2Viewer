@@ -28,8 +28,8 @@ void FileViewer::Open(TargetType target, OpenViewerOptions const& options)
 std::string FileViewer::Title()
 {
     if (&File.Source.get().Archive != G::Game.Archive.GetArchive())
-        return std::format("<c=#4>File #</c>{}<c=#4> ({})</c>", File.ID, File.Source.get().Path.filename().string());
-    return std::format("<c=#4>File #</c>{}", File.ID);
+        return std::format("<c=#4>{} #</c>{}<c=#4> ({})</c>", Base::Title(), File.ID, File.Source.get().Path.filename().string());
+    return std::format("<c=#4>{} #</c>{}", Base::Title(), File.ID);
 }
 
 void FileViewer::Draw()
