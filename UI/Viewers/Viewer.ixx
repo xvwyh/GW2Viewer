@@ -18,6 +18,7 @@ struct OpenViewerOptions
 struct Viewer
 {
     uint32 const ID;
+    ImGuiWindow* ImGuiWindow = nullptr;
     bool SetSelected = false;
     bool SetAfterCurrent = false;
 

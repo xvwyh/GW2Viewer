@@ -62,6 +62,7 @@ void Manager::Load()
     io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     io.ConfigErrorRecoveryEnableAssert = false;
     //io.ConfigWindowsMoveFromTitleBarOnly = true;
+    io.ConfigDockingTransparentPayload = true;
 
     io.Fonts->AddFontDefault();
     auto loadFont = [&](const char* filename, float size)
@@ -201,6 +202,17 @@ void Manager::Update()
 
     static bool needInitialSettings = G::Config.GameExePath.empty() || G::Config.GameDatPath.empty();
 
+    ImGuiID dockspace = I::DockSpaceOverViewport();
+    static ImGuiWindowClass windowClassViewer;
+    static ImGuiID left, center;
+    static bool dockSpaceInited = [dockspace]
+    {
+        windowClassViewer.DockingAlwaysTabBar = true;
+
+        I::DockBuilderSplitNode(dockspace, ImGuiDir_Left, 0.4f, &left, &center);
+        return true;
+    }();
+
     if (G::Config.ShowImGuiDemo)
     {
         I::SetNextWindowPos(ImVec2(500, 0), ImGuiCond_FirstUseEver);
@@ -213,184 +225,141 @@ void Manager::Update()
     else if (needInitialSettings)
         return G::Windows::Settings.Show();
 
-    if (G::Config.MainWindowFullScreen)
+    if (scoped::MainMenuBar())
     {
-        I::SetNextWindowPos(I::GetMainViewport()->WorkPos);
-        I::SetNextWindowSize(I::GetMainViewport()->WorkSize);
-    }
-    if (scoped::Window("GW2Browser", nullptr, ImGuiWindowFlags_MenuBar | (G::Config.MainWindowFullScreen ? ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove : 0)))
-    {
-        if (scoped::MenuBar())
+        if (scoped::Menu("Config"))
         {
-            if (scoped::Menu("Config"))
-            {
-                if (I::MenuItem("Load"))
-                    G::Config.Load();
-                if (I::MenuItem("Save"))
-                    G::Config.Save();
-            }
-            if (scoped::Menu("View"))
-            {
-                I::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
-                if (I::MenuItem("Show Original Names", nullptr, &G::Config.ShowOriginalNames))
-                    G::Viewers::Notify(&Viewers::ContentListViewer::ClearCache);
-                I::MenuItem("Show <c=#CCF>Valid Raw Pointers</c>", nullptr, &G::Config.ShowValidRawPointers);
-                I::MenuItem("Show Content Symbol <c=#8>Name</c> Before <c=#4>Type</c>", nullptr, &G::Config.ShowContentSymbolNameBeforeType);
-                I::MenuItem("Display Content Layout As  " ICON_FA_FOLDER_TREE " Tree", nullptr, &G::Config.TreeContentStructLayout);
-                I::MenuItem("Full Screen Window", nullptr, &G::Config.MainWindowFullScreen);
-                I::MenuItem("Open ImGui Demo Window", nullptr, &G::Config.ShowImGuiDemo);
-                I::MenuItem("Open Parse Window", nullptr, &G::Windows::Parse.GetShown());
-                I::MenuItem("Open Demangle Window", nullptr, &G::Windows::Demangle.GetShown());
-                I::MenuItem("Open Notes Window", nullptr, &G::Windows::Notes.GetShown());
-                I::MenuItem("Open Settings Window", nullptr, &G::Windows::Settings.GetShown());
-                I::PopItemFlag();
-            }
-            if (scoped::Menu("Language"))
-            {
-                I::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
-                for (auto const lang : magic_enum::enum_values<Language>())
-                {
-                    if (I::MenuItem(magic_enum::enum_name(lang).data(), nullptr, G::Config.Language == lang))
-                    {
-                        G::Config.Language = lang;
-                        if (!G::Game.Text.IsLoaded(lang))
-                        {
-                            m_progress[3].Run([lang](Utils::Async::ProgressBarContext& progress)
-                            {
-                                G::Game.Text.LoadLanguage(lang, *G::Game.Archive.GetSource(), progress);
-                            });
-                        }
-                    }
-                }
-                I::PopItemFlag();
-            }
-            if (scoped::Menu("Tools"))
-            {
-                if (I::MenuItem("Export Content Files"))
-                    for (auto const fileID : G::Game.Content.GetFileIDs())
-                        if (auto data = G::Game.Archive.GetFile(fileID); !data.empty())
-                            ExportData(data, std::format(R"(Export\Game Content\{}.cntc)", fileID));
-                I::MenuItem("Migrate Content Types", nullptr, &G::Windows::MigrateContentTypes.GetShown());
-            }
-            for (auto const& progress : m_progress)
-            {
-                if (auto lock = progress.Lock(); progress.IsRunning())
-                {
-                    if (progress.IsIndeterminate())
-                    {
-                        I::SetCursorPosY(I::GetCursorPosY() + 2);
-                        I::ProgressBar(-I::GetTime(), { 100, 16 });
-                        I::SameLine();
-                        I::TextUnformatted(progress.GetDescription().c_str());
-                    }
-                    else
-                    {
-                        auto [p, current, total] = progress.GetProgress();
-                        I::SetCursorPosY(I::GetCursorPosY() + 2);
-                        I::ProgressBar(p, { 100, 16 });
-                        I::SameLine();
-                        I::Text("%zu / %zu", current, total);
-                        I::SameLine();
-                        I::TextUnformatted(progress.GetDescription().c_str());
-                    }
-                }
-            }
+            if (I::MenuItem("Load"))
+                G::Config.Load();
+            if (I::MenuItem("Save"))
+                G::Config.Save();
         }
-        if (scoped::Child("SourcesPane", { 250, 0 }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Borders | ImGuiChildFlags_ResizeX))
+        if (scoped::Menu("View"))
         {
-            if (scoped::TabBar("Tabs", ImGuiTabBarFlags_FittingPolicyResizeDown | ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_Reorderable))
+            I::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
+            if (I::MenuItem("Show Original Names", nullptr, &G::Config.ShowOriginalNames))
+                G::Viewers::Notify(&Viewers::ContentListViewer::ClearCache);
+            I::MenuItem("Show <c=#CCF>Valid Raw Pointers</c>", nullptr, &G::Config.ShowValidRawPointers);
+            I::MenuItem("Show Content Symbol <c=#8>Name</c> Before <c=#4>Type</c>", nullptr, &G::Config.ShowContentSymbolNameBeforeType);
+            I::MenuItem("Display Content Layout As  " ICON_FA_FOLDER_TREE " Tree", nullptr, &G::Config.TreeContentStructLayout);
+            I::MenuItem("Open ImGui Demo Window", nullptr, &G::Config.ShowImGuiDemo);
+            I::MenuItem("Open Parse Window", nullptr, &G::Windows::Parse.GetShown());
+            I::MenuItem("Open Demangle Window", nullptr, &G::Windows::Demangle.GetShown());
+            I::MenuItem("Open Notes Window", nullptr, &G::Windows::Notes.GetShown());
+            I::MenuItem("Open Settings Window", nullptr, &G::Windows::Settings.GetShown());
+            I::PopItemFlag();
+        }
+        if (scoped::Menu("Language"))
+        {
+            I::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
+            for (auto const lang : magic_enum::enum_values<Language>())
             {
-                auto tabBar = I::GetCurrentTabBar();
-                int selectedTabOrder = -1;
-                std::unique_ptr<Viewers::Viewer> const* toRemove = nullptr;
-                for (auto& viewer : m_listViewers)
+                if (I::MenuItem(magic_enum::enum_name(lang).data(), nullptr, G::Config.Language == lang))
                 {
-                    bool open = true;
-                    if (scoped::TabItem(std::format("{}###Viewer-{}", viewer->Title(), viewer->ID).c_str(), nullptr/*TODO: &open*/, viewer->SetSelected ? ImGuiTabItemFlags_SetSelected : 0))
-                        viewer->Draw();
-                    if (auto tab = I::TabBarGetCurrentTab(tabBar))
+                    G::Config.Language = lang;
+                    if (!G::Game.Text.IsLoaded(lang))
                     {
-                        if (tab->ID == tabBar->SelectedTabId)
-                            selectedTabOrder = I::TabBarGetTabOrder(tabBar, tab);
-                        if (viewer->SetAfterCurrent)
-                            if (int offset = selectedTabOrder - I::TabBarGetTabOrder(tabBar, tab) + 1)
-                                I::TabBarQueueReorder(I::GetCurrentTabBar(), tab, offset);
-                    }
-                    viewer->SetSelected = false;
-                    viewer->SetAfterCurrent = false;
-                    if (!open)
-                        toRemove = &viewer;
-                }
-                if (toRemove)
-                    m_listViewers.erase(std::ranges::find(m_listViewers, *toRemove));
-
-                if (scoped::TabItem(ICON_FA_BOOKMARK " Bookmarks"))
-                {
-                    if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, { I::GetStyle().FramePadding.x, 0 }))
-                    if (scoped::Table("Table", 2, ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable))
-                    {
-                        I::TableSetupColumn("Bookmark", ImGuiTableColumnFlags_WidthStretch);
-                        I::TableSetupColumn("Time", ImGuiTableColumnFlags_WidthFixed);
-                        I::TableSetupScrollFreeze(0, 1);
-                        I::TableHeadersRow();
-
-                        for (auto const& bookmark : G::Config.BookmarkedContentObjects)
+                        m_progress[3].Run([lang](Utils::Async::ProgressBarContext& progress)
                         {
-                            I::TableNextRow();
-                            I::TableNextColumn(); Controls::ContentButton(G::Game.Content.GetByGUID(bookmark.Value), &bookmark, { .MissingContentName = "CONTENT OBJECT MISSING" });
-                            I::TableNextColumn(); I::TextUnformatted(Utils::Format::DurationShortColored("{} ago", std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - bookmark.Time)).c_str());
-                        }
-                    }
-                }
-                if (scoped::TabItem(ICON_FA_WRENCH " Tools"))
-                {
-                    if (scoped::WithStyleVar(ImGuiStyleVar_ButtonTextAlign, { 0, I::GetStyle().ButtonTextAlign.y }))
-                    {
-                        if (I::Button(ICON_FA_GLOBE " World Map", { -FLT_MIN, 0 }); auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
-                            OpenWorldMap(button & ImGuiButtonFlags_MouseButtonMiddle);
+                            G::Game.Text.LoadLanguage(lang, *G::Game.Archive.GetSource(), progress);
+                        });
                     }
                 }
             }
+            I::PopItemFlag();
         }
-        if (I::SameLine(); scoped::Child("ViewerPane", { }, ImGuiChildFlags_FrameStyle | ImGuiChildFlags_Borders))
+        if (scoped::Menu("Tools"))
         {
-            if (scoped::TabBar("Tabs", ImGuiTabBarFlags_TabListPopupButton/* | ImGuiTabBarFlags_AutoSelectNewTabs*/ | ImGuiTabBarFlags_FittingPolicyScroll | ImGuiTabBarFlags_Reorderable))
+            if (I::MenuItem(ICON_FA_GLOBE " World Map"))
+                OpenWorldMap();
+            if (I::MenuItem("Export Content Files"))
+                for (auto const fileID : G::Game.Content.GetFileIDs())
+                    if (auto data = G::Game.Archive.GetFile(fileID); !data.empty())
+                        ExportData(data, std::format(R"(Export\Game Content\{}.cntc)", fileID));
+            I::MenuItem("Migrate Content Types", nullptr, &G::Windows::MigrateContentTypes.GetShown());
+        }
+        for (auto const& progress : m_progress)
+        {
+            if (auto lock = progress.Lock(); progress.IsRunning())
             {
-                auto tabBar = I::GetCurrentTabBar();
-                int selectedTabOrder = -1;
-                std::unique_ptr<Viewers::Viewer> const* toRemove = nullptr;
-                for (auto& viewer : m_viewers)
+                if (progress.IsIndeterminate())
                 {
-                    bool open = true;
-                    if (scoped::TabItem(std::format("{}###Viewer-{}", viewer->Title(), viewer->ID).c_str(), &open, viewer->SetSelected ? ImGuiTabItemFlags_SetSelected : 0))
-                    {
-                        if (open)
-                            m_currentViewer = viewer.get();
-
-                        viewer->Draw();
-                    }
-                    if (auto tab = I::TabBarGetCurrentTab(tabBar))
-                    {
-                        if (tab->ID == tabBar->SelectedTabId)
-                            selectedTabOrder = I::TabBarGetTabOrder(tabBar, tab);
-                        if (viewer->SetAfterCurrent)
-                            if (int offset = selectedTabOrder - I::TabBarGetTabOrder(tabBar, tab) + 1)
-                                I::TabBarQueueReorder(I::GetCurrentTabBar(), tab, offset);
-                    }
-                    viewer->SetSelected = false;
-                    viewer->SetAfterCurrent = false;
-                    if (!open)
-                        toRemove = &viewer;
+                    I::SetCursorPosY(I::GetCursorPosY() + 2);
+                    I::ProgressBar(-I::GetTime(), { 100, 16 });
+                    I::SameLine();
+                    I::TextUnformatted(progress.GetDescription().c_str());
                 }
-                if (toRemove)
+                else
                 {
-                    if (m_currentViewer == toRemove->get())
-                        m_currentViewer = nullptr;
-                    m_viewers.erase(std::ranges::find(m_viewers, *toRemove));
+                    auto [p, current, total] = progress.GetProgress();
+                    I::SetCursorPosY(I::GetCursorPosY() + 2);
+                    I::ProgressBar(p, { 100, 16 });
+                    I::SameLine();
+                    I::Text("%zu / %zu", current, total);
+                    I::SameLine();
+                    I::TextUnformatted(progress.GetDescription().c_str());
                 }
             }
         }
     }
+
+    auto drawViewers = [this](std::list<std::unique_ptr<Viewers::Viewer>>& viewers, ImGuiID defaultDock, bool canClose)
+    {
+        std::unique_ptr<Viewers::Viewer> const* toRemove = nullptr;
+        ImGuiWindow* focusWindow = nullptr;
+        for (auto& viewer : viewers)
+        {
+            bool open = true;
+            ImGuiID dock = defaultDock;
+            if (defaultDock == center)
+            {
+                if (defaultDock == center && m_currentViewer && m_currentViewer->ImGuiWindow && m_currentViewer->ImGuiWindow->DockNode)
+                    dock = m_currentViewer->ImGuiWindow->DockNode->ID;
+            }
+            I::SetNextWindowDockID(dock, ImGuiCond_Once);
+            I::SetNextWindowClass(&windowClassViewer);
+            if (scoped::Window(std::format("{}###Viewer-{}", viewer->Title(), viewer->ID).c_str(), canClose ? &open : nullptr, ImGuiWindowFlags_NoFocusOnAppearing))
+            {
+                viewer->ImGuiWindow = I::GetCurrentWindow();
+                if (viewer->SetAfterCurrent && I::GetWindowDockNode())
+                    if (m_currentViewer && m_currentViewer->ImGuiWindow && m_currentViewer->ImGuiWindow->DockNode == I::GetWindowDockNode())
+                        if (auto tabBar = I::GetWindowDockNode()->TabBar)
+                            if (auto currentViewerTab = I::TabBarFindTabByID(tabBar, I::GetWindowDockNode()->SelectedTabId))
+                                if (auto viewerTab = I::TabBarFindTabByID(tabBar, viewer->ImGuiWindow->TabId))
+                                    if (int offset = I::TabBarGetTabOrder(tabBar, currentViewerTab) - I::TabBarGetTabOrder(tabBar, viewerTab) + 1)
+                                        I::TabBarQueueReorder(tabBar, viewerTab, offset);
+
+                if (open && defaultDock == center && (!m_currentViewer || I::IsWindowFocused()))
+                    m_currentViewer = viewer.get();
+
+                viewer->Draw();
+            }
+            if (!open)
+                toRemove = &viewer;
+            else if (viewer->SetSelected)
+                focusWindow = viewer->ImGuiWindow;
+
+            viewer->SetSelected = false;
+            viewer->SetAfterCurrent = false;
+
+        }
+        if (toRemove)
+        {
+            if (m_currentViewer == toRemove->get())
+                m_currentViewer = nullptr;
+
+            viewers.erase(std::ranges::find(viewers, *toRemove));
+        }
+        if (focusWindow)
+        {
+            auto old = I::GetCurrentContext()->NavWindow;
+            I::FocusWindow(focusWindow);
+            if (old)
+                I::FocusWindow(old);
+        }
+    };
+    drawViewers(m_listViewers, left, false /*TODO: true*/);
+    drawViewers(m_viewers, center, true);
 
     G::Game.Texture.UploadToGPU();
     static bool firstTime = [&]

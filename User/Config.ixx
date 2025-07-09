@@ -41,7 +41,6 @@ struct Config
     bool ShowValidRawPointers = false;
     bool ShowContentSymbolNameBeforeType = false;
     bool TreeContentStructLayout = false;
-    bool MainWindowFullScreen = true;
     std::string Notes;
     std::wstring BruteforceDictionary;
     std::set<Bookmark<GUID>> BookmarkedContentObjects;
@@ -65,7 +64,6 @@ struct Config
         , ShowValidRawPointers
         , ShowContentSymbolNameBeforeType
         , TreeContentStructLayout
-        , MainWindowFullScreen
         , Notes
         , BruteforceDictionary
         , BookmarkedContentObjects
