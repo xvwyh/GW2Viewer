@@ -67,7 +67,7 @@ struct ContentSearch : Window
         if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
         if (scoped::Child("Content", { }, 0, ImGuiWindowFlags_AlwaysVerticalScrollbar))
             for (auto const& object : Results)
-                Controls::ContentButton(object, &object);
+                Controls::ContentButton(object, object);
     }
 };
 

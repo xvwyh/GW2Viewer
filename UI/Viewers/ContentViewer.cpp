@@ -95,7 +95,7 @@ void ContentViewer::Draw()
                 if (scoped::Child("Scroll", { }, ImGuiChildFlags_AutoResizeY))
                 if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
                 for (auto const& [object, type] : Content.OutgoingReferences)
-                    UI::Controls::ContentButton(object, &object, { .Icon = type == Root ? ICON_FA_ARROW_TURN_DOWN_RIGHT : type == Tracked ? ICON_FA_CHEVRONS_RIGHT : ICON_FA_ARROW_RIGHT });
+                    Controls::ContentButton(object, object, { .Icon = type == Root ? ICON_FA_ARROW_TURN_DOWN_RIGHT : type == Tracked ? ICON_FA_CHEVRONS_RIGHT : ICON_FA_ARROW_RIGHT });
             }
             else if (!Content.OutgoingReferences.empty())
                 I::PopStyleColor();
@@ -112,10 +112,10 @@ void ContentViewer::Draw()
                 if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
                 for (auto const& [object, type] : Content.IncomingReferences)
                 {
-                    UI::Controls::ContentButton(object, &object, { .Icon = type == Root ? ICON_FA_ARROW_TURN_LEFT_UP : type == Tracked ? ICON_FA_CHEVRONS_LEFT : ICON_FA_ARROW_LEFT });
+                    Controls::ContentButton(object, object, { .Icon = type == Root ? ICON_FA_ARROW_TURN_LEFT_UP : type == Tracked ? ICON_FA_CHEVRONS_LEFT : ICON_FA_ARROW_LEFT });
                     if (object->Root)
                         if (scoped::Indent(20))
-                            UI::Controls::ContentButton(object->Root, &type, { .Icon = ICON_FA_ARROW_TURN_LEFT_UP });
+                            Controls::ContentButton(object->Root, object->Root, { .Icon = ICON_FA_ARROW_TURN_LEFT_UP });
                 }
             }
             else if (!Content.IncomingReferences.empty())
@@ -123,7 +123,7 @@ void ContentViewer::Draw()
         }
     }
 
-    static std::optional<UI::Controls::HexViewerCellInfo> persistentHovered;
+    static std::optional<Controls::HexViewerCellInfo> persistentHovered;
     static std::optional<std::tuple<Data::Content::TypeInfo::LayoutStack, std::string, uint32, bool, bool>> creatingSymbol;
     static std::optional<std::tuple<Data::Content::TypeInfo::LayoutStack, std::string, Data::Content::TypeInfo::Symbol*, ImVec2, ImVec2, bool>> editingSymbol;
     struct ViewUniqueValues
@@ -273,7 +273,7 @@ void ContentViewer::Draw()
                         break;
                 }
 
-                UI::Controls::HexViewerOptions options
+                Controls::HexViewerOptions options
                 {
                     .StartOffset = unmappedStart + context.ScopeOffset,
                     .ShowHeaderRow = false,
@@ -854,7 +854,7 @@ void ContentViewer::Draw()
                             }
 
                             I::TableNextColumn();
-                            UI::Controls::ContentButton(object, &object);
+                            Controls::ContentButton(object, object);
                             if (first)
                             {
                                 keyDrawn.emplace(key);
