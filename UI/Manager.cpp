@@ -187,14 +187,25 @@ void Manager::Update()
 
     static bool needInitialSettings = G::Config.GameExePath.empty() || G::Config.GameDatPath.empty();
 
-    ImGuiID dockspace = I::DockSpaceOverViewport(0, nullptr, ImGuiDockNodeFlags_NoCloseButton);
+    static ImGuiID dockSpace = I::GetID("DockSpace");
+    static bool resetDockSpace = !I::DockBuilderGetNode(dockSpace);
     static ImGuiWindowClass windowClassViewer;
     static ImGuiID left, center;
-    static bool dockSpaceInited = [dockspace]
+    I::DockSpaceOverViewport(dockSpace, nullptr, ImGuiDockNodeFlags_NoCloseButton);
+    static bool dockSpaceInited = []
     {
         windowClassViewer.DockingAlwaysTabBar = true;
 
-        I::DockBuilderSplitNode(dockspace, ImGuiDir_Left, 0.4f, &left, &center);
+        auto node = I::DockBuilderGetNode(dockSpace);
+        if (resetDockSpace)
+            I::DockBuilderSplitNode(dockSpace, ImGuiDir_Left, 0.4f, &left, &center);
+        else if (node->IsSplitNode() && node->SplitAxis == ImGuiAxis_X)
+        {
+            left = I::DockBuilderGetNode(dockSpace)->ChildNodes[0]->ID;
+            center = I::DockBuilderGetNode(dockSpace)->ChildNodes[1]->ID;
+        }
+        else
+            left = center = node->ID;
         return true;
     }();
 
@@ -309,7 +320,6 @@ void Manager::Update()
     auto drawViewers = [this](std::list<std::unique_ptr<Viewers::Viewer>>& viewers, ImGuiID defaultDock)
     {
         std::unique_ptr<Viewers::Viewer> const* toRemove = nullptr;
-        ImGuiWindow* focusWindow = nullptr;
         for (auto& viewer : viewers)
         {
             bool open = true;
@@ -321,7 +331,7 @@ void Manager::Update()
             }
             I::SetNextWindowDockID(dock, ImGuiCond_Once);
             I::SetNextWindowClass(&windowClassViewer);
-            if (scoped::Window(std::format("{}###Viewer-{}", viewer->Title(), viewer->ID).c_str(), &open, ImGuiWindowFlags_NoFocusOnAppearing))
+            if (scoped::Window(std::format("{}###Viewer-{}", viewer->Title(), viewer->ID).c_str(), &open, viewer->SetSelected ? 0 : ImGuiWindowFlags_NoFocusOnAppearing))
             {
                 viewer->ImGuiWindow = I::GetCurrentWindow();
                 if (viewer->SetAfterCurrent && I::GetWindowDockNode())
@@ -332,15 +342,13 @@ void Manager::Update()
                                     if (int offset = I::TabBarGetTabOrder(tabBar, currentViewerTab) - I::TabBarGetTabOrder(tabBar, viewerTab) + 1)
                                         I::TabBarQueueReorder(tabBar, viewerTab, offset);
 
-                if (open && defaultDock == center && (!m_currentViewer || I::IsWindowFocused()))
+                if (open && defaultDock == center && (!m_currentViewer || I::IsWindowFocused() || viewer->ImGuiWindow->TabId == I::GetWindowDockNode()->SelectedTabId))
                     m_currentViewer = viewer.get();
 
                 viewer->Draw();
             }
             if (!open)
                 toRemove = &viewer;
-            else if (viewer->SetSelected)
-                focusWindow = viewer->ImGuiWindow;
 
             viewer->SetSelected = false;
             viewer->SetAfterCurrent = false;
@@ -352,13 +360,6 @@ void Manager::Update()
                 m_currentViewer = nullptr;
 
             viewers.erase(std::ranges::find(viewers, *toRemove));
-        }
-        if (focusWindow)
-        {
-            auto old = I::GetCurrentContext()->NavWindow;
-            I::FocusWindow(focusWindow);
-            if (old)
-                I::FocusWindow(old);
         }
     };
     drawViewers(m_listViewers, left);
