@@ -38,7 +38,7 @@ struct ListViewerBase : Viewer
 {
     using Viewer::Viewer;
 
-    template<typename Range, typename Index = typename Range::value_type, typename Transform, typename ComplexIndex = decltype(Transform{}(Index{})), typename Comparison = bool(Index, Index, ComplexIndex const&, ComplexIndex const&)>
+    template<typename Range, typename Index = typename Range::value_type, typename Transform, typename ComplexIndex = std::invoke_result_t<Transform, Index>, typename Comparison = bool(Index, Index, ComplexIndex const&, ComplexIndex const&)>
     static constexpr void ComplexSort(Range& data, bool invert, Transform const& transform, Comparison const& function = defaultComplexSortComparison)
     {
         std::vector sortable { std::from_range, data | std::views::transform([&transform](auto const& id) { return std::pair { id, transform(id) }; }) };
