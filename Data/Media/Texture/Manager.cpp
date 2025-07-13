@@ -143,10 +143,10 @@ std::unique_ptr<Texture> Manager::Create(uint32 width, uint32 height, void const
 void Manager::Load(uint32 fileID, LoadTextureOptions const& options)
 {
     std::scoped_lock _(m_mutex);
-    auto [itr, success] = m_textures.try_emplace(fileID, nullptr);
-    if (!success)
+    auto [itr, added] = m_textures.try_emplace(fileID, nullptr);
+    if (!added)
     {
-        if (options.Export)
+        if (!options.ExportPath.empty())
         {
             TextureEntry temp;
             temp.FileID = fileID;
@@ -314,9 +314,9 @@ std::unique_ptr<Manager::BoxedImage> Manager::GetTextureRGBAImage(TextureEntry& 
         image.swap(converted);
     }
 
-    if (texture.Options.Export)
+    if (auto const path = texture.Options.ExportPath; !path.empty())
         if (Image const* img = image->GetImage(0, 0, 0))
-            if (std::filesystem::path const path(std::format(LR"(Export\{}.png)", texture.FileID)); /*!exists(path)*/true)
+            if (/*!exists(path)*/true)
                 if (SUCCEEDED(SaveToWICFile(*img, WIC_FLAGS_NONE, GetWICCodec(WIC_CODEC_PNG), path.c_str())))
                     StripPNGMetadata(path);
 

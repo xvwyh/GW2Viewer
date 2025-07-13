@@ -16,9 +16,12 @@ void FileViewer::Open(TargetType target, OpenViewerOptions const& options)
 {
     if (I::GetIO().KeyAlt)
     {
-        auto data = target.Source.get().Archive.GetFile(target.ID);
-        G::UI.ExportData(data, std::format(R"(Export\{})", target.ID));
-        G::Game.Texture.Load(target.ID, { .DataSource = &data, .Export = true });
+        auto data = target.GetData();
+        std::filesystem::path path = std::format(R"(Export\{})", target.ID);
+        create_directories(path.parent_path());
+        G::UI.ExportData(data, path);
+        path.replace_extension(".png");
+        G::Game.Texture.Load(target.ID, { .DataSource = &data, .ExportPath = path });
         return;
     }
 
