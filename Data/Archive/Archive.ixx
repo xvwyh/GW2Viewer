@@ -247,7 +247,7 @@ public:
         GetFile(fileID, result);
         return result;
     }
-    void GetFile(uint32 fileID, std::span<byte> buffer)
+    uint32 GetFile(uint32 fileID, std::span<byte> buffer)
     {
         if (auto entryPtr = GetFileMftEntry(fileID))
         {
@@ -255,24 +255,28 @@ public:
             {
                 if (entry.alloc.extraBytes)
                 {
-                    std::vector<byte> compressed(entry.alloc.size);
-                    Read(*compressed.data(), entry.alloc.offset, entry.alloc.size);
                     uint32 size = buffer.size();
+                    boost::container::small_vector<byte const, 0x200> compressed(std::min(std::max(0x200u, size), entry.alloc.size));
+                    Read(compressed.front(), entry.alloc.offset, compressed.size());
                     gw2dt::compression::inflateDatFileBuffer(compressed.size(), compressed.data(), size, buffer.data());
                     assert(size == buffer.size());
+                    return size;
                 }
                 else
                 {
                     byte* p = buffer.data();
-                    uint32 const blocks = (entry.alloc.size + BLOCK_SIZE - 1) / BLOCK_SIZE;
+                    uint32 const blocks = (std::min<uint32>(entry.alloc.size, buffer.size()) + BLOCK_SIZE - 1) / BLOCK_SIZE;
                     for (uint32 i = 0; i < blocks; ++i)
                     {
-                        Read(*p, entry.alloc.offset + i * BLOCK_SIZE, std::min<size_t>(BLOCK_DATA_SIZE, entry.alloc.size - i * BLOCK_SIZE - BLOCK_CRC_SIZE));
-                        p += BLOCK_DATA_SIZE;
+                        uint32 const readSize = std::min<size_t>(std::min(BLOCK_DATA_SIZE, entry.alloc.size - i * BLOCK_SIZE - BLOCK_CRC_SIZE), std::distance(p, buffer.data() + buffer.size()));
+                        Read(*p, entry.alloc.offset + i * BLOCK_SIZE, readSize);
+                        p += readSize;
                     }
+                    return std::distance(buffer.data(), p);
                 }
             }
         }
+        return 0;
     }
     std::unique_ptr<Pack::PackFile> GetPackFile(uint32 fileID)
     {
