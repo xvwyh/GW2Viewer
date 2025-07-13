@@ -293,6 +293,7 @@ void Manager::Update()
                         ExportData(data, std::format(R"(Export\Game Content\{}.cntc)", fileID));
             I::MenuItem("Migrate Content Types", nullptr, &G::Windows::MigrateContentTypes.GetShown());
         }
+        I::Text("<c=#8>Gw2: %u</c>", G::Game.Build);
         for (auto const& progress : m_progress)
         {
             if (auto lock = progress.Lock(); progress.IsRunning())
@@ -476,7 +477,10 @@ void Manager::Update()
         m_progress[1].Run([](Utils::Async::ProgressBarContext& progress)
         {
             if (!G::Config.GameExePath.empty())
+            {
+                G::Game.Load(G::Config.GameExePath, progress);
                 G::Game.Pack.Load(G::Config.GameExePath, progress);
+            }
         });
         return true;
     }();

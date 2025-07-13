@@ -115,6 +115,7 @@
     <ClCompile Include="Data\Encryption\RC4.ixx" />
     <ClCompile Include="Data\Encryption\Text.ixx" />
     <ClCompile Include="Data\External\Database.ixx" />
+    <ClCompile Include="Data\Game.cpp" />
     <ClCompile Include="Data\Game.ixx" />
     <ClCompile Include="Data\Media\Texture\Manager.cpp" />
     <ClCompile Include="Data\Media\Texture\Manager.ixx" />

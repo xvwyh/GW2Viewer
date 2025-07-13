@@ -1,4 +1,5 @@
 export module GW2Viewer.Data.Game;
+import GW2Viewer.Common;
 import GW2Viewer.Data.Archive.Manager;
 import GW2Viewer.Data.Content.Manager;
 import GW2Viewer.Data.Encryption.Manager;
@@ -6,6 +7,7 @@ import GW2Viewer.Data.Media.Text.Manager;
 import GW2Viewer.Data.Media.Texture.Manager;
 import GW2Viewer.Data.Media.Voice.Manager;
 import GW2Viewer.Data.Pack.Manager;
+import GW2Viewer.Utils.Async.ProgressBarContext;
 import std;
 
 export namespace GW2Viewer::Data
@@ -13,19 +15,7 @@ export namespace GW2Viewer::Data
 
 struct Game
 {
-    /*
-    void Load(ProgressBarContext& progress)
-    {
-        Archive.Load(progress);
-        Pack.Load(, progress);
-        if (auto const source = Archive.GetSource())
-        {
-            Text.Load(*source, progress);
-            Voice.Load(*source, progress);
-            Content.Load(*source, progress);
-        }
-    }
-    */
+    uint32 Build = 0;
 
     Archive::Manager Archive;
     Content::Manager Content;
@@ -34,6 +24,8 @@ struct Game
     Media::Text::Manager Text;
     Media::Texture::Manager Texture;
     Media::Voice::Manager Voice;
+
+    void Load(std::filesystem::path const& path, Utils::Async::ProgressBarContext& progress);
 };
 
 }
