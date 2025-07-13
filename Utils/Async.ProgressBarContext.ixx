@@ -20,6 +20,17 @@ public:
         m_total = total;
         m_current = current;
     }
+    void Start(size_t total, size_t current)
+    {
+        std::scoped_lock _(m_mutex);
+        m_total = total;
+        m_current = current;
+    }
+    void Start(size_t total = 0)
+    {
+        std::scoped_lock _(m_mutex);
+        m_total = total;
+    }
 
     ProgressBarContext& operator=(size_t current)
     {
@@ -27,12 +38,8 @@ public:
         m_current = current;
         return *this;
     }
-    ProgressBarContext& operator++()
-    {
-        std::scoped_lock _(m_mutex);
-        ++m_current;
-        return *this;
-    }
+    ProgressBarContext& operator+=(size_t increment) { return *this = m_current + increment; }
+    ProgressBarContext& operator++() { return *this += 1; }
 
     [[nodiscard]] auto Lock() const { return std::scoped_lock(m_mutex); }
     [[nodiscard]] bool IsRunning() const

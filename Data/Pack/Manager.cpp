@@ -129,7 +129,7 @@ void Manager::Load(std::filesystem::path const& path, Utils::Async::ProgressBarC
         }
     };
 
-    progress.Start(progress.GetDescription(), rdata.Bounds.size(), 0);
+    progress.Start(rdata.Bounds.size());
     for (auto p = rdata.Bounds.data(); p < rdata.Bounds.data() + rdata.Bounds.size(); p += sizeof(void*))
     {
         if (isalnum(p[0]) && isalnum(p[1]) && isalnum(p[2]) && (!p[3] || isalnum(p[3])))
