@@ -26,7 +26,7 @@ public:
                 {
                     for (auto const& language : bankIndex->QueryChunk(fcc::BIDX)["bankLanguage"])
                     {
-                        std::ranges::transform(language["bankFileName"], std::back_inserter(m_files[(Language)language.GetArrayIndex()]), [&source](auto const& filename) -> Archive::File { return { filename["fileName"], std::ref(source) }; });
+                        std::ranges::transform(language["bankFileName"], std::back_inserter(m_files[(Language)language.GetArrayIndex()]), [&source](auto const& filename) { return source.GetFile(filename["fileName"]); });
                         if (auto const maxID = m_voicesPerFile * language["bankFileName[]"].GetArraySize(); m_maxID < maxID)
                             m_maxID = maxID;
                     }
@@ -100,8 +100,10 @@ public:
         auto& file = files[fileIndex];
         if (!file)
         {
-            auto const& archiveFile = m_files[lang][fileIndex];
-            file = archiveFile.Source.get().Archive.GetPackFile(archiveFile.ID);
+            auto const archiveFile = m_files[lang][fileIndex];
+            if (!archiveFile)
+                return { };
+            file = archiveFile->GetPackFile();
             if (!file)
                 return { };
             assert(file->Header.HeaderSize == sizeof(file->Header));
@@ -117,7 +119,7 @@ public:
 private:
     uint32 m_voicesPerFile = 10;
     uint32 m_maxID = 0;
-    std::unordered_map<Language, std::vector<Archive::File>> m_files;
+    std::unordered_map<Language, std::vector<Archive::File const*>> m_files;
     std::unordered_map<Language, std::vector<std::unique_ptr<Pack::PackFile>>> m_packFiles;
     std::unordered_map<Language, std::unordered_map<uint32, Encryption::Status>> m_statusCache;
 };

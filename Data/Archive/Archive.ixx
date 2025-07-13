@@ -313,15 +313,7 @@ enum class Kind
     Game,
     Local,
 };
-struct Source;
-struct File
-{
-    uint32 ID;
-    std::reference_wrapper<Source> Source;
-
-    std::strong_ordering operator<=>(File const& other) const;
-    bool operator==(File const& other) const { return ID == other.ID && &Source.get() == &other.Source.get(); }
-};
+struct File;
 struct Source
 {
     uint32 LoadOrder;
@@ -329,8 +321,51 @@ struct Source
     std::filesystem::path Path;
     Archive Archive;
     std::vector<File> Files;
+    std::unordered_map<uint32, std::reference_wrapper<File const>> FileLookup;
+
+    File const* GetFile(uint32 fileID) const
+    {
+        auto itr = FileLookup.find(fileID);
+        return itr != FileLookup.end() ? &itr->second.get() : nullptr;
+    }
 
     auto operator<=>(Source const& other) const { return LoadOrder <=> other.LoadOrder; }
+};
+struct File
+{
+    uint32 ID;
+
+    File(uint32 fileID, Source& source, Archive::MftEntry const& entry) : ID(fileID), m_source(source), m_entry(entry) { }
+
+    auto& GetSource() const { return m_source.get(); }
+    auto GetSourceLoadOrder() const { return GetSource().LoadOrder; }
+    auto GetSourceKind() const { return GetSource().Kind; }
+    auto& GetSourcePath() const { return GetSource().Path; }
+    auto& GetArchive() const { return GetSource().Archive; }
+
+    auto& GetEntry() const { return m_entry.get(); }
+
+    auto GetRawSize() const { return GetArchive().GetRawFileSize(ID); }
+    auto GetRawData() const { return GetArchive().GetRawFile(ID); }
+    auto GetRawData(std::span<byte> buffer) const { return GetArchive().GetRawFile(ID, buffer); }
+
+    auto GetSize() const { return GetArchive().GetFileSize(ID); }
+    auto GetData() const { return GetArchive().GetFile(ID); }
+    auto GetData(std::span<byte> buffer) const { return GetArchive().GetFile(ID, buffer); }
+
+    auto GetPackFile() const { return GetArchive().GetPackFile(ID); }
+
+    std::strong_ordering operator<=>(File const& other) const
+    {
+        if (auto const result = ID <=> other.ID; result != std::strong_ordering::equal) return result;
+        if (auto const result = GetSource() <=> other.GetSource(); result != std::strong_ordering::equal) return result;
+        return std::strong_ordering::equal;
+    }
+    bool operator==(File const& other) const { return *this <=> other == std::strong_ordering::equal; }
+
+private:
+    std::reference_wrapper<Source> m_source;
+    std::reference_wrapper<Archive::MftEntry const> m_entry;
 };
 
 }

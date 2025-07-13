@@ -92,7 +92,7 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
                         if (I::Button("Search for Content References"))
                             G::Windows::ContentSearch.SearchForSymbolValue("FileID", file.ID);
                     }
-                    I::TableNextColumn(); I::Text("<c=#4>%s</c>", file.Source.get().Path.filename().string().c_str());
+                    I::TableNextColumn(); I::Text("<c=#4>%s</c>", file.GetSourcePath().filename().string().c_str());
                 }
             }
         }

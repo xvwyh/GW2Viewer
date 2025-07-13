@@ -23,7 +23,7 @@ struct FileViewer : ViewerWithHistory<FileViewer, Data::Archive::File, { ICON_FA
     TargetType File;
     std::vector<byte> RawData;
 
-    FileViewer(uint32 id, bool newTab, TargetType file) : Base(id, newTab), File(file), RawData(File.Source.get().Archive.GetFile(file.ID)) { }
+    FileViewer(uint32 id, bool newTab, TargetType file) : Base(id, newTab), File(file), RawData(File.GetData()) { }
 
     TargetType GetCurrent() const override { return File; }
     bool IsCurrent(TargetType target) const override { return File == target; }

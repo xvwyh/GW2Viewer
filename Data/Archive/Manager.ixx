@@ -27,8 +27,7 @@ public:
     [[nodiscard]] File const* GetFileEntry(uint32 fileID, Kind kind = Kind::Game) const
     {
         if (auto const itr = std::ranges::find(m_sources, kind, &Source::Kind); itr != m_sources.end())
-            if (auto const range = std::ranges::equal_range(itr->Files, fileID, { }, &File::ID))
-                return &range.front();
+            return itr->GetFile(fileID);
 
         return nullptr;
     }
@@ -75,7 +74,9 @@ public:
         for (auto& source : m_sources)
         {
             source.Archive.Open(source.Path, progress);
-            source.Files.assign_range(source.Archive.FileIdToMftEntry | std::views::keys | std::views::transform([&](uint32 fileID) { return File(fileID, source); }));
+            source.Files.assign_range(source.Archive.FileIdToMftEntry | std::views::transform([&](auto const& pair) -> File { return { pair.first, source, *pair.second }; }));
+            for (auto const& file : source.Files)
+                source.FileLookup.emplace(file.ID, file);
             m_files.insert_range(source.Files);
         }
     }
@@ -85,12 +86,5 @@ private:
     std::set<File> m_files;
     bool m_loaded = false;
 };
-
-inline std::strong_ordering File::operator<=>(File const& other) const
-{
-    if (auto const result = ID <=> other.ID; result != std::strong_ordering::equal) return result;
-    if (auto const result = Source.get() <=> other.Source.get(); result != std::strong_ordering::equal) return result;
-    return std::strong_ordering::equal;
-}
 
 }

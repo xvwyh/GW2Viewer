@@ -30,8 +30,8 @@ void FileViewer::Open(TargetType target, OpenViewerOptions const& options)
 
 std::string FileViewer::Title()
 {
-    if (&File.Source.get().Archive != G::Game.Archive.GetArchive())
-        return std::format("<c=#4>{} #</c>{}<c=#4> ({})</c>", Base::Title(), File.ID, File.Source.get().Path.filename().string());
+    if (&File.GetArchive() != G::Game.Archive.GetArchive())
+        return std::format("<c=#4>{} #</c>{}<c=#4> ({})</c>", Base::Title(), File.ID, File.GetSourcePath().filename().string());
     return std::format("<c=#4>{} #</c>{}", Base::Title(), File.ID);
 }
 
@@ -102,7 +102,7 @@ void FileViewer::DrawPreview()
 std::unique_ptr<FileViewer> Init(uint32 id, bool newTab, FileViewer::TargetType file)
 {
     std::unique_ptr<FileViewer> result = nullptr;
-    if (auto const data = file.Source.get().Archive.GetFile(file.ID); data.size() >= 4) // TODO: Refactor to avoid copying
+    if (auto const data = file.GetData(); data.size() >= 4) // TODO: Refactor to avoid copying
     {
         auto&& registry = FileViewers::GetRegistry();
         if (auto const itr = registry.find(*(fcc const*)data.data()); itr != registry.end())

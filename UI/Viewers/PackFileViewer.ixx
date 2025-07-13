@@ -567,7 +567,7 @@ struct PackFileViewer : FileViewer
 
     void Initialize() override
     {
-        PackFile = File.Source.get().Archive.GetPackFile(File.ID);
+        PackFile = File.GetPackFile();
     }
     void DrawOutline() override
     {
