@@ -157,6 +157,7 @@ void Manager::Load()
     style.GrabRounding = 3;
     style.LogSliderDeadzone = 4;
     style.TabRounding = 4;
+    style.TabCloseButtonMinWidthUnselected = FLT_MAX;
 
     for (auto const name : { "Files", "Strings", "Content", "Conversations", "Events", "Bookmarks" })
         m_listViewers.emplace_back(Viewers::ViewerRegistry::GetByName(name)->Constructor(m_nextViewerID++, false));
