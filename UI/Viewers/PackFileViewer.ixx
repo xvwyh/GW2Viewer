@@ -424,6 +424,20 @@ struct PackFileChunkPreview<fcc::PGTB> : RegisterPackFileChunkPreview<fcc::PGTB>
 
     void DrawPreview(Data::Pack::Layout::Traversal::QueryChunk const& chunk) override
     {
+        struct Layer
+        {
+            ImVec2 StrippedDims { };
+            ImRect ContentsRect { };
+        };
+        std::vector<Layer> layers;
+        layers.reserve(chunk["layers"].GetArraySize());
+        for (auto const& layerData : chunk["layers"])
+        {
+            auto& layer = layers.emplace_back();
+            std::array<float, 2> strippedDims = layerData["strippedDims"];
+            layer.StrippedDims = { strippedDims[0], strippedDims[1] };
+        }
+
 #pragma pack(push, 4)
         static struct PixelBuffer
         {
@@ -447,6 +461,17 @@ struct PackFileChunkPreview<fcc::PGTB> : RegisterPackFileChunkPreview<fcc::PGTB>
         I::SameLine(0, 0);
         if (I::Button(std::format("<c=#{}>" ICON_FA_VIRUS "</c><c=#{}>" ICON_FA_SQUARE_VIRUS "</c><c=#{}>" ICON_FA_SQUARE "</c>###AlphaMode", pixelBuffer.AlphaMode == 0 ? "F" : "4", pixelBuffer.AlphaMode == 1 ? "F" : "4",             pixelBuffer.AlphaMode == 2 ? "F" : "4").c_str(), { 0, I::GetFrameHeight() }))
             pixelBuffer.AlphaMode = (pixelBuffer.AlphaMode + 1) % 3;
+        static int selectedLayer = -1;
+        if (layers.size() > 1)
+        {
+            I::SameLine();
+            I::TextUnformatted("Layer:");
+            I::SameLine();
+            I::SetNextItemWidth(100);
+            I::SliderInt("##Layer", &selectedLayer, -1, layers.size() - 1);
+        }
+        if (selectedLayer >= (int)layers.size())
+            selectedLayer = layers.size();
         static auto buffer = ImGui_ImplDX11_CreateBuffer(sizeof(PixelBuffer));
         static auto shader = ImGui_ImplDX11_CompilePixelShader(R"(
 cbuffer pixelBuffer : register(b0)
@@ -493,20 +518,6 @@ float4 main(PS_INPUT input) : SV_Target
         }
         *ViewportOffset = { (float)(int)ViewportOffset->x, (float)(int)ViewportOffset->y };
 
-        struct Layer
-        {
-            ImVec2 StrippedDims { };
-            ImRect ContentsRect { };
-        };
-        std::vector<Layer> layers;
-        layers.reserve(chunk["layers"].GetArraySize());
-        for (auto const& layerData : chunk["layers"])
-        {
-            auto& layer = layers.emplace_back();
-            std::array<float, 2> strippedDims = layerData["strippedDims"];
-            layer.StrippedDims = { strippedDims[0], strippedDims[1] };
-        }
-
         I::GetWindowDrawList()->AddCallback([](ImDrawList const* parent_list, ImDrawCmd const* cmd)
         {
             ImGui_ImplDX11_SetPixelShader(shader);
@@ -516,15 +527,16 @@ float4 main(PS_INPUT input) : SV_Target
         for (auto const& pageData : chunk["strippedPages"])
         {
             std::array<float, 2> const coord = pageData["coord"];
+            uint32 const layerIndex = pageData["layer"];
 
-            auto& layer = layers.at(pageData["layer"]);
+            auto& layer = layers.at(layerIndex);
             ImVec2 pagePos = layer.StrippedDims * ImVec2 { coord[0], coord[1] };
             if (layer.ContentsRect.Min == layer.ContentsRect.Max)
                 layer.ContentsRect = { pagePos, pagePos + layer.StrippedDims };
             else
                 layer.ContentsRect.Add(ImRect { pagePos, pagePos + layer.StrippedDims });
             ImVec2 drawPos = cursor - *ViewportOffset + pagePos;
-            if (viewportScreenRect.Overlaps({ drawPos, drawPos + layer.StrippedDims }))
+            if ((layerIndex == selectedLayer || selectedLayer < 0) && viewportScreenRect.Overlaps({ drawPos, drawPos + layer.StrippedDims }))
                 if (scoped::WithCursorScreenPos(drawPos))
                     UI::Controls::Texture(pageData["filename"], { .Size = layer.StrippedDims, .FullPreviewOnHover = false, .AdvanceCursor = false });
         }
