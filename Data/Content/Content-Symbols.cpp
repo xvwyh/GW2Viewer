@@ -443,6 +443,8 @@ std::strong_ordering ParamValue::CompareDataForSearch(byte const* dataA, byte co
             pB += typeInfo->Size();
         }
     }
+
+    return std::strong_ordering::equal;
 }
 
 std::optional<TypeInfo::Condition::ValueType> ParamValue::GetValueForCondition(byte const* data) const
