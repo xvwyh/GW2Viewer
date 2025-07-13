@@ -5,6 +5,7 @@ export module GW2Viewer.Data.Archive;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Pack.PackFile;
 import GW2Viewer.Utils.Async.ProgressBarContext;
+import GW2Viewer.Utils.CRC;
 import std;
 import <gw2dattools/compression/inflateDatFileBuffer.h>;
 import <boost/container/small_vector.hpp>;
@@ -179,6 +180,24 @@ public:
         if (auto entryPtr = GetFileMftEntry(fileID))
             if (MftEntry const& entry = *entryPtr; entry.alloc.flags & FLAG_ENTRY_USED)
                 Read(buffer.front(), entry.alloc.offset, entry.alloc.size);
+    }
+    uint32 CalculateRawFileCRC(uint32 fileID)
+    {
+        uint32 crc = 0;
+        if (auto entryPtr = GetFileMftEntry(fileID))
+        {
+            if (MftEntry const& entry = *entryPtr; entry.alloc.flags & FLAG_ENTRY_USED)
+            {
+                uint32 const blocks = (entry.alloc.size + BLOCK_SIZE - 1) / BLOCK_SIZE;
+                for (uint32 i = 0; i < blocks; ++i)
+                {
+                    uint32 blockCRC = 0;
+                    Read(blockCRC, entry.alloc.offset + i * BLOCK_SIZE + std::min<size_t>(BLOCK_DATA_SIZE, entry.alloc.size - i * BLOCK_SIZE - BLOCK_CRC_SIZE) - BLOCK_CRC_SIZE);
+                    crc = Utils::CRC::Calculate(crc, { (byte const*)&blockCRC, sizeof(blockCRC) });
+                }
+            }
+        }
+        return crc;
     }
     uint32 GetFileSize(uint32 fileID)
     {

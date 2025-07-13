@@ -1,4 +1,6 @@
 export module GW2Viewer.Utils.Format;
+import GW2Viewer.Common;
+import GW2Viewer.Common.FourCC;
 import GW2Viewer.Utils.ConstString;
 import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.Visitor;
@@ -148,5 +150,44 @@ std::string DurationShortColored(char const* format, std::chrono::duration<Rep, 
         duration < 72h ? "8" : "4";
     return std::format("<c=#{}>{}</c>", color, std::vformat(format, std::make_format_args(DurationShort(duration))));
 }
+
+union PrintableFourCC
+{
+    uint64 Number;
+    char Chars[5];
+
+    PrintableFourCC(uint32 fourCC) : Number(fourCC)
+    {
+        for (auto& c : Chars)
+            if (!c || !isprint(c) && !isspace(c))
+                c = '?';
+        Chars[4] = '\0';
+        for (auto& c : Chars | std::views::reverse)
+        {
+            if (!c || c == '?')
+                c = '\0';
+            else
+                break;
+        }
+    }
+    PrintableFourCC(fcc fourCC) : PrintableFourCC((uint32)fourCC) { }
+};
+
+}
+
+using namespace GW2Viewer::Utils::Format;
+
+export namespace std
+{
+
+template<>
+struct formatter<PrintableFourCC, char>
+{
+    constexpr auto parse(auto& ctx) { return ctx.begin(); }
+    auto format(PrintableFourCC const& value, auto& ctx) const
+    {
+        return format_to(ctx.out(), "{}", value.Chars);
+    }
+};
 
 }

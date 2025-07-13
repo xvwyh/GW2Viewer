@@ -17,12 +17,14 @@ import GW2Viewer.UI.Viewers.ListViewer;
 import GW2Viewer.UI.Viewers.MapLayoutViewer;
 import GW2Viewer.UI.Viewers.StringListViewer;
 import GW2Viewer.UI.Viewers.ViewerRegistry;
+import GW2Viewer.UI.Windows.ArchiveIndex;
 import GW2Viewer.UI.Windows.Demangle;
 import GW2Viewer.UI.Windows.MigrateContentTypes;
 import GW2Viewer.UI.Windows.Notes;
 import GW2Viewer.UI.Windows.Parse;
 import GW2Viewer.UI.Windows.Settings;
 import GW2Viewer.UI.Windows.Window;
+import GW2Viewer.User.ArchiveIndex;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Base64;
 import GW2Viewer.Utils.Scan;
@@ -262,6 +264,7 @@ void Manager::Update()
             I::MenuItem("Open ImGui Demo Window", nullptr, &G::Config.ShowImGuiDemo);
             I::MenuItem("Open Parse Window", nullptr, &G::Windows::Parse.GetShown());
             I::MenuItem("Open Demangle Window", nullptr, &G::Windows::Demangle.GetShown());
+            I::MenuItem("Open Archive Index Window", nullptr, &G::Windows::ArchiveIndex.GetShown());
             I::MenuItem("Open Notes Window", nullptr, &G::Windows::Notes.GetShown());
             I::MenuItem("Open Settings Window", nullptr, &G::Windows::Settings.GetShown());
             I::PopItemFlag();
@@ -426,6 +429,12 @@ void Manager::Update()
             }
 
             G::Game.Archive.Load(progress);
+
+            progress.Start("Loading archive index");
+            for (auto const [kind, name] : magic_enum::enum_entries<Data::Archive::Kind>())
+                if (G::Game.Archive.GetSource(kind))
+                    G::ArchiveIndex[kind].Load(kind, std::format("ArchiveIndex.{}.bin", name));
+
             auto sourcePtr = G::Game.Archive.GetSource();
             if (!sourcePtr)
                 return;

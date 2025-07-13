@@ -190,6 +190,7 @@
     <ClCompile Include="UI\Viewers\Viewer.ixx" />
     <ClCompile Include="UI\Viewers\ViewerRegistry.ixx" />
     <ClCompile Include="UI\Viewers\ViewerWithHistory.ixx" />
+    <ClCompile Include="UI\Windows\ArchiveIndex.ixx" />
     <ClCompile Include="UI\Windows\ContentSearch.ixx" />
     <ClCompile Include="UI\Windows\Demangle.ixx" />
     <ClCompile Include="UI\Windows\MigrateContentTypes.ixx" />
@@ -197,6 +198,8 @@
     <ClCompile Include="UI\Windows\Parse.ixx" />
     <ClCompile Include="UI\Windows\Settings.ixx" />
     <ClCompile Include="UI\Windows\Window.ixx" />
+    <ClCompile Include="User\ArchiveIndex.cpp" />
+    <ClCompile Include="User\ArchiveIndex.ixx" />
     <ClCompile Include="User\Config.cpp" />
     <ClCompile Include="User\Config.ixx" />
     <ClCompile Include="User\User.ixx" />

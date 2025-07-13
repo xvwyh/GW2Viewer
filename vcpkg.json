@@ -12,6 +12,7 @@
     "libpng",
     "ms-gsl",
     "magic-enum",
+    "mio",
     "nlohmann-json",
     "picosha2",
     "scnlib",
