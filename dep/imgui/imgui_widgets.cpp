@@ -10690,7 +10690,10 @@ void ImGui::TabItemLabelAndCloseButton(ImDrawList* draw_list, const ImRect& bb, 
         if (CloseButton(close_button_id, button_pos))
             close_button_pressed = true;
         g.LastItemData = last_item_backup;
+    }
 
+    if (close_button_id != 0)
+    {
         // Close with middle mouse button
         if (is_hovered && !(flags & ImGuiTabItemFlags_NoCloseWithMiddleMouseButton) && IsMouseClicked(2))
             close_button_pressed = true;
