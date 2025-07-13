@@ -7,6 +7,7 @@ import GW2Viewer.Data.Pack.PackFile;
 import GW2Viewer.Utils.Async.ProgressBarContext;
 import std;
 import <gw2dattools/compression/inflateDatFileBuffer.h>;
+import <boost/container/small_vector.hpp>;
 
 export namespace GW2Viewer::Data::Archive
 {
@@ -19,7 +20,7 @@ public:
     {
         IndexMFTHeader = 0,
         IndexArchiveHeader = 1,
-        IndexFileToMftEntryMap = 2,
+        IndexDirectory = 2,
         INDEX_MFT = 3,
         INDEX_FIRST_FILE = 16,
 
@@ -27,28 +28,32 @@ public:
 
         FLAG_ENTRY_USED = 1,
         FLAG_FIRST_STREAM = 2,
+
+        ARCHIVE_SIGNATURE_BASE = '\x1ANA2',
+        ARCHIVE_VERSION = 101,
     };
 
-    /** Compression flags that appear in the MFT entries. */
-    enum ANetCompressionFlags : uint16
+    struct ArchiveHeaderV0
     {
-        ANCF_Uncompressed = 0,          /**< File is uncompressed. */
-        ANCF_Compressed = 8,            /**< File is compressed. */
+        uint32 Signature = ARCHIVE_SIGNATURE_BASE + ARCHIVE_VERSION;
+        uint32 BlockSize = 0x200;
+        uint64 MFTOffset;
+        uint32 MFTSize;
+        uint32 Flags;
     };
-
-    struct ArchiveHeader
+    struct ArchiveHeaderV1
     {
-        byte version;                   /**< Version of the .dat file format. */
-        byte identifier[3];             /**< 0x41 0x4e 0x1a */
-        uint32 headerSize;              /**< Size of this header. */
-        uint32 unknownField1;
-        uint32 chunkSize;               /**< Size of each chunk in the file. */
-        uint32 cRC;                     /**< CRC of the 16 first bytes of the header. */
+        uint32 Signature = ARCHIVE_SIGNATURE_BASE + ARCHIVE_VERSION;
+        uint32 HeaderSize = sizeof(ArchiveHeaderV1);
+        uint32 HeaderVersion = 0xCABA0001;
+        uint32 BlockSize = 0x200;
+        uint32 CRC /*= CRC::Calculate(0, this, offsetof(ArchiveHeaderV1, CRC))*/;
         uint32 unknownField2;
-        uint64 mftOffset;               /**< Offset to the MFT, from the start of the file. */
-        uint32 mftSize;                 /**< Size of the MFT, in bytes. */
-        uint32 flags;
+        uint64 MFTOffset;
+        uint32 MFTSize;
+        uint32 Flags;
     };
+    using ArchiveHeader = ArchiveHeaderV1;
 
     struct MftEntry
     {
@@ -60,49 +65,50 @@ public:
                 uint32 writes;
                 uint32 unknownField1;
                 uint32 numEntries;              /**< Amount of entries in the MFT, including this. */
-                uint64 unknownField2;
             } descriptor;
             struct
             {
                 uint64 offset;
                 uint32 size;
-                ANetCompressionFlags compressionFlag;
+                uint16 extraBytes;
                 byte flags;
                 byte stream;
                 uint32 nextStream;
-                uint32 crc;                     /**< Was 'crc' in GW1, seems to have different usage in GW2. */
+                uint32 crc;
             } alloc;
         };
     };
 
-    struct FileIdEntry
+    struct DirectoryEntry
     {
-        uint32 fileId;                  /**< File ID. */
-        uint32 mftEntryIndex;           /**< Index of the file in the mft. */
+        uint32 fileId;
+        uint32 mftIndex;
     };
-    /*
+    /* Inside Directory:
     #pragma pack(push, 8)
-    struct MftBaseFileEntry
+    struct FileHash
     {
-    bool InUse;
-    MftFileEntry const* Prev;
-    MftFileEntry const* Next;
-    uint32 FileID;
+        FileHash const* prevInMft;
+        FileHash const* Prev;
+        FileHash const* Next;
+        uint32 FileID;
+        uint32 DirectoryIndex;
+        uint32 MftIndex;
     };
-    struct MftArrayEntry
+    struct Mft
     {
-    MftBaseFileEntry const* Base;
-    uint32 refCount;
+        FileHash const* head;
+        uint32 refCount;
     };
     #pragma pack(pop)
-    std::vector<MftArrayEntry> m_mftArray;
+    std::vector<Mft> m_mftArray;
     */
 
     ArchiveHeader Header;
-    std::vector<MftEntry> MftEntries;
-    std::vector<FileIdEntry> FileIdEntries;
+    std::vector<MftEntry> m_entryArray;
+    std::vector<DirectoryEntry> DirectoryEntries;
     std::map<uint32, MftEntry*> FileIdToMftEntry;
-    std::multimap<uint32, uint32> MftEntryIndexToFileId;
+    std::multimap<uint32, uint32> MftIndexToFileId;
     uint32 MaxFileID = 0;
 
     bool Open(std::filesystem::path const& path, Utils::Async::ProgressBarContext& progress)
@@ -116,29 +122,30 @@ public:
 
         progress.Start(prefix + "Reading header");
         Read(Header);
-        MftEntries.resize(1);
-        Read(MftEntries.front(), Header.mftOffset);
+        m_entryArray.resize(1);
+        Read(m_entryArray.front(), Header.MFTOffset);
 
         progress.Start(prefix + "Reading MFT");
-        auto const& descriptor = MftEntries.front();
-        assert(Header.mftSize == descriptor.descriptor.numEntries * sizeof(MftEntry));
-        MftEntries.resize(descriptor.descriptor.numEntries);
-        Read(MftEntries.front(), Header.mftOffset, Header.mftSize);
+        auto const& descriptor = m_entryArray[IndexMFTHeader];
+        assert(Header.MFTSize == descriptor.descriptor.numEntries * sizeof(MftEntry));
+        m_entryArray.resize(descriptor.descriptor.numEntries);
+        Read(m_entryArray.front(), Header.MFTOffset, Header.MFTSize);
 
         progress.Start(prefix + "Reading file ID database");
-        auto& fileMap = MftEntries[IndexFileToMftEntryMap];
-        assert(!(fileMap.alloc.size % sizeof(FileIdEntry)));
-        FileIdEntries.resize(fileMap.alloc.size / sizeof(FileIdEntry));
-        Read(FileIdEntries.front(), fileMap.alloc.offset, fileMap.alloc.size);
+        auto& fileMap = m_entryArray[IndexDirectory];
+        assert(!(fileMap.alloc.size % sizeof(DirectoryEntry)));
+        DirectoryEntries.resize(fileMap.alloc.size / sizeof(DirectoryEntry));
+        Read(DirectoryEntries.front(), fileMap.alloc.offset, fileMap.alloc.size);
 
-        progress.Start(prefix + "Assembling file lookup table", FileIdEntries.size());
-        for (auto const& [index, entry] : FileIdEntries | std::views::enumerate)
+        progress.Start(prefix + "Assembling file lookup table", DirectoryEntries.size());
+        for (auto const& [index, entry] : DirectoryEntries | std::views::enumerate)
         {
-            if (!entry.mftEntryIndex)
+            if (!entry.mftIndex)
                 continue;
 
-            FileIdToMftEntry.try_emplace(entry.fileId, &MftEntries[entry.mftEntryIndex]);
-            //MftEntryIndexToFileId.emplace(entry.mftEntryIndex, entry.fileId);
+            auto [itr, added] = FileIdToMftEntry.try_emplace(entry.fileId, &m_entryArray[entry.mftIndex]);
+            assert(added);
+            //MftIndexToFileId.emplace(entry.mftIndex, entry.fileId);
             if (MaxFileID < entry.fileId)
                 MaxFileID = entry.fileId;
 
@@ -149,19 +156,87 @@ public:
     }
 
     [[nodiscard]] auto GetFileIDs() const { return FileIdToMftEntry | std::ranges::views::keys; }
+    MftEntry const* GetFileMftEntry(uint32 fileID) const
+    {
+        auto const itr = FileIdToMftEntry.find(fileID);
+        return itr != FileIdToMftEntry.end() ? itr->second : nullptr;
+    }
+    uint32 GetRawFileSize(uint32 fileID) const
+    {
+        if (auto entryPtr = GetFileMftEntry(fileID))
+            if (MftEntry const& entry = *entryPtr; entry.alloc.flags & FLAG_ENTRY_USED)
+                return entry.alloc.size;
+        return 0;
+    }
+    std::vector<byte> GetRawFile(uint32 fileID)
+    {
+        std::vector<byte> result(GetRawFileSize(fileID));
+        GetRawFile(fileID, result);
+        return result;
+    }
+    void GetRawFile(uint32 fileID, std::span<byte> buffer)
+    {
+        if (auto entryPtr = GetFileMftEntry(fileID))
+            if (MftEntry const& entry = *entryPtr; entry.alloc.flags & FLAG_ENTRY_USED)
+                Read(buffer.front(), entry.alloc.offset, entry.alloc.size);
+    }
     uint32 GetFileSize(uint32 fileID)
     {
-        if (auto const itr = FileIdToMftEntry.find(fileID); itr != FileIdToMftEntry.end())
+        if (auto entryPtr = GetFileMftEntry(fileID))
         {
-            if (MftEntry const& entry = *itr->second; entry.alloc.flags & FLAG_ENTRY_USED)
+            if (MftEntry const& entry = *entryPtr; entry.alloc.flags & FLAG_ENTRY_USED)
             {
-                if (entry.alloc.compressionFlag & ANCF_Compressed)
+                if (!entry.alloc.extraBytes)
+                    return entry.alloc.size - (entry.alloc.size + BLOCK_SIZE - 1) / BLOCK_SIZE * sizeof(uint32);
+
+                enum class Type : uint16
                 {
-                    CompressedFileHeader header;
-                    Read(header, entry.alloc.offset, sizeof(header));
-                    return header.UncompressedSize;
+                    Invalid = 0x8000,
+                    UncompressedSize,
+                    Unknown,
+                };
+                struct Header
+                {
+                    uint16 Size;
+                    Type Type;
+                };
+
+                uint32 uncompressedSize = 0;
+                boost::container::small_vector<byte const, 16> headers((entry.alloc.extraBytes + 15) / 16 * 16);
+                Read(*headers.data(), entry.alloc.offset, headers.size());
+                byte const* p = headers.data();
+                while (std::distance(headers.data(), p) + sizeof(Header) <= entry.alloc.extraBytes)
+                {
+                    auto header = (Header const*)p;
+                    switch (header->Type)
+                    {
+                        case Type::UncompressedSize:
+                            struct UncompressedSize : Header
+                            {
+                                uint32 Value;
+                            };
+                            if (header->Size != sizeof(UncompressedSize))
+                                return 0;
+                            uncompressedSize = ((UncompressedSize const*&)p)++->Value;
+                            break;
+                        case Type::Unknown:
+                            struct Unknown : Header
+                            {
+                                uint32 Value;
+                            };
+                            if (header->Size != sizeof(Unknown))
+                                return 0;
+                            ((Unknown const*&)p)++;
+                            break;
+                        default:
+                            if (header->Type >= Type::Invalid)
+                                return 0;
+                            p += header->Size * 2;
+                            break;
+                    }
                 }
-                return entry.alloc.size - (entry.alloc.size + BLOCK_SIZE - 1) / BLOCK_SIZE * sizeof(uint32);
+                if (p == headers.data() + entry.alloc.extraBytes)
+                    return uncompressedSize;
             }
         }
         return 0;
@@ -174,11 +249,11 @@ public:
     }
     void GetFile(uint32 fileID, std::span<byte> buffer)
     {
-        if (auto const itr = FileIdToMftEntry.find(fileID); itr != FileIdToMftEntry.end())
+        if (auto entryPtr = GetFileMftEntry(fileID))
         {
-            if (MftEntry const& entry = *itr->second; entry.alloc.flags & FLAG_ENTRY_USED)
+            if (MftEntry const& entry = *entryPtr; entry.alloc.flags & FLAG_ENTRY_USED)
             {
-                if (entry.alloc.compressionFlag & ANCF_Compressed)
+                if (entry.alloc.extraBytes)
                 {
                     std::vector<byte> compressed(entry.alloc.size);
                     Read(*compressed.data(), entry.alloc.offset, entry.alloc.size);
@@ -192,7 +267,7 @@ public:
                     uint32 const blocks = (entry.alloc.size + BLOCK_SIZE - 1) / BLOCK_SIZE;
                     for (uint32 i = 0; i < blocks; ++i)
                     {
-                        Read(*p, entry.alloc.offset + i * BLOCK_SIZE, std::min<size_t>(BLOCK_DATA_SIZE, entry.alloc.size - i * BLOCK_SIZE - sizeof(uint32)));
+                        Read(*p, entry.alloc.offset + i * BLOCK_SIZE, std::min<size_t>(BLOCK_DATA_SIZE, entry.alloc.size - i * BLOCK_SIZE - BLOCK_CRC_SIZE));
                         p += BLOCK_DATA_SIZE;
                     }
                 }
@@ -212,7 +287,8 @@ public:
 
 private:
     static constexpr uint32 BLOCK_SIZE = 0x10000;
-    static constexpr uint32 BLOCK_DATA_SIZE = BLOCK_SIZE - sizeof(uint32);
+    static constexpr uint32 BLOCK_CRC_SIZE = sizeof(uint32);
+    static constexpr uint32 BLOCK_DATA_SIZE = BLOCK_SIZE - BLOCK_CRC_SIZE;
 
     std::ifstream m_file;
     std::mutex m_mutex;
@@ -229,13 +305,6 @@ private:
         if (!m_file)
             std::terminate();
     }
-
-    struct CompressedFileHeader
-    {
-        uint32 Unknown0;
-        uint32 UncompressedSize;
-        uint32 Unknown8;
-    };
 };
 #pragma pack(pop)
 
