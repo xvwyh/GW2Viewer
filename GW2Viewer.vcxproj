@@ -205,6 +205,7 @@
     <ClCompile Include="Utils\Base64.ixx" />
     <ClCompile Include="Utils\ConstString.ixx" />
     <ClCompile Include="Utils\Container.ixx" />
+    <ClCompile Include="Utils\CRC.ixx" />
     <ClCompile Include="Utils\Encoding.ixx" />
     <ClCompile Include="Utils\Enum.ixx" />
     <ClCompile Include="Utils\Exception.cpp" />

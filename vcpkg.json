@@ -5,6 +5,7 @@
     "boost-serialization",
     "boost-thread",
     "cpp-base64",
+    "crc32c",
     "concurrentqueue",
     "directxtex",
     "directxtk",
