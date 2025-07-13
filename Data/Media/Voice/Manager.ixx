@@ -72,11 +72,14 @@ public:
             if (test(data))
                 return Encryption::Status::Unencrypted;
 
-            std::vector encrypted { std::from_range, data };
-            Encryption::RC4(Encryption::RC4::MakeKey(*decryptionKey)).Crypt(encrypted);
+            if (decryptionKey)
+            {
+                std::vector encrypted { std::from_range, data };
+                Encryption::RC4(Encryption::RC4::MakeKey(*decryptionKey)).Crypt(encrypted);
 
-            if (test(encrypted))
-                return Encryption::Status::Decrypted;
+                if (test(encrypted))
+                    return Encryption::Status::Decrypted;
+            }
 
             return Encryption::Status::Encrypted;
         }()).first->second;
