@@ -9,8 +9,8 @@ import :Texture;
 import GW2Viewer.Common.FourCC;
 import GW2Viewer.Data.Content;
 import GW2Viewer.Data.Game;
-import GW2Viewer.Data.Media.Texture;
 import GW2Viewer.Data.Pack.PackFile;
+import GW2Viewer.Data.Texture;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.Utils;
 import GW2Viewer.Utils.Encoding;
@@ -123,7 +123,7 @@ struct MapLayout
 
     bool ExploredMaskDirty = false;
     std::vector<byte> ExploredMask;
-    std::unique_ptr<Data::Media::Texture::Texture> ExploredMaskTexture;
+    std::unique_ptr<Data::Texture::Texture> ExploredMaskTexture;
 
     ImVec2 ViewportOffset { };
     float ViewportScale = 1.0f;

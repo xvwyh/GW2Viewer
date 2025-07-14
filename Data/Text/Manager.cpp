@@ -1,7 +1,7 @@
-﻿module GW2Viewer.Data.Media.Text.Manager;
+﻿module GW2Viewer.Data.Text.Manager;
 import GW2Viewer.Data.Game;
 
-namespace GW2Viewer::Data::Media::Text
+namespace GW2Viewer::Data::Text
 {
 
 Manager::StringsFile::TCache const& Manager::GetStringImpl(uint32 stringID)

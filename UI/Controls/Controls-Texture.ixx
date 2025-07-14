@@ -4,7 +4,7 @@ module;
 export module GW2Viewer.UI.Controls:Texture;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Game;
-import GW2Viewer.Data.Media.Texture;
+import GW2Viewer.Data.Texture;
 
 export namespace GW2Viewer::UI::Controls
 {
@@ -23,7 +23,7 @@ struct TextureOptions
 };
 bool Texture(uint32 textureFileID, TextureOptions const& options = { })
 {
-    if (auto const texture = G::Game.Texture.Get(textureFileID); !texture || texture->TextureLoadingState == Data::Media::Texture::TextureEntry::TextureLoadingStates::NotLoaded)
+    if (auto const texture = G::Game.Texture.Get(textureFileID); !texture || texture->TextureLoadingState == Data::Texture::TextureEntry::TextureLoadingStates::NotLoaded)
         G::Game.Texture.Load(textureFileID, { .DataSource = options.Data });
     else if (texture && texture->Texture && texture->Texture->Handle.GetTexID())
     {

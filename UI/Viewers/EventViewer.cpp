@@ -4,7 +4,7 @@
 module GW2Viewer.UI.Viewers.EventViewer;
 import GW2Viewer.Content;
 import GW2Viewer.Data.Game;
-import GW2Viewer.Data.Media.Text.Format;
+import GW2Viewer.Data.Text.Format;
 import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.User.Config;
@@ -143,7 +143,7 @@ void EventViewer::Draw()
 
 void EventViewer::DrawEvent(Content::EventID eventID)
 {
-    using namespace Data::Media::Text;
+    using namespace Data::Text;
 
     auto& cache = Cache[eventID];
     auto const& event = Content::events.at(eventID);
@@ -246,7 +246,7 @@ void EventViewer::DrawEvent(Content::EventID eventID)
 
 void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cache::Data& cache, uint32 index, uint32* variant, uint32 const* variantCount)
 {
-    using namespace Data::Media::Text;
+    using namespace Data::Text;
 
     struct Params
     {

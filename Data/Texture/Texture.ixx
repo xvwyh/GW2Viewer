@@ -1,11 +1,11 @@
 module;
 #include "UI/ImGui/ImGui.h"
 
-export module GW2Viewer.Data.Media.Texture;
+export module GW2Viewer.Data.Texture;
 import GW2Viewer.Common;
 import std;
 
-export namespace GW2Viewer::Data::Media::Texture
+export namespace GW2Viewer::Data::Texture
 {
 
 struct Texture

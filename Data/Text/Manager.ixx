@@ -1,4 +1,4 @@
-export module GW2Viewer.Data.Media.Text.Manager;
+export module GW2Viewer.Data.Text.Manager;
 import GW2Viewer.Common;
 import GW2Viewer.Common.FourCC;
 import GW2Viewer.Data.Archive;
@@ -12,7 +12,7 @@ import <boost/container/static_vector.hpp>;
 import <boost/thread/locks.hpp>;
 import <boost/thread/shared_mutex.hpp>;
 
-export namespace GW2Viewer::Data::Media::Text
+export namespace GW2Viewer::Data::Text
 {
 
 class Manager

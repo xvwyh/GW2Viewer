@@ -1,9 +1,9 @@
 ﻿module;
 #include <d3d11.h>
 
-module GW2Viewer.Data.Media.Texture;
+module GW2Viewer.Data.Texture;
 
-namespace GW2Viewer::Data::Media::Texture
+namespace GW2Viewer::Data::Texture
 {
 
 Texture::~Texture()

@@ -1,4 +1,4 @@
-export module GW2Viewer.Data.Media.Voice.Manager;
+export module GW2Viewer.Data.Voice.Manager;
 import GW2Viewer.Common;
 import GW2Viewer.Common.FourCC;
 import GW2Viewer.Data.Archive;
@@ -9,7 +9,7 @@ import GW2Viewer.Utils.Async.ProgressBarContext;
 import std;
 import <cassert>;
 
-export namespace GW2Viewer::Data::Media::Voice
+export namespace GW2Viewer::Data::Voice
 {
 
 class Manager

@@ -5,7 +5,7 @@
 #include <DirectXTex.h>
 #include <png.h>
 
-module GW2Viewer.Data.Media.Texture.Manager;
+module GW2Viewer.Data.Texture.Manager;
 import GW2Viewer.Data.Game;
 
 void StripPNGMetadata(std::filesystem::path const& path)
@@ -96,7 +96,7 @@ void StripPNGMetadata(std::filesystem::path const& path)
     }
 }
 
-namespace GW2Viewer::Data::Media::Texture
+namespace GW2Viewer::Data::Texture
 {
 
 std::unique_ptr<Texture> Manager::Create(uint32 width, uint32 height, void const* data)

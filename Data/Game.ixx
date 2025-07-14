@@ -3,10 +3,10 @@ import GW2Viewer.Common;
 import GW2Viewer.Data.Archive.Manager;
 import GW2Viewer.Data.Content.Manager;
 import GW2Viewer.Data.Encryption.Manager;
-import GW2Viewer.Data.Media.Text.Manager;
-import GW2Viewer.Data.Media.Texture.Manager;
-import GW2Viewer.Data.Media.Voice.Manager;
 import GW2Viewer.Data.Pack.Manager;
+import GW2Viewer.Data.Text.Manager;
+import GW2Viewer.Data.Texture.Manager;
+import GW2Viewer.Data.Voice.Manager;
 import GW2Viewer.Utils.Async.ProgressBarContext;
 import std;
 
@@ -21,9 +21,9 @@ struct Game
     Content::Manager Content;
     Encryption::Manager Encryption;
     Pack::Manager Pack;
-    Media::Text::Manager Text;
-    Media::Texture::Manager Texture;
-    Media::Voice::Manager Voice;
+    Text::Manager Text;
+    Texture::Manager Texture;
+    Voice::Manager Voice;
 
     void Load(std::filesystem::path const& path, Utils::Async::ProgressBarContext& progress);
 };

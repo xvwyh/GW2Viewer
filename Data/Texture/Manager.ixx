@@ -1,6 +1,6 @@
-export module GW2Viewer.Data.Media.Texture.Manager;
+export module GW2Viewer.Data.Texture.Manager;
 import GW2Viewer.Common;
-import GW2Viewer.Data.Media.Texture;
+import GW2Viewer.Data.Texture;
 import GW2Viewer.System.Graphics;
 import std;
 import <concurrentqueue/blockingconcurrentqueue.h>;
@@ -8,7 +8,7 @@ import <gsl/util>;
 
 using namespace std::chrono_literals;
 
-export namespace GW2Viewer::Data::Media::Texture
+export namespace GW2Viewer::Data::Texture
 {
 
 class Manager

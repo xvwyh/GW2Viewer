@@ -1,4 +1,4 @@
-export module GW2Viewer.Data.Media.Text.Format;
+export module GW2Viewer.Data.Text.Format;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Game;
 import GW2Viewer.Utils.String;
@@ -88,7 +88,7 @@ void FixupString(std::wstring& string)
     string = std::move(result);
 }
 
-export namespace GW2Viewer::Data::Media::Text
+export namespace GW2Viewer::Data::Text
 {
 
 enum
