@@ -383,52 +383,7 @@ void Manager::Update()
         {
             progress.Start("Preparing decryption key storage");
             if (!G::Config.DecryptionKeysPath.empty())
-            {
-                auto const extension = std::wstring(std::from_range, std::filesystem::path(G::Config.DecryptionKeysPath).extension().wstring() | std::views::transform(towlower));
-                if (extension == L".sqlite")
-                {
-                    G::Database.Load(G::Config.DecryptionKeysPath, progress);
-                }
-                if (extension == L".txt")
-                {
-                    std::filesystem::path const path = LR"(E:\Program Files\Guild Wars 2\addons\arcdps\arcdps_chatlog_keys.txt)";
-                    progress.Start("Reading string decryption keys", file_size(path));
-                    std::ifstream file(path);
-                    std::string buffer;
-                    uint32 session = 0;
-                    std::chrono::local_seconds time;
-                    while (std::getline(file, buffer))
-                    {
-                        uint32 stringID;
-                        uint64 key;
-                        if (std::string timeString; Utils::Scan::Into(buffer, "; Session: {:[^\r\n]}", timeString))
-                        {
-                            std::istringstream(timeString) >> std::chrono::parse("%F %T", time);
-                            ++session;
-                        }
-                        if (Utils::Scan::Into(buffer, "{} = {:x}", stringID, key))
-                            G::Game.Encryption.AddTextKeyInfo(stringID, { .Key = key, .Time = std::chrono::system_clock::to_time_t(std::chrono::current_zone()->to_sys(time)), .Session = session });
-
-                        progress = file.tellg();
-                    }
-                }
-                if (extension == L".txt")
-                {
-                    std::filesystem::path const path = LR"(E:\Program Files\Guild Wars 2\addons\arcdps\arcdps_chatlog_asset_keys.txt)";
-                    progress.Start("Reading asset decryption keys", file_size(path));
-                    std::ifstream file(path);
-                    std::string buffer;
-                    while (std::getline(file, buffer))
-                    {
-                        uint32 assetType, assetID;
-                        uint64 key;
-                        if (Utils::Scan::Into(buffer, "{} {} = {:x}", assetType, assetID, key))
-                            G::Game.Encryption.AddAssetKey((Data::Encryption::AssetType)assetType, assetID, key);
-
-                        progress = file.tellg();
-                    }
-                }
-            }
+                G::Database.Load(G::Config.DecryptionKeysPath, progress);
 
             G::Game.Archive.Load(progress);
 

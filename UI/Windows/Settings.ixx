@@ -19,7 +19,7 @@ struct Settings : Window
         I::InputText("Gw2-64.exe Path", &G::Config.GameExePath);
         I::InputText("Gw2.dat Path", &G::Config.GameDatPath);
         I::InputText("Local.dat Path (optional)", &G::Config.LocalDatPath);
-        I::InputText("Decryption Keys DB (.sqlite/.txt) (optional)", &G::Config.DecryptionKeysPath);
+        I::InputText("Decryption Keys DB (.sqlite) (optional)", &G::Config.DecryptionKeysPath);
         if (scoped::Disabled(G::Config.GameExePath.empty() || G::Config.GameDatPath.empty()))
         {
             if (I::Button("OK"))
