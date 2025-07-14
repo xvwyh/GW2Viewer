@@ -175,16 +175,14 @@ union PrintableFourCC
 
 }
 
-using namespace GW2Viewer::Utils::Format;
-
 export namespace std
 {
 
 template<>
-struct formatter<PrintableFourCC, char>
+struct formatter<GW2Viewer::Utils::Format::PrintableFourCC, char>
 {
     constexpr auto parse(auto& ctx) { return ctx.begin(); }
-    auto format(PrintableFourCC const& value, auto& ctx) const
+    auto format(GW2Viewer::Utils::Format::PrintableFourCC const& value, auto& ctx) const
     {
         return format_to(ctx.out(), "{}", value.Chars);
     }
