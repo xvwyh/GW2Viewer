@@ -165,6 +165,7 @@
     <ClCompile Include="UI\Controls\Controls-MapLayout.ixx" />
     <ClCompile Include="UI\Controls\Controls-Texture.ixx" />
     <ClCompile Include="UI\Controls\Controls-VoiceButton.ixx" />
+    <ClCompile Include="UI\Controls\Controls.cpp" />
     <ClCompile Include="UI\Controls\Controls.ixx" />
     <ClCompile Include="UI\ImGui\ImGuiExtensions.cpp" />
     <ClCompile Include="UI\Manager.cpp" />
@@ -193,6 +194,7 @@
     <ClCompile Include="UI\Windows\ArchiveIndex.ixx" />
     <ClCompile Include="UI\Windows\ContentSearch.ixx" />
     <ClCompile Include="UI\Windows\Demangle.ixx" />
+    <ClCompile Include="UI\Windows\ListContentValues.ixx" />
     <ClCompile Include="UI\Windows\MigrateContentTypes.ixx" />
     <ClCompile Include="UI\Windows\Notes.ixx" />
     <ClCompile Include="UI\Windows\Parse.ixx" />

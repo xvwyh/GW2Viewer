@@ -5,6 +5,7 @@ export module GW2Viewer.UI.Viewers.ContentViewer;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Content;
 import GW2Viewer.Utils.Encoding;
+import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.UI.Viewers.ViewerWithHistory;
 import std;
@@ -26,6 +27,13 @@ struct ContentViewer : ViewerWithHistory<ContentViewer, Data::Content::ContentOb
 
     std::string Title() override;
     void Draw() override;
+
+private:
+    std::optional<Controls::HexViewerCellInfo> persistentHovered;
+    std::optional<std::tuple<Data::Content::TypeInfo::LayoutStack, std::string, uint32, bool, bool>> creatingSymbol;
+    std::optional<std::tuple<Data::Content::TypeInfo::LayoutStack, std::string, Data::Content::TypeInfo::Symbol*, ImVec2, ImVec2, bool>> editingSymbol;
+    std::optional<uint32> highlightOffset;
+    std::optional<byte const*> highlightPointer;
 };
 
 }

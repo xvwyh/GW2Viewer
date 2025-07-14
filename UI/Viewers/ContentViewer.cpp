@@ -8,6 +8,7 @@ import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Viewers.ContentListViewer;
 import GW2Viewer.UI.Viewers.ListViewer;
+import GW2Viewer.UI.Windows.ListContentValues;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Exception;
 
@@ -123,85 +124,6 @@ void ContentViewer::Draw()
         }
     }
 
-    static std::optional<Controls::HexViewerCellInfo> persistentHovered;
-    static std::optional<std::tuple<Data::Content::TypeInfo::LayoutStack, std::string, uint32, bool, bool>> creatingSymbol;
-    static std::optional<std::tuple<Data::Content::TypeInfo::LayoutStack, std::string, Data::Content::TypeInfo::Symbol*, ImVec2, ImVec2, bool>> editingSymbol;
-    struct ViewUniqueValues
-    {
-        struct CachedKey
-        {
-            std::span<byte const> Data;
-            Data::Content::TypeInfo::SymbolType const* Type = nullptr;
-
-            auto operator<=>(CachedKey const& other) const
-            {
-                return Type && Type == other.Type
-                    ? Type->CompareDataForSearch(Data.data(), other.Data.data())
-                    : std::lexicographical_compare_three_way(Data.rbegin(), Data.rend(), other.Data.rbegin(), other.Data.rend());
-            }
-        };
-        struct CachedValue
-        {
-            Data::Content::TypeInfo::Symbol Symbol;
-            byte const* Data;
-            std::set<Data::Content::ContentObject*> Objects;
-            bool IsFolded = true;
-        };
-
-        Data::Content::ContentTypeInfo const& Type;
-        std::string SymbolPath;
-        bool IsEnum = false;
-        bool IncludeZero = false;
-        bool AsFlags = false;
-        std::map<CachedKey, CachedValue> Results;
-        std::set<Data::Content::TypeInfo::Condition::ValueType> ExternalKeyStorage;
-
-        void Get(Data::Content::TypeInfo::Symbol const& symbol, Data::Content::TypeInfo::LayoutStack const& layoutStack)
-        {
-            SymbolPath = symbol.GetFullPath(*layoutStack.top().Path);
-            IsEnum = symbol.GetEnum();
-            IncludeZero = IsEnum && !symbol.GetEnum()->Flags;
-            AsFlags = IsEnum && symbol.GetEnum()->Flags;
-            Refresh();
-        }
-        void Refresh()
-        {
-            std::vector<std::string_view> path;
-            for (auto const part : std::views::split(SymbolPath, std::string_view("->")))
-                path.emplace_back(part);
-
-            Results.clear();
-            ExternalKeyStorage.clear();
-            for (auto* object : Type.Objects)
-            {
-                for (auto& result : QuerySymbolData(*object, path))
-                {
-                    if (CachedKey key { { result.Data, result.Symbol->Size() }, result.Symbol->GetType() }; IncludeZero || std::ranges::any_of(key.Data, std::identity())) // Only show non-zero values
-                    {
-                        if (auto const e = result.Symbol->GetEnum(); e && e->Flags && AsFlags)
-                        {
-                            if (auto value = key.Type->GetValueForCondition(result.Data).value_or(0))
-                            {
-                                for (decltype(value) flag = 1; flag; flag <<= 1)
-                                {
-                                    if (value & flag)
-                                    {
-                                        auto data = (byte const*)&*ExternalKeyStorage.emplace(flag).first;
-                                        Results.try_emplace({ { data, sizeof(decltype(ExternalKeyStorage)::value_type) } }, *result.Symbol, data).first->second.Objects.emplace(object);
-                                    }
-                                }
-                                continue;
-                            }
-                        }
-                        Results.try_emplace(key, *result.Symbol, result.Data).first->second.Objects.emplace(object);
-                    }
-                }
-            }
-        }
-    };
-    static std::optional<ViewUniqueValues> viewUniqueValues;
-    static std::optional<uint32> highlightOffset;
-    static std::optional<byte const*> highlightPointer;
     using DrawType = Data::Content::TypeInfo::Symbol::DrawType;
     ImGuiID tableLayoutScope = I::GetCurrentWindow()->GetID("TableLayoutScope");
     ImGuiID popupDefineStructLayoutSymbol = I::GetCurrentWindow()->GetID("DefineStructLayoutSymbol");
@@ -228,7 +150,7 @@ void ContentViewer::Draw()
         std::vector<Pointers*> PointersStack;
         std::vector<std::tuple<std::string, uint32>> OutTableColumns;
     };
-    auto renderContentEditor = [&typeInfo, tableLayoutScope, popupChangeStructLayoutSymbol, popupDefineStructLayoutSymbol](RenderContentEditorContext& context, auto& renderContentEditor) -> void
+    auto renderContentEditor = [this, &typeInfo, tableLayoutScope, popupChangeStructLayoutSymbol, popupDefineStructLayoutSymbol](RenderContentEditorContext& context, auto& renderContentEditor) -> void
     {
         auto const& data = context.ScopedData;
 
@@ -729,7 +651,7 @@ void ContentViewer::Draw()
                 close = true;
             }
 
-            if (I::SameLine(); I::Button("View Unique Values"))
+            if (I::SameLine(); I::Button("List All Used Values"))
             {
                 auto itr = layout.emplace(offset, symbol);
                 auto& added = itr->second;
@@ -738,7 +660,7 @@ void ContentViewer::Draw()
                     added.Name = placeholderName;
                 //added.FinishLoading();
 
-                viewUniqueValues.emplace(*Content.Type).Get(added, layoutStack);
+                G::Windows::ListContentValues.Set(*Content.Type, added, layoutStack);
 
                 layout.erase(itr);
             }
@@ -768,8 +690,8 @@ void ContentViewer::Draw()
             symbol->DrawOptions(typeInfo, layoutStack, parentPath, false, symbolItr != layout.end() ? std::format("field{:X}", symbolItr->first) : "");
             bool close = I::Button("Close");
 
-            if (I::SameLine(); I::Button("View Unique Values"))
-                viewUniqueValues.emplace(*Content.Type).Get(*symbol, layoutStack);
+            if (I::SameLine(); I::Button("List All Used Values"))
+                G::Windows::ListContentValues.Set(*Content.Type, *symbol, layoutStack);
 
             if (symbolItr != layout.end())
             if (scoped::WithColorVar(ImGuiCol_Text, 0xFF0000FF))
@@ -789,86 +711,6 @@ void ContentViewer::Draw()
         }
         else
             editingSymbol.reset();
-    }
-    if (viewUniqueValues)
-    {
-        bool open = true;
-        if (scoped::Window("View Unique Field Values", &open, ImGuiWindowFlags_NoFocusOnAppearing))
-        {
-            if (I::Button(ICON_FA_ARROWS_ROTATE " Refresh"))
-                viewUniqueValues->Refresh();
-            if (I::SameLine(), I::Checkbox("Include Zero", &viewUniqueValues->IncludeZero))
-                viewUniqueValues->Refresh();
-            if (viewUniqueValues->IsEnum && (I::SameLine(), I::Checkbox("As Flags", &viewUniqueValues->AsFlags)))
-                viewUniqueValues->Refresh();
-
-            if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
-            if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
-            if (scoped::Table("UniqueFieldValues", 3, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoSavedSettings))
-            {
-                I::TableSetupColumn(viewUniqueValues->SymbolPath.c_str(), 0, 1);
-                I::TableSetupColumn("##Fold", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize);
-                I::TableSetupColumn("Content", 0, 3);
-                I::TableSetupScrollFreeze(0, 1);
-                I::TableHeadersRow();
-
-                auto const tableContentsCursor = I::GetCursorScreenPos();
-
-                ImGuiListClipper clipper;
-                clipper.Begin(std::ranges::fold_left(viewUniqueValues->Results, 0u, [](uint32 count, auto const& pair) { return count + (pair.second.IsFolded ? 1 : pair.second.Objects.size()); })/*, I::GetFrameHeight()*/);
-                std::set<decltype(ViewUniqueValues::Results)::key_type> keyDrawn;
-                while (clipper.Step())
-                {
-                    int drawn = 0;
-                    int offset = 0;
-                    for (auto& [key, value] : viewUniqueValues->Results)
-                    {
-                        int numToDisplay = value.IsFolded ? 1 : value.Objects.size();
-                        auto displayedObjects = value.Objects | std::views::take(numToDisplay) | std::views::drop(std::max(0, clipper.DisplayStart - offset)) | std::views::take(clipper.DisplayEnd - clipper.DisplayStart - drawn);
-                        bool const canAdjustY = !value.IsFolded && displayedObjects.size() > 1;
-                        bool first = !keyDrawn.contains(key);
-                        for (auto* object : displayedObjects)
-                        {
-                            I::TableNextRow();
-
-                            float const yOffset = canAdjustY && I::GetCursorScreenPos().y < tableContentsCursor.y ? tableContentsCursor.y - I::GetCursorScreenPos().y : 0;
-
-                            I::TableNextColumn();
-                            if (first)
-                            {
-                                if (yOffset)
-                                    I::SetCursorPosY(I::GetCursorPosY() + yOffset);
-                                value.Symbol.Draw(value.Data, DrawType::TableRow, *object);
-                                I::GetCurrentWindow()->DC.CursorMaxPos.y -= yOffset;
-                            }
-
-                            I::TableNextColumn();
-                            if (first && value.Objects.size() > 1)
-                            {
-                                if (yOffset)
-                                    I::SetCursorPosY(I::GetCursorPosY() + yOffset);
-                                if (scoped::WithID(&value))
-                                    if (I::Button(value.IsFolded ? ICON_FA_CHEVRON_RIGHT : ICON_FA_CHEVRON_DOWN))
-                                        value.IsFolded ^= true;
-                                I::GetCurrentWindow()->DC.CursorMaxPos.y -= yOffset;
-                            }
-
-                            I::TableNextColumn();
-                            Controls::ContentButton(object, object);
-                            if (first)
-                            {
-                                keyDrawn.emplace(key);
-                                first = false;
-                            }
-                            ++drawn;
-                        }
-                        offset += numToDisplay;
-                    }
-                }
-            }
-        }
-        if (!open)
-            viewUniqueValues.reset();
     }
 }
 
