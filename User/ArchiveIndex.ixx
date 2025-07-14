@@ -177,10 +177,10 @@ struct ArchiveIndex
     Utils::Async::Scheduler AsyncScan;
 
     bool IsLoaded() const { return m_mappedFile.is_mapped() && m_index && m_header; }
-    void Load(Data::Archive::Kind kind, std::filesystem::path const& path)
+    void Load(Data::Archive::Source& source, std::filesystem::path const& path)
     {
-        m_kind = kind;
-        m_archiveSource = G::Game.Archive.GetSource(m_kind);
+        m_kind = source.Kind;
+        m_archiveSource = &source;
         assert(m_archiveSource);
 
         bool creating = false;
@@ -196,7 +196,7 @@ struct ArchiveIndex
             resize_file(path, fileSize);
 
         std::error_code error;
-        m_mappedFile.map(path.wstring(), 0, 0, error);
+        m_mappedFile.map(path.wstring(), error);
         if (error)
             std::terminate();
 

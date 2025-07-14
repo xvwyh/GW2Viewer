@@ -432,8 +432,8 @@ void Manager::Update()
 
             progress.Start("Loading archive index");
             for (auto const [kind, name] : magic_enum::enum_entries<Data::Archive::Kind>())
-                if (G::Game.Archive.GetSource(kind))
-                    G::ArchiveIndex[kind].Load(kind, std::format("ArchiveIndex.{}.bin", name));
+                if (auto const source = G::Game.Archive.GetSource(kind))
+                    G::ArchiveIndex[kind].Load(*source, std::format("ArchiveIndex.{}.bin", name));
 
             auto sourcePtr = G::Game.Archive.GetSource();
             if (!sourcePtr)
