@@ -12,6 +12,34 @@ import GW2Viewer.System.Graphics;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.User.Config;
 
+void Render()
+{
+    using namespace GW2Viewer;
+    ImVec4 clear_col = ImColor(0, 0, 0);
+
+    ImGui_ImplDX11_NewFrame();
+    ImGui_ImplWin32_NewFrame();
+    ImGui::NewFrame();
+
+    G::UI.Update();
+
+    // Rendering
+    ImGui::Render();
+    G::GraphicsDeviceContext->OMSetRenderTargets(1, &G::RenderTargetView, NULL);
+    G::GraphicsDeviceContext->ClearRenderTargetView(G::RenderTargetView, (float*)&clear_col);
+    ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
+
+    // Update and Render additional Platform Windows
+    if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+    {
+        ImGui::UpdatePlatformWindows();
+        ImGui::RenderPlatformWindowsDefault();
+    }
+
+    G::SwapChain->Present(1, 0); // Present with vsync
+    //g_pSwapChain->Present(0, 0); // Present without vsync
+}
+
 extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
 {
@@ -20,6 +48,7 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam))
         return true;
 
+    static bool windowResizing = false;
     switch (msg)
     {
     case WM_SIZE:
@@ -33,6 +62,21 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
             pBackBuffer->Release();
         }
         return 0;
+    case WM_ENTERSIZEMOVE:
+        InvalidateRect(hWnd, nullptr, true);
+        windowResizing = true;
+        break;
+    case WM_EXITSIZEMOVE:
+        windowResizing = false;
+        break;
+    case WM_PAINT:
+        if (G::UI.IsLoaded())
+        {
+            Render();
+            if (windowResizing)
+                return 0;
+        }
+        break;
     case WM_SYSCOMMAND:
         if ((wParam & 0xfff0) == SC_KEYMENU) // Disable ALT application menu
             return 0;
@@ -117,8 +161,6 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
     G::Config.Load();
     G::UI.Load();
 
-    ImVec4 clear_col = ImColor(0, 0, 0);
-
     // Main loop
     MSG msg;
     ZeroMemory(&msg, sizeof(msg));
@@ -131,27 +173,7 @@ int WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLine, int n
             continue;
         }
 
-        ImGui_ImplDX11_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
-
-        G::UI.Update();
-
-        // Rendering
-        ImGui::Render();
-        G::GraphicsDeviceContext->OMSetRenderTargets(1, &G::RenderTargetView, NULL);
-        G::GraphicsDeviceContext->ClearRenderTargetView(G::RenderTargetView, (float*)&clear_col);
-        ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-
-        // Update and Render additional Platform Windows
-        if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
-        {
-            ImGui::UpdatePlatformWindows();
-            ImGui::RenderPlatformWindowsDefault();
-        }
-
-        G::SwapChain->Present(1, 0); // Present with vsync
-        //g_pSwapChain->Present(0, 0); // Present without vsync
+        Render();
 
         if (GetForegroundWindow() != hwnd && !ImGui::GetIO().WantCaptureMouse)
             Sleep(100);

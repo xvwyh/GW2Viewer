@@ -166,6 +166,8 @@ void Manager::Load()
 
     for (auto const& viewer : m_listViewers)
         viewer->SetSelected = dynamic_cast<Viewers::StringListViewer*>(viewer.get());
+
+    m_loaded = true;
 }
 
 void Manager::Unload()

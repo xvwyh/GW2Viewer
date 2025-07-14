@@ -25,6 +25,7 @@ public:
         ImFont* GameHeadingItalic { };
     } Fonts;
 
+    bool IsLoaded() const { return m_loaded; }
     void Load();
     void Unload();
 
@@ -64,6 +65,8 @@ public:
     }
 
 private:
+    bool m_loaded = false;
+
     std::list<std::function<void()>> m_deferred;
 
     float m_deltaTime = 1.0f;
