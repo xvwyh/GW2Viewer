@@ -221,12 +221,12 @@ public:
                 };
 
                 uint32 uncompressedSize = 0;
-                boost::container::small_vector<byte const, 16> headers((entry.alloc.extraBytes + 15) / 16 * 16);
+                boost::container::small_vector<byte, 16> headers((entry.alloc.extraBytes + 15) / 16 * 16);
                 Read(*headers.data(), entry.alloc.offset, headers.size());
-                byte const* p = headers.data();
+                byte* p = headers.data();
                 while (std::distance(headers.data(), p) + sizeof(Header) <= entry.alloc.extraBytes)
                 {
-                    auto header = (Header const*)p;
+                    auto header = (Header*)p;
                     switch (header->Type)
                     {
                         case Type::UncompressedSize:
@@ -236,7 +236,7 @@ public:
                             };
                             if (header->Size != sizeof(UncompressedSize))
                                 return 0;
-                            uncompressedSize = ((UncompressedSize const*&)p)++->Value;
+                            uncompressedSize = ((UncompressedSize*&)p)++->Value;
                             break;
                         case Type::Unknown:
                             struct Unknown : Header
@@ -245,7 +245,7 @@ public:
                             };
                             if (header->Size != sizeof(Unknown))
                                 return 0;
-                            ((Unknown const*&)p)++;
+                            ((Unknown*&)p)++;
                             break;
                         default:
                             if (header->Type >= Type::Invalid)
@@ -266,7 +266,7 @@ public:
         GetFile(fileID, result);
         return result;
     }
-    uint32 GetFile(uint32 fileID, std::span<byte> buffer)
+    uint32 GetFile(uint32 fileID, std::span<byte> buffer, bool partial = false)
     {
         if (auto entryPtr = GetFileMftEntry(fileID))
         {
@@ -275,7 +275,7 @@ public:
                 if (entry.alloc.extraBytes)
                 {
                     uint32 size = buffer.size();
-                    boost::container::small_vector<byte const, 0x200> compressed(std::min(std::max(0x200u, size), entry.alloc.size));
+                    boost::container::small_vector<byte, 0x200> compressed(partial ? std::min(std::max(0x200u, size), entry.alloc.size) : entry.alloc.size);
                     Read(compressed.front(), entry.alloc.offset, compressed.size());
                     gw2dt::compression::inflateDatFileBuffer(compressed.size(), compressed.data(), size, buffer.data());
                     assert(size == buffer.size());

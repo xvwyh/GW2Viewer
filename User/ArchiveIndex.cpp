@@ -33,7 +33,7 @@ bool ArchiveIndex::UpdateCache(CacheFile& cache, uint32 fileID, uint32 const* pr
         auto read = [&](uint32 bytes)
         {
             if (bytes > readBytes)
-                readBytes = m_archiveSource->Archive.GetFile(fileID, { data.data(), std::min<uint32>(data.size(), bytes) });
+                readBytes = m_archiveSource->Archive.GetFile(fileID, { data.data(), std::min<uint32>(data.size(), bytes) }, true);
             return readBytes;
         };
         if (read(32) < sizeof(uint32))
