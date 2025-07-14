@@ -212,7 +212,7 @@ void ConversationViewer::Draw()
                         // TODO: Open map to { state.Map, state.Position }
                     }
                     if (scoped::ItemTooltip())
-                        I::TextUnformatted(std::format("Encountered on: {:%F %T}", std::chrono::floor<std::chrono::seconds>(std::chrono::current_zone()->to_local(state.EncounteredTime))).c_str());
+                        I::TextUnformatted(std::format("Encountered on: {}", Utils::Format::DateTimeFullLocal(state.EncounteredTime)).c_str());
                 }
             }
 
@@ -323,7 +323,7 @@ void ConversationViewer::Draw()
                             // TODO: Open map to { transition.Map, transition.Position }
                         }
                         if (scoped::ItemTooltip())
-                            I::TextUnformatted(std::format("Encountered on: {:%F %T}", std::chrono::floor<std::chrono::seconds>(std::chrono::current_zone()->to_local(transition.EncounteredTime))).c_str());
+                            I::TextUnformatted(std::format("Encountered on: {}", Utils::Format::DateTimeFullLocal(transition.EncounteredTime)).c_str());
                     }
                 }
 

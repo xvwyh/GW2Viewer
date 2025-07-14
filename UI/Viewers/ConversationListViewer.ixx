@@ -209,7 +209,7 @@ struct ConversationListViewer : ListViewer<ConversationListViewer, { ICON_FA_COM
                                 // TODO: Open map to { conversation.Map, conversation.Position }
                             }
                             if (scoped::ItemTooltip())
-                                I::TextUnformatted(std::format("Encountered on: {:%F %T}", std::chrono::floor<std::chrono::seconds>(std::chrono::current_zone()->to_local(conversation.EncounteredTime))).c_str());
+                                I::TextUnformatted(std::format("Encountered on: {}", Utils::Format::DateTimeFullLocal(conversation.EncounteredTime)).c_str());
                         }
                     }
                 }

@@ -255,7 +255,7 @@ struct EventListViewer : ListViewer<EventListViewer, { ICON_FA_SEAL " Events", "
                                 // TODO: Open map to { eventID.Map, ?position? }
                             }
                             if (scoped::ItemTooltip())
-                                I::TextUnformatted(std::format("Encountered on: {:%F %T}", std::chrono::floor<std::chrono::seconds>(std::chrono::current_zone()->to_local(time))).c_str());
+                                I::TextUnformatted(std::format("Encountered on: {}", Utils::Format::DateTimeFullLocal(time)).c_str());
                         }
                     }
                 }

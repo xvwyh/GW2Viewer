@@ -310,7 +310,7 @@ struct StringListViewer : ListViewer<StringListViewer, { ICON_FA_TEXT " Strings"
                             // TODO: Open map to { info->Map, info->Position }
                         }
                         if (scoped::ItemTooltip())
-                            I::TextUnformatted(std::format("Decrypted on: {:%F %T}", std::chrono::floor<std::chrono::seconds>(std::chrono::current_zone()->to_local(std::chrono::system_clock::from_time_t(info->Time)))).c_str());
+                            I::TextUnformatted(std::format("Decrypted on: {}", Utils::Format::DateTimeFullLocal(std::chrono::system_clock::from_time_t(info->Time))).c_str());
                     }
 
                     I::TableNextColumn();
