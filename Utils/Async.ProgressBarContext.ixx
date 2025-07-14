@@ -1,4 +1,8 @@
+module;
+#include <assert.h>
+
 export module GW2Viewer.Utils.Async.ProgressBarContext;
+import GW2Viewer.Utils.Encoding;
 import std;
 
 export namespace GW2Viewer::Utils::Async
@@ -64,7 +68,21 @@ public:
 
     void Run(std::function<void(ProgressBarContext&)>&& func)
     {
-        m_task = std::async(std::launch::async, std::move(func), std::ref(*this));
+        m_task = std::async(std::launch::async, [this, func = std::move(func)](ProgressBarContext& context)
+        {
+            try
+            {
+                func(context);
+            }
+            catch (std::exception const& ex)
+            {
+                _wassert(Encoding::ToWString(ex.what()).c_str(), _CRT_WIDE(__FILE__), __LINE__);
+            }
+            catch (...)
+            {
+                assert(false);
+            }
+        }, std::ref(*this));
     }
 };
 
