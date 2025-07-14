@@ -1,6 +1,7 @@
 export module GW2Viewer.Content.Event;
 import GW2Viewer.Common;
 import GW2Viewer.Common.GUID;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Content;
 import GW2Viewer.Data.Game;
 import GW2Viewer.Utils.Enum;
@@ -137,11 +138,11 @@ struct Event
     }
     auto EncounteredTime() const
     {
-        std::chrono::system_clock::time_point result;
+        Time::Point result;
         for (auto const& state : States)
-            result = std::max(result, decltype(result) { std::chrono::milliseconds(state.Time) });
+            result = std::max(result, Time::FromTimestampMs(state.Time));
         for (auto const& objective : Objectives)
-            result = std::max(result, decltype(result) { std::chrono::milliseconds(objective.Time) });
+            result = std::max(result, Time::FromTimestampMs(objective.Time));
         return result;
     }
 };

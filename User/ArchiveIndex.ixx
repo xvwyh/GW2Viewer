@@ -7,6 +7,7 @@ module;
 export module GW2Viewer.User.ArchiveIndex;
 import GW2Viewer.Common;
 import GW2Viewer.Common.FourCC;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Archive;
 import GW2Viewer.Data.Game;
 import GW2Viewer.Utils.Async;
@@ -215,7 +216,7 @@ struct ArchiveIndex
         assert(m_header->FourCC == CacheHeader().FourCC && m_header->FourCC2 == CacheHeader().FourCC2);
         assert(m_header->ArchiveKind == (byte)m_kind);
 
-        m_header->ArchiveTimestampOnLastRun = std::chrono::system_clock::to_time_t(std::chrono::system_clock::time_point { last_write_time(m_archiveSource->Path).time_since_epoch() - std::chrono::duration_cast<std::chrono::seconds>(std::chrono::file_clock::duration { 0x19DB1DED53E8000LL }) });
+        m_header->ArchiveTimestampOnLastRun = Time::ToTimestamp(last_write_time(m_archiveSource->Path));
 
         if (!m_header->NumMetadata)
         {

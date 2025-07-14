@@ -2,6 +2,7 @@
 #include "UI/ImGui/ImGui.h"
 
 module GW2Viewer.UI.Viewers.EventViewer;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Content;
 import GW2Viewer.Data.Game;
 import GW2Viewer.Data.Text.Format;
@@ -309,7 +310,7 @@ void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cach
                 uint32 color = 0xFFFFFFFF;
                 if (params.WarningTime)
                 {
-                    time = std::vformat(params.TargetCount >= 60 * 60 ? L"{:%H:%M:%S}" : params.TargetCount >= 60 ? L"{:%M:%S}" : L"{:%S}", std::make_wformat_args(std::chrono::seconds(count)));
+                    time = std::vformat(params.TargetCount >= 60 * 60 ? L"{:%H:%M:%S}" : params.TargetCount >= 60 ? L"{:%M:%S}" : L"{:%S}", std::make_wformat_args(Time::Secs(count)));
                     time = FormatString(47773,
                         TEXTPARAM_STR1_LITERAL, defend ? L"#C5331B" : L"#BFD47A",
                         TEXTPARAM_STR2_LITERAL, std::wstring_view { time.begin() + time.starts_with(L'0'), time.end() });
@@ -317,9 +318,9 @@ void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cach
                     {
                         float value;
                         if (params.TextDefault == 192867)
-                            value = std::max(0.0f, 1.0f - std::abs(1000 - std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() % 2000) / 1000.0f);
+                            value = std::max(0.0f, 1.0f - std::abs(1000 - Time::ToTimestampMs(Time::Now()) % 2000) / 1000.0f);
                         else
-                            value = std::max(0.0f, 3.0f * (1000 - std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now().time_since_epoch()).count() % 1000) / 1000.0f - 2.0f);
+                            value = std::max(0.0f, 3.0f * (1000 - Time::ToTimestampMs(Time::Now()) % 1000) / 1000.0f - 2.0f);
                         color = I::ColorLerp(0xFFFFFFFF, 0xFF0000FF, value);
                     }
                 }

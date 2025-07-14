@@ -2,6 +2,7 @@ module;
 #include "UI/ImGui/ImGui.h"
 
 export module GW2Viewer.UI.Viewers.BookmarkListViewer;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Viewers.ListViewer;
@@ -31,7 +32,7 @@ struct BookmarkListViewer : ListViewer<BookmarkListViewer, { ICON_FA_BOOKMARK " 
             {
                 I::TableNextRow();
                 I::TableNextColumn(); Controls::ContentButton(G::Game.Content.GetByGUID(bookmark.Value), &bookmark, { .MissingContentName = "CONTENT OBJECT MISSING" });
-                I::TableNextColumn(); I::TextUnformatted(Utils::Format::DurationShortColored("{} ago", std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - bookmark.Time)).c_str());
+                I::TableNextColumn(); I::TextUnformatted(Utils::Format::DurationShortColored("{} ago", Time::UntilNowSecs(bookmark.Time)).c_str());
             }
         }
     }

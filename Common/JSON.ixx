@@ -3,6 +3,7 @@ module;
 #include "Utils/Scan.h"
 
 export module GW2Viewer.Common.JSON;
+import GW2Viewer.Common.Time;
 //export import nlohmann.json;
 import GW2Viewer.Utils.ConstString;
 import GW2Viewer.Utils.Encoding;
@@ -170,15 +171,19 @@ struct nlohmann::adl_serializer<std::chrono::duration<Rep, Period>>
 {
     static void to_json(auto& j, std::chrono::duration<Rep, Period> const& duration)
     {
+        using namespace GW2Viewer;
+
         auto const ticks = duration.count();
-             if (!(ticks % (std::chrono::days   ::period::num * std::chrono::milliseconds::period::den))) j = std::format("{:%Q%q}", std::chrono::duration_cast<std::chrono::days        >(duration));
-        else if (!(ticks % (std::chrono::hours  ::period::num * std::chrono::milliseconds::period::den))) j = std::format("{:%Q%q}", std::chrono::duration_cast<std::chrono::hours       >(duration));
-        else if (!(ticks % (std::chrono::minutes::period::num * std::chrono::milliseconds::period::den))) j = std::format("{:%Q%q}", std::chrono::duration_cast<std::chrono::minutes     >(duration));
-        else if (!(ticks % (std::chrono::seconds::period::num * std::chrono::milliseconds::period::den))) j = std::format("{:%Q%q}", std::chrono::duration_cast<std::chrono::seconds     >(duration));
-        else                                                                                              j = std::format("{:%Q%q}", std::chrono::duration_cast<std::chrono::milliseconds>(duration));
+             if (!(ticks % (Time::Days ::period::num * Time::Ms::period::den))) j = std::format("{:%Q%q}", std::chrono::duration_cast<Time::Days >(duration));
+        else if (!(ticks % (Time::Hours::period::num * Time::Ms::period::den))) j = std::format("{:%Q%q}", std::chrono::duration_cast<Time::Hours>(duration));
+        else if (!(ticks % (Time::Mins ::period::num * Time::Ms::period::den))) j = std::format("{:%Q%q}", std::chrono::duration_cast<Time::Mins >(duration));
+        else if (!(ticks % (Time::Secs ::period::num * Time::Ms::period::den))) j = std::format("{:%Q%q}", std::chrono::duration_cast<Time::Secs >(duration));
+        else                                                                    j = std::format("{:%Q%q}", std::chrono::duration_cast<Time::Ms   >(duration));
     }
     static void from_json(auto const& j, std::chrono::duration<Rep, Period>& duration)
     {
+        using namespace GW2Viewer;
+
         if (j.is_number())
         {
             duration = { j.template get<Rep>() };
@@ -191,17 +196,17 @@ struct nlohmann::adl_serializer<std::chrono::duration<Rep, Period>>
         if (!scn::scan(str, ticks))
             return;
         if (str.ends_with("ms"))
-            duration = std::chrono::milliseconds(ticks);
+            duration = Time::Ms(ticks);
         else if (str.ends_with("s"))
-            duration = std::chrono::seconds(ticks);
+            duration = Time::Secs(ticks);
         else if (str.ends_with("min"))
-            duration = std::chrono::minutes(ticks);
+            duration = Time::Mins(ticks);
         else if (str.ends_with("h"))
-            duration = std::chrono::hours(ticks);
+            duration = Time::Hours(ticks);
         else if (str.ends_with("d"))
-            duration = std::chrono::days(ticks);
+            duration = Time::Days(ticks);
         else
-            duration = std::chrono::milliseconds(ticks);
+            duration = Time::Ms(ticks);
     }
 };
 

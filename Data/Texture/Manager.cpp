@@ -6,6 +6,7 @@
 #include <png.h>
 
 module GW2Viewer.Data.Texture.Manager;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Game;
 
 void StripPNGMetadata(std::filesystem::path const& path)

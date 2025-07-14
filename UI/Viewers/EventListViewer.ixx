@@ -3,6 +3,7 @@ module;
 #include "Utils/Async.h"
 
 export module GW2Viewer.UI.Viewers.EventListViewer;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Content.Event;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
@@ -250,7 +251,7 @@ struct EventListViewer : ListViewer<EventListViewer, { ICON_FA_SEAL " Events", "
                         I::TableNextColumn();
                         if (auto time = event.EncounteredTime(); time.time_since_epoch().count())
                         {
-                            if (I::Selectable(std::format("<c=#{}>{}</c> {}###EncounteredTime", eventID.Map ? "F" : "2", ICON_FA_GLOBE, Utils::Format::DurationShortColored("{} ago", std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - time))).c_str()))
+                            if (I::Selectable(std::format("<c=#{}>{}</c> {}###EncounteredTime", eventID.Map ? "F" : "2", ICON_FA_GLOBE, Utils::Format::DurationShortColored("{} ago", Time::UntilNowSecs(time))).c_str()))
                             {
                                 // TODO: Open map to { eventID.Map, ?position? }
                             }

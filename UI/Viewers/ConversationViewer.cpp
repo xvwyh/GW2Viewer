@@ -2,6 +2,7 @@
 #include "UI/ImGui/ImGui.h"
 
 module GW2Viewer.UI.Viewers.ConversationViewer;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Content.Conversation;
 import GW2Viewer.Data.Encryption;
 import GW2Viewer.Data.Game;
@@ -207,7 +208,7 @@ void ConversationViewer::Draw()
                 I::SameLine();
                 if (state.EncounteredTime.time_since_epoch().count())
                 {
-                    if (I::Button(std::format("<c=#{}>{}</c> {}###EncounteredTime", state.Map ? "F" : "2", ICON_FA_GLOBE, Utils::Format::DurationShortColored("{} ago", std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - state.EncounteredTime))).c_str()))
+                    if (I::Button(std::format("<c=#{}>{}</c> {}###EncounteredTime", state.Map ? "F" : "2", ICON_FA_GLOBE, Utils::Format::DurationShortColored("{} ago", Time::UntilNowSecs(state.EncounteredTime))).c_str()))
                     {
                         // TODO: Open map to { state.Map, state.Position }
                     }
@@ -318,7 +319,7 @@ void ConversationViewer::Draw()
                     I::SameLine();
                     if (transition.EncounteredTime.time_since_epoch().count())
                     {
-                        if (I::Button(std::format("<c=#{}>{}</c> {}###EncounteredTime", transition.Map ? "F" : "2", ICON_FA_GLOBE, Utils::Format::DurationShortColored("{} ago", std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - transition.EncounteredTime))).c_str()))
+                        if (I::Button(std::format("<c=#{}>{}</c> {}###EncounteredTime", transition.Map ? "F" : "2", ICON_FA_GLOBE, Utils::Format::DurationShortColored("{} ago", Time::UntilNowSecs(transition.EncounteredTime))).c_str()))
                         {
                             // TODO: Open map to { transition.Map, transition.Position }
                         }

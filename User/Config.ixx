@@ -6,6 +6,7 @@ export module GW2Viewer.User.Config;
 import GW2Viewer.Common;
 import GW2Viewer.Common.GUID;
 import GW2Viewer.Common.JSON;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Content;
 import std;
 
@@ -20,7 +21,7 @@ struct Config
     template<typename T>
     struct Bookmark
     {
-        std::chrono::system_clock::time_point Time;
+        Time::Point Time;
         T Value;
 
         NLOHMANN_DEFINE_TYPE_ORDERED_INTRUSIVE_WITH_DEFAULT(Bookmark

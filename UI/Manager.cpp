@@ -31,8 +31,6 @@ import GW2Viewer.Utils.Scan;
 import std;
 import magic_enum;
 
-using namespace std::chrono_literals;
-
 namespace GW2Viewer::UI
 {
 
@@ -179,9 +177,9 @@ void Manager::Unload()
 
 void Manager::Update()
 {
-    m_now = std::chrono::high_resolution_clock::now();
+    m_now = Time::PreciseNow();
     static auto prev = m_now;
-    m_deltaTime = std::max(0.001f, std::chrono::duration_cast<std::chrono::microseconds>(m_now - prev).count() / 1000000.0f);
+    m_deltaTime = std::max(0.001f, Time::Between<Time::Us>(prev, m_now).count() / 1000000.0f);
     prev = m_now;
 
     while (!m_deferred.empty())

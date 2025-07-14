@@ -3,6 +3,7 @@ module;
 
 export module GW2Viewer.Content.Conversation;
 import GW2Viewer.Common;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Game;
 import GW2Viewer.Utils.String;
 import std;
@@ -55,7 +56,7 @@ struct Conversation
             auto GetIdentity() const { return std::tie(TransitionID, TextID, CostAmount, CostType, CostKarma, Diplomacy, Unk, Personality, Icon, SkillDefDataID); }
             auto operator<=>(Transition const& other) const { return GetIdentity() <=> other.GetIdentity(); }
 
-            mutable std::chrono::system_clock::time_point EncounteredTime;
+            mutable Time::Point EncounteredTime;
             mutable uint32 Session { };
             mutable uint32 Map { };
             mutable ImVec4 Position { };
@@ -98,7 +99,7 @@ struct Conversation
         auto GetIdentity() const { return std::tie(StateID, TextID, SpeakerNameTextID, SpeakerPortraitOverrideFileID, Priority, Flags, Voting, Timeout, CostAmount, CostType, Unk); }
         auto operator<=>(State const& other) const { return GetIdentity() <=> other.GetIdentity(); }
 
-        mutable std::chrono::system_clock::time_point EncounteredTime;
+        mutable Time::Point EncounteredTime;
         mutable uint32 Session { };
         mutable uint32 Map { };
         mutable ImVec4 Position { };
@@ -159,7 +160,7 @@ struct Conversation
         Utils::String::ReplaceAll(result, "\n", R"(<c=#F00>\n</c>)");
         return result;
     }
-    std::chrono::system_clock::time_point EncounteredTime;
+    Time::Point EncounteredTime;
     uint32 Session { };
     uint32 Map { };
     ImVec4 Position { };

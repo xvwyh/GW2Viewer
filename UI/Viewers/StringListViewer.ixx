@@ -4,6 +4,7 @@ module;
 
 export module GW2Viewer.UI.Viewers.StringListViewer;
 import GW2Viewer.Common;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Encryption;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
@@ -18,8 +19,6 @@ import GW2Viewer.Utils.Scan;
 import GW2Viewer.Utils.String;
 import std;
 import <ctype.h>;
-
-using namespace std::chrono_literals;
 
 export namespace GW2Viewer::UI::Viewers
 {
@@ -305,12 +304,12 @@ struct StringListViewer : ListViewer<StringListViewer, { ICON_FA_TEXT " Strings"
                     I::TableNextColumn();
                     if (info)
                     {
-                        if (I::Selectable(std::format("<c=#{}>{}</c> {}###DecryptionTime", info->Map ? "F" : "2", ICON_FA_GLOBE, Utils::Format::DurationShortColored("{} ago", std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - std::chrono::system_clock::from_time_t(info->Time)))).c_str()))
+                        if (I::Selectable(std::format("<c=#{}>{}</c> {}###DecryptionTime", info->Map ? "F" : "2", ICON_FA_GLOBE, Utils::Format::DurationShortColored("{} ago", Time::UntilNowSecs(Time::FromTimestamp(info->Time)))).c_str()))
                         {
                             // TODO: Open map to { info->Map, info->Position }
                         }
                         if (scoped::ItemTooltip())
-                            I::TextUnformatted(std::format("Decrypted on: {}", Utils::Format::DateTimeFullLocal(std::chrono::system_clock::from_time_t(info->Time))).c_str());
+                            I::TextUnformatted(std::format("Decrypted on: {}", Utils::Format::DateTimeFullLocal(Time::FromTimestamp(info->Time))).c_str());
                     }
 
                     I::TableNextColumn();

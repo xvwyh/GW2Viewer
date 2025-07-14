@@ -3,6 +3,7 @@ module;
 
 export module GW2Viewer.UI.Manager;
 import GW2Viewer.Common.GUID;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Content.Event;
 import GW2Viewer.Data.Archive;
 import GW2Viewer.Data.Content;
@@ -70,7 +71,7 @@ private:
     std::list<std::function<void()>> m_deferred;
 
     float m_deltaTime = 1.0f;
-    std::chrono::high_resolution_clock::time_point m_now;
+    Time::PrecisePoint m_now;
 
     bool m_showOriginalNames = false;
 

@@ -4,6 +4,7 @@ module;
 export module GW2Viewer.Data.External.Database;
 import GW2Viewer.Common;
 import GW2Viewer.Common.GUID;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Content.Conversation;
 import GW2Viewer.Content.Event;
 import GW2Viewer.Data.Encryption.Asset;
@@ -18,8 +19,6 @@ import GW2Viewer.Utils.Async.ProgressBarContext;
 import GW2Viewer.Utils.Enum;
 import std;
 import <gsl/gsl>;
-
-using namespace std::chrono_literals;
 
 export namespace GW2Viewer::Data::External
 {
@@ -193,7 +192,7 @@ public:
                 [](uint32 ConversationGenID, uint32 ConversationStateID, uint32 ConversationStateTextID, uint32 ConversationStateTransitionID, uint32 ConversationStateTransitionTextID, uint64 Time, uint32 Session, uint32 Map, float AgentX, float AgentY, float AgentZ, float AgentFacing)
                 {
                     auto& conversation = Content::conversations[ConversationGenID];
-                    conversation.EncounteredTime = std::chrono::system_clock::time_point { std::chrono::milliseconds(Time) };
+                    conversation.EncounteredTime = Time::FromTimestampMs(Time);
                     conversation.Session = Session;
                     conversation.Map = Map;
                     conversation.Position = { AgentX, AgentY, AgentZ, AgentFacing };

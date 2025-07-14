@@ -3,6 +3,7 @@ module;
 #include "Utils/Async.h"
 
 export module GW2Viewer.UI.Viewers.ConversationListViewer;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Content.Conversation;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
@@ -204,7 +205,7 @@ struct ConversationListViewer : ListViewer<ConversationListViewer, { ICON_FA_COM
                         I::TableNextColumn();
                         if (conversation.EncounteredTime.time_since_epoch().count())
                         {
-                            if (I::Selectable(std::format("<c=#{}>{}</c> {}###EncounteredTime", conversation.Map ? "F" : "2", ICON_FA_GLOBE, Utils::Format::DurationShortColored("{} ago", std::chrono::duration_cast<std::chrono::seconds>(std::chrono::system_clock::now() - conversation.EncounteredTime))).c_str()))
+                            if (I::Selectable(std::format("<c=#{}>{}</c> {}###EncounteredTime", conversation.Map ? "F" : "2", ICON_FA_GLOBE, Utils::Format::DurationShortColored("{} ago", Time::UntilNowSecs(conversation.EncounteredTime))).c_str()))
                             {
                                 // TODO: Open map to { conversation.Map, conversation.Position }
                             }

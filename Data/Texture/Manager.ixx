@@ -6,8 +6,6 @@ import std;
 import <concurrentqueue/blockingconcurrentqueue.h>;
 import <gsl/util>;
 
-using namespace std::chrono_literals;
-
 export namespace GW2Viewer::Data::Texture
 {
 

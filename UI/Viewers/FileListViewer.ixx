@@ -4,6 +4,7 @@ module;
 
 export module GW2Viewer.UI.Viewers.FileListViewer;
 import GW2Viewer.Common;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Archive;
 import GW2Viewer.Data.Game;
 import GW2Viewer.Data.Pack;
@@ -260,10 +261,10 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
                         Controls::CopyButton("FourCC", metadata.FourCCToString());
 
                         Controls::CopyButton("Added Build", addedTimestamp.Build); I::SameLine();
-                        Controls::CopyButton("Added Timestamp", Utils::Format::DateTimeFullLocal(std::chrono::system_clock::from_time_t(addedTimestamp.Timestamp)));
+                        Controls::CopyButton("Added Timestamp", Utils::Format::DateTimeFullLocal(Time::FromTimestamp(addedTimestamp.Timestamp)));
 
                         Controls::CopyButton("Changed Build", changedTimestamp.Build); I::SameLine();
-                        Controls::CopyButton("Changed Timestamp", Utils::Format::DateTimeFullLocal(std::chrono::system_clock::from_time_t(changedTimestamp.Timestamp)));
+                        Controls::CopyButton("Changed Timestamp", Utils::Format::DateTimeFullLocal(Time::FromTimestamp(changedTimestamp.Timestamp)));
 
                         Controls::CopyButton("Size", cache.FileSize); I::SameLine();
                         Controls::CopyButton("Compressed Size", entry.alloc.size); I::SameLine();
@@ -286,7 +287,7 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
                     {
                         I::Selectable(std::format("<c=#{}>{}</c>##{}", G::Game.Build ? (timestamp.Build >= G::Game.Build ? "F00" : timestamp.Build + 100 >= G::Game.Build ? "F80" : timestamp.Build + 1000 >= G::Game.Build ? "FF0": timestamp.Build + 5000 >= G::Game.Build ? "FF8" : "F") : "F", timestamp.Build, id).c_str());
                         if (scoped::ItemTooltip())
-                            I::Text(std::format("{}:\nBuild: {}\nDate: {}", description, timestamp.Build, Utils::Format::DateTimeFullLocal(std::chrono::system_clock::from_time_t(timestamp.Timestamp))).c_str());
+                            I::Text(std::format("{}:\nBuild: {}\nDate: {}", description, timestamp.Build, Utils::Format::DateTimeFullLocal(Time::FromTimestamp(timestamp.Timestamp))).c_str());
                     };
                     I::TableNextColumn(); timestamp("AddedTimestamp", addedTimestamp, "File first scanned");
                     I::TableNextColumn(); timestamp("ChangedTimestamp", changedTimestamp, "Last time file changed was scanned");

@@ -3,6 +3,7 @@ module;
 #include "Utils/Async.h"
 
 export module GW2Viewer.UI.Windows.ArchiveIndex;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Archive;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
@@ -94,7 +95,7 @@ struct ArchiveIndex : Window
 
             if (std::exchange(WritingLog, false))
             {
-                std::filesystem::path path = std::format(R"(Export\Index\{:%F_%H-%M-%S}Z_{}_{}.log)", std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::from_time_t(Index.GetArchiveTimestamp())), G::Game.Build, Name);
+                std::filesystem::path path = std::format(R"(Export\Index\{:%F_%H-%M-%S}Z_{}_{}.log)", Time::FromTimestamp(Index.GetArchiveTimestamp()), G::Game.Build, Name);
                 create_directories(path.parent_path());
                 auto originalPath = path;
                 int attempt = 1;
@@ -180,7 +181,7 @@ struct ArchiveIndex : Window
                         {
                             CHECK_ASYNC;
                             auto data = Index.GetSource().Archive.GetFile(fileID);
-                            std::filesystem::path path = std::format(R"(Export\Index\{:%F_%H-%M-%S}Z_{}_{}\{})", std::chrono::floor<std::chrono::seconds>(std::chrono::system_clock::from_time_t(Index.GetArchiveTimestamp())), G::Game.Build, Name, fileID);
+                            std::filesystem::path path = std::format(R"(Export\Index\{:%F_%H-%M-%S}Z_{}_{}\{})", Time::FromTimestamp(Index.GetArchiveTimestamp()), G::Game.Build, Name, fileID);
                             create_directories(path.parent_path());
                             G::UI.ExportData(data, path);
                             //path.replace_extension(".png");

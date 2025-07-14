@@ -83,6 +83,7 @@
     <ClCompile Include="Common\GUID.ixx" />
     <ClCompile Include="Common\Hash.ixx" />
     <ClCompile Include="Common\JSON.ixx" />
+    <ClCompile Include="Common\Time.ixx" />
     <ClCompile Include="Common\Token.ixx" />
     <ClCompile Include="Common\Token32.ixx" />
     <ClCompile Include="Common\Token64.ixx" />

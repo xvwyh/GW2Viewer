@@ -3,6 +3,7 @@
 
 module GW2Viewer.UI.Viewers.ContentViewer;
 import GW2Viewer.Common.GUID;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Manager;
@@ -36,7 +37,7 @@ void ContentViewer::Draw()
         if (auto const* guid = Content.GetGUID())
             if (auto bookmarked = std::ranges::contains(G::Config.BookmarkedContentObjects, *guid, &decltype(G::Config.BookmarkedContentObjects)::value_type::Value); I::CheckboxButton(ICON_FA_BOOKMARK, bookmarked, "Bookmark", I::GetFrameHeight()))
                 if (bookmarked)
-                    G::Config.BookmarkedContentObjects.emplace(std::chrono::system_clock::now(), *guid);
+                    G::Config.BookmarkedContentObjects.emplace(Time::Now(), *guid);
                 else
                     std::erase_if(G::Config.BookmarkedContentObjects, [guid = *guid](auto const& record) { return record.Value == guid; });
 

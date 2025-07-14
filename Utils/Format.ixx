@@ -4,13 +4,12 @@ module;
 export module GW2Viewer.Utils.Format;
 import GW2Viewer.Common;
 import GW2Viewer.Common.FourCC;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Utils.ConstString;
 import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.Visitor;
 import std;
 import <format>;
-
-using namespace std::chrono_literals;
 
 export namespace std
 {
@@ -154,24 +153,24 @@ std::string DurationShortColored(char const* format, std::chrono::duration<Rep, 
     return std::format("<c=#{}>{}</c>", color, std::vformat(format, std::make_format_args(DurationShort(duration))));
 }
 
-std::string DateTimeFull(std::chrono::system_clock::time_point time)
+std::string DateTimeFull(Time::Point time)
 {
-    try { return std::format("{:%F %T}", std::chrono::floor<std::chrono::seconds>(time)); }
+    try { return std::format("{:%F %T}", Time::ToSecs(time)); }
     catch (...)
     {
-        time_t const timestamp = std::chrono::system_clock::to_time_t(time);
+        auto const timestamp = Time::ToTimestamp(time);
         tm tm { };
         gmtime_s(&tm, &timestamp);
         return std::format("{:04}-{:02}-{:02} {:02}:{:02}:{:02}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
     }
 }
 
-std::string DateTimeFullLocal(std::chrono::system_clock::time_point time)
+std::string DateTimeFullLocal(Time::Point time)
 {
     try { return std::format("{:%F %T}", std::chrono::floor<std::chrono::seconds>(std::chrono::current_zone()->to_local(time))); }
     catch (...)
     {
-        time_t const timestamp = std::chrono::system_clock::to_time_t(time);
+        auto const timestamp = Time::ToTimestamp(time);
         tm tm { };
         localtime_s(&tm, &timestamp);
         return std::format("{:04}-{:02}-{:02} {:02}:{:02}:{:02}", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);

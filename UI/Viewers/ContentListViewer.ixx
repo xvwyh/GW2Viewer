@@ -5,6 +5,7 @@ module;
 export module GW2Viewer.UI.Viewers.ContentListViewer;
 import GW2Viewer.Common;
 import GW2Viewer.Common.GUID;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Content;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
@@ -21,8 +22,6 @@ import GW2Viewer.Utils.Scan;
 import GW2Viewer.Utils.Visitor;
 import std;
 import <gsl/gsl>;
-
-using namespace std::chrono_literals;
 
 export namespace GW2Viewer::UI::Viewers
 {
@@ -67,7 +66,7 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             cache.Objects.assign_range(entries | std::views::transform([](auto const& ptr) { return ptr->Index; }));
             reset = true;
         }
-        if ((reset || cache.Sort != Sort || cache.Invert != SortInvert) && std::chrono::high_resolution_clock::now() < timeout)
+        if ((reset || cache.Sort != Sort || cache.Invert != SortInvert) && Time::PreciseNow() < timeout)
             SortList(cache.Objects, (cache.Sort = Sort), (cache.Invert = SortInvert));
         return cache.Objects | std::views::transform([](uint32 index) { return G::Game.Content.GetByIndex(index); });
     }
