@@ -188,11 +188,12 @@ bool ArchiveIndex::UpdateCache(CacheFile& cache, uint32 fileID, uint32 const* pr
                     case std::byteswap('ID3'): // MP3
                         metadata.Type = Type::Audio;
                         break;
-                    case 0xBFBBEF: // UTF-8 BOM
+                    case '\0\xEF\xBB\xBF': // UTF-8 BOM
                         metadata.Type = Type::Text;
                         break;
-                    case 0xFFD8FF: // JPEG
+                    case '\0\xFF\xD8\xFF': // JPEG
                         metadata.Type = Type::Texture;
+                        metadata.Texture.Format = std::byteswap('JPEG');
                         break;
                     case std::byteswap('KB2'): // Bink Video 2
                         metadata.Type = Type::Video;
@@ -200,7 +201,7 @@ bool ArchiveIndex::UpdateCache(CacheFile& cache, uint32 fileID, uint32 const* pr
                     default:
                         switch ((metadata.FourCC &= 0xFFFF) << 16)
                         {
-                            case 0xFBFF: // MP3
+                            case '\0\0\xFF\xFB': // MP3
                                 metadata.Type = Type::Audio;
                                 break;
                             case std::byteswap('MZ'): // EXE / DLL
