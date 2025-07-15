@@ -39,7 +39,7 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
     std::optional<std::pair<int32, int32>> FilterID;
     uint32 FilterRange { };
     std::optional<User::ArchiveIndex::Type> FilterType;
-    enum class FileSort { ID, Archive, FourCC, Type, Metadata, Added, Changed, Size, CompressedSize, ExtraBytes, Flags, Stream, NextStream, CRC } Sort { FileSort::ID };
+    enum class FileSort { ID, Archive, FourCC, Type, Metadata, Added, Changed, Size, CompressedSize, ExtraBytes, Flags, Stream, NextStream, CRC, Refs } Sort { FileSort::ID };
     bool SortInvert { };
 
     void SortList(Utils::Async::Context context, std::vector<File>& data, FileSort sort, bool invert)
@@ -89,6 +89,9 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
                 break;
             case CRC:
                 ComplexSort(data, invert, [](File const& file) { return file.GetEntry().alloc.crc; });
+                break;
+            case Refs:
+                ComplexSort(data, invert, [](File const& file) { return G::Game.ReferencedFiles.contains(file.ID) ? 1 : 0; });
                 break;
             default: std::terminate();
         }
@@ -199,7 +202,7 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
 
         if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, I::GetStyle().FramePadding))
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, I::GetStyle().ItemSpacing / 2))
-        if (scoped::Table("Table", 14, ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Sortable))
+        if (scoped::Table("Table", 15, ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Sortable))
         {
             I::TableSetupColumn("File ID", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth, 60, (ImGuiID)FileSort::ID);
             I::TableSetupColumn("Archive", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth, 60, (ImGuiID)FileSort::Archive);
@@ -215,6 +218,7 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
             I::TableSetupColumn("Stream", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth | ImGuiTableColumnFlags_DefaultHide, 20, (ImGuiID)FileSort::Stream);
             I::TableSetupColumn("Next Stream", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth | ImGuiTableColumnFlags_DefaultHide, 30, (ImGuiID)FileSort::NextStream);
             I::TableSetupColumn("CRC", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth | ImGuiTableColumnFlags_DefaultHide, 70, (ImGuiID)FileSort::CRC);
+            I::TableSetupColumn("Refs", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth | ImGuiTableColumnFlags_PreferSortDescending, 40, (ImGuiID)FileSort::Refs);
             I::TableSetupScrollFreeze(0, 1);
             I::TableHeadersRow();
 
@@ -298,6 +302,7 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
                     I::TableNextColumn(); I::Text(entry.alloc.stream ? "%u" : "<c=#4>%u</c>", entry.alloc.stream);
                     I::TableNextColumn(); I::Text(entry.alloc.nextStream ? "%u" : "<c=#4>%u</c>", entry.alloc.nextStream);
                     I::TableNextColumn(); I::Text("%08X", entry.alloc.crc);
+                    I::TableNextColumn(); if (G::Game.ReferencedFiles.contains(file.ID)) I::TextColored({ 0, 0.5f, 1, 1 }, ICON_FA_ARROW_LEFT "EXE");
                 }
             }
         }

@@ -1,7 +1,7 @@
 ﻿module GW2Viewer.Data.Game;
-import GW2Viewer.Utils.ScanPE;
-
+import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Pack;
+import GW2Viewer.Utils.ScanPE;
 
 namespace GW2Viewer::Data
 {
@@ -25,6 +25,37 @@ void Game::Load(std::filesystem::path const& path, Utils::Async::ProgressBarCont
                             if (skipPadding(p), p[0] == 0xB8)
                                 if (uint32 const build = *(uint32 const*)&p[1]; build < 300000 && ((Build = build)))
                                     break;
+    }
+
+    progress.Start("Searching for embedded filenames", scanner.rdata.size());
+    while (!G::Game.Archive.IsLoaded())
+        std::this_thread::sleep_for(50ms);
+
+    for (byte const* p = scanner.text.begin(); p != scanner.text.end() - 7; ++p)
+    {
+        if ((p[0] == 0x48 || p[0] == 0x4C) && p[1] == 0x8D)
+        {
+            for (auto target = p + 7 + *(uint32 const*)&p[3]; (scanner.rdata.Contains(target) || scanner.data.Contains(target)) && !target[6] && !target[7]; target += 8)
+            {
+                if (uint32 const fileID = ((Pack::FileReference const*)target)->GetFileID(); fileID && fileID <= G::Game.Archive.GetMaxFileID())
+                    ReferencedFiles.emplace(fileID);
+                else
+                    break;
+            }
+            if (auto indirection = (byte const* const*)(p + 7 + *(uint32 const*)&p[3]); scanner.rdata.Contains(indirection) || scanner.data.Contains(indirection))
+            {
+                for (auto target = *indirection; (scanner.rdata.Contains(target) || scanner.data.Contains(target)) && !target[6] && !target[7]; target += 8)
+                {
+                    if (uint32 const fileID = ((Pack::FileReference const*)target)->GetFileID(); fileID && fileID <= G::Game.Archive.GetMaxFileID())
+                        ReferencedFiles.emplace(fileID);
+                    else
+                        break;
+                }
+            }
+        }
+
+        if (static constexpr uint32 interval = 1000; !(std::distance(scanner.text.begin(), p) % interval))
+            progress += interval;
     }
 }
 

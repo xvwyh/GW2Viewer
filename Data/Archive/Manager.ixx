@@ -23,6 +23,7 @@ public:
             return &source->Archive;
         return nullptr;
     }
+    [[nodiscard]] auto GetMaxFileID() const { return m_maxFileID; }
     [[nodiscard]] auto const& GetFiles() const { return m_files; }
     [[nodiscard]] File const* GetFileEntry(uint32 fileID, Kind kind = Kind::Game) const
     {
@@ -65,11 +66,11 @@ public:
 
     void Add(Kind kind, std::filesystem::path const& path);
 
+    bool IsLoaded() const { return m_loaded; }
     void Load(Utils::Async::ProgressBarContext& progress)
     {
         if (m_loaded)
             return;
-        m_loaded = true;
 
         for (auto& source : m_sources)
         {
@@ -78,12 +79,16 @@ public:
             for (auto const& file : source.Files)
                 source.FileLookup.emplace(file.ID, file);
             m_files.insert_range(source.Files);
+            m_maxFileID = std::max(m_maxFileID, source.Archive.MaxFileID);
         }
+
+        m_loaded = true;
     }
 
 private:
     boost::container::static_vector<Source, 5> m_sources;
     std::set<File> m_files;
+    uint32 m_maxFileID = 0;
     bool m_loaded = false;
 };
 

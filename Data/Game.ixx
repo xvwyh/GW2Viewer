@@ -16,6 +16,7 @@ export namespace GW2Viewer::Data
 struct Game
 {
     uint32 Build = 0;
+    std::set<uint32> ReferencedFiles;
 
     Archive::Manager Archive;
     Content::Manager Content;
