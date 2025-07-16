@@ -28,7 +28,7 @@ struct ArchiveIndex : Window
         User::ArchiveIndex::ScanProgress ScanProgress;
         User::ArchiveIndex::ScanResult ScanResult;
         bool ScanInProgress = false;
-        Utils::Async::Scheduler AsyncExport;
+        std::unordered_map<char const*, Utils::Async::Scheduler> AsyncExport;
 
         std::string Log;
         bool WriteLog = false;
@@ -67,7 +67,7 @@ struct ArchiveIndex : Window
             }
             else
             {
-                if (scoped::Disabled(AsyncExport.Current()))
+                if (scoped::Disabled(std::ranges::any_of(AsyncExport | std::views::values, &Utils::Async::Scheduler::Current)))
                 {
                     if (I::Button("Start Full Scan"))
                     {
@@ -155,20 +155,21 @@ struct ArchiveIndex : Window
                         I::SetClipboardText(buffer.data());
                 }
                 I::SameLine();
-                if (auto context = AsyncExport.Current())
+                auto& async = AsyncExport[header];
+                if (auto context = async.Current())
                 {
                     if (I::Button(ICON_FA_FLOPPY_DISK " Stop"))
-                        AsyncExport.Run([](Utils::Async::Context context) { context->Finish(); });
+                        async.Run([](Utils::Async::Context context) { context->Finish(); });
 
                     I::SameLine();
                     I::SetNextItemWidth(-FLT_MIN);
                     if (scoped::Disabled(true))
                         I::InputText("##Description", (char*)std::format("{} / {}", context.Current, context.Total).c_str(), 9999);
-                    Controls::AsyncProgressBar(AsyncExport);
+                    Controls::AsyncProgressBar(async);
                 }
                 else if (I::Button(ICON_FA_FLOPPY_DISK " Export"))
                 {
-                    AsyncExport.Run([this, &results](Utils::Async::Context context)
+                    async.Run([this, &results](Utils::Async::Context context)
                     {
                         std::vector<uint32> files;
                         if constexpr (isMap)
