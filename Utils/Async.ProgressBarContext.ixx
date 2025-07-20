@@ -35,6 +35,11 @@ public:
         std::scoped_lock _(m_mutex);
         m_total = total;
     }
+    void SetDescription(std::string_view description)
+    {
+        std::scoped_lock _(m_mutex);
+        m_description = description;
+    }
 
     ProgressBarContext& operator=(size_t current)
     {

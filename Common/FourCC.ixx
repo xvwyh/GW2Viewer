@@ -95,6 +95,8 @@ export enum class fcc : uint32
     FourCC(Main),
     FourCC(vari),
     FourCC(BIDX),
+    FourCC(MFST),
+    FourCC(mfst),
 };
 #undef FourCC
 

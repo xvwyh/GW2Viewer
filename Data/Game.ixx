@@ -3,6 +3,7 @@ import GW2Viewer.Common;
 import GW2Viewer.Data.Archive.Manager;
 import GW2Viewer.Data.Content.Manager;
 import GW2Viewer.Data.Encryption.Manager;
+import GW2Viewer.Data.Manifest.Manager;
 import GW2Viewer.Data.Pack.Manager;
 import GW2Viewer.Data.Text.Manager;
 import GW2Viewer.Data.Texture.Manager;
@@ -21,6 +22,7 @@ struct Game
     Archive::Manager Archive;
     Content::Manager Content;
     Encryption::Manager Encryption;
+    Manifest::Manager Manifest;
     Pack::Manager Pack;
     Text::Manager Text;
     Texture::Manager Texture;

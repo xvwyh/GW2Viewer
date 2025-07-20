@@ -25,10 +25,18 @@ public:
     }
     [[nodiscard]] auto GetMaxFileID() const { return m_maxFileID; }
     [[nodiscard]] auto const& GetFiles() const { return m_files; }
-    [[nodiscard]] File const* GetFileEntry(uint32 fileID, Kind kind = Kind::Game) const
+    [[nodiscard]] File const* GetFileEntry(uint32 fileID, Kind kind) const
     {
         if (auto const itr = std::ranges::find(m_sources, kind, &Source::Kind); itr != m_sources.end())
             return itr->GetFile(fileID);
+
+        return nullptr;
+    }
+    [[nodiscard]] File const* GetFileEntry(uint32 fileID) const
+    {
+        for (auto const& source : m_sources)
+            if (auto const file = source.GetFile(fileID))
+                return file;
 
         return nullptr;
     }
@@ -75,7 +83,7 @@ public:
         for (auto& source : m_sources)
         {
             source.Archive.Open(source.Path, progress);
-            source.Files.assign_range(source.Archive.FileIdToMftEntry | std::views::transform([&](auto const& pair) -> File { return { pair.first, source, *pair.second }; }));
+            source.Files.assign_range(source.Archive.FileLookup | std::views::transform([&](auto const& pair) -> File { return { pair.first, source, *std::get<Archive::MftEntry*>(pair.second), *std::get<Archive::DirectoryEntry*>(pair.second), *std::get<Manifest::Asset*>(pair.second) }; }));
             for (auto const& file : source.Files)
                 source.FileLookup.emplace(file.ID, file);
             m_files.insert_range(source.Files);

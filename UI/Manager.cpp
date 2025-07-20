@@ -402,6 +402,11 @@ void Manager::Update()
             while (!G::Game.Pack.IsLoaded())
                 std::this_thread::sleep_for(50ms);
 
+            m_progress[4].Run([](Utils::Async::ProgressBarContext& progress)
+            {
+                G::Game.Manifest.Load(progress);
+            });
+
             // Can't parallelize currently, Archive supports only single-thread file loading
 
             G::Game.Text.Load(source, progress);

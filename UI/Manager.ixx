@@ -75,7 +75,7 @@ private:
 
     bool m_showOriginalNames = false;
 
-    std::array<Utils::Async::ProgressBarContext, 4> m_progress;
+    std::array<Utils::Async::ProgressBarContext, 10> m_progress;
 
     std::list<std::unique_ptr<Viewers::Viewer>> m_listViewers;
     std::list<std::unique_ptr<Viewers::Viewer>> m_viewers;

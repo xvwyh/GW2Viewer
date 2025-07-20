@@ -118,6 +118,9 @@
     <ClCompile Include="Data\External\Database.ixx" />
     <ClCompile Include="Data\Game.cpp" />
     <ClCompile Include="Data\Game.ixx" />
+    <ClCompile Include="Data\Manifest\Asset.ixx" />
+    <ClCompile Include="Data\Manifest\Manager.cpp" />
+    <ClCompile Include="Data\Manifest\Manager.ixx" />
     <ClCompile Include="Data\Pack\Manager.cpp" />
     <ClCompile Include="Data\Pack\Manager.ixx" />
     <ClCompile Include="Data\Pack\Pack.ixx" />

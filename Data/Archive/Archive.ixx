@@ -3,6 +3,7 @@ module;
 
 export module GW2Viewer.Data.Archive;
 import GW2Viewer.Common;
+import GW2Viewer.Data.Manifest.Asset;
 import GW2Viewer.Data.Pack.PackFile;
 import GW2Viewer.Utils.Async.ProgressBarContext;
 import GW2Viewer.Utils.CRC;
@@ -13,7 +14,6 @@ import <boost/container/small_vector.hpp>;
 export namespace GW2Viewer::Data::Archive
 {
 
-#pragma pack(push, 1)
 class Archive
 {
 public:
@@ -34,6 +34,7 @@ public:
         ARCHIVE_VERSION = 101,
     };
 
+#pragma pack(push, 1)
     struct ArchiveHeaderV0
     {
         uint32 Signature = ARCHIVE_SIGNATURE_BASE + ARCHIVE_VERSION;
@@ -104,11 +105,13 @@ public:
     #pragma pack(pop)
     std::vector<Mft> m_mftArray;
     */
+#pragma pack(pop)
 
     ArchiveHeader Header;
     std::vector<MftEntry> m_entryArray;
     std::vector<DirectoryEntry> DirectoryEntries;
-    std::map<uint32, MftEntry*> FileIdToMftEntry;
+    std::vector<Manifest::Asset> ManifestAssets;
+    std::map<uint32, std::tuple<MftEntry*, DirectoryEntry*, Manifest::Asset*>> FileLookup;
     std::multimap<uint32, uint32> MftIndexToFileId;
     uint32 MaxFileID = 0;
 
@@ -139,12 +142,13 @@ public:
         Read(DirectoryEntries.front(), fileMap.alloc.offset, fileMap.alloc.size);
 
         progress.Start(prefix + "Assembling file lookup table", DirectoryEntries.size());
+        ManifestAssets.resize(m_entryArray.size());
         for (auto const& [index, entry] : DirectoryEntries | std::views::enumerate)
         {
             if (!entry.mftIndex)
                 continue;
 
-            auto [itr, added] = FileIdToMftEntry.try_emplace(entry.fileId, &m_entryArray[entry.mftIndex]);
+            auto [itr, added] = FileLookup.try_emplace(entry.fileId, &m_entryArray[entry.mftIndex], &entry, &ManifestAssets[entry.mftIndex]);
             assert(added);
             //MftIndexToFileId.emplace(entry.mftIndex, entry.fileId);
             if (MaxFileID < entry.fileId)
@@ -156,11 +160,21 @@ public:
         return true;
     }
 
-    [[nodiscard]] auto GetFileIDs() const { return FileIdToMftEntry | std::ranges::views::keys; }
+    [[nodiscard]] auto GetFileIDs() const { return FileLookup | std::ranges::views::keys; }
     MftEntry const* GetFileMftEntry(uint32 fileID) const
     {
-        auto const itr = FileIdToMftEntry.find(fileID);
-        return itr != FileIdToMftEntry.end() ? itr->second : nullptr;
+        auto const itr = FileLookup.find(fileID);
+        return itr != FileLookup.end() ? std::get<MftEntry*>(itr->second) : nullptr;
+    }
+    DirectoryEntry const* GetFileDirectoryEntry(uint32 fileID) const
+    {
+        auto const itr = FileLookup.find(fileID);
+        return itr != FileLookup.end() ? std::get<DirectoryEntry*>(itr->second) : nullptr;
+    }
+    Manifest::Asset* GetFileManifestAsset(uint32 fileID) const
+    {
+        auto const itr = FileLookup.find(fileID);
+        return itr != FileLookup.end() ? std::get<Manifest::Asset*>(itr->second) : nullptr;
     }
     uint32 GetRawFileSize(uint32 fileID) const
     {
@@ -329,7 +343,6 @@ private:
             std::terminate();
     }
 };
-#pragma pack(pop)
 
 enum class Kind
 {
@@ -358,7 +371,7 @@ struct File
 {
     uint32 ID;
 
-    File(uint32 fileID, Source& source, Archive::MftEntry const& entry) : ID(fileID), m_source(source), m_entry(entry) { }
+    File(uint32 fileID, Source& source, Archive::MftEntry const& mft, Archive::DirectoryEntry const& directory, Manifest::Asset& asset) : ID(fileID), m_source(source), m_mft(mft), m_directory(directory), m_asset(asset) { }
 
     auto& GetSource() const { return m_source.get(); }
     auto GetSourceLoadOrder() const { return GetSource().LoadOrder; }
@@ -366,7 +379,9 @@ struct File
     auto& GetSourcePath() const { return GetSource().Path; }
     auto& GetArchive() const { return GetSource().Archive; }
 
-    auto& GetEntry() const { return m_entry.get(); }
+    auto& GetMftEntry() const { return m_mft.get(); }
+    auto& GetDirectoryEntry() const { return m_directory.get(); }
+    auto& GetManifestAsset() const { return m_asset.get(); }
 
     auto GetRawSize() const { return GetArchive().GetRawFileSize(ID); }
     auto GetRawData() const { return GetArchive().GetRawFile(ID); }
@@ -378,6 +393,13 @@ struct File
 
     auto GetPackFile() const { return GetArchive().GetPackFile(ID); }
 
+    auto& GetBestVersion() const
+    {
+        if (auto const streamBaseID = GetManifestAsset().StreamBaseID)
+            return *GetSource().GetFile(streamBaseID);
+        return *this;
+    }
+
     std::strong_ordering operator<=>(File const& other) const
     {
         if (auto const result = ID <=> other.ID; result != std::strong_ordering::equal) return result;
@@ -388,7 +410,9 @@ struct File
 
 private:
     std::reference_wrapper<Source> m_source;
-    std::reference_wrapper<Archive::MftEntry const> m_entry;
+    std::reference_wrapper<Archive::MftEntry const> m_mft;
+    std::reference_wrapper<Archive::DirectoryEntry const> m_directory;
+    std::reference_wrapper<Manifest::Asset> m_asset;
 };
 
 }

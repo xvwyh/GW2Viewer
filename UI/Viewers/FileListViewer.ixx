@@ -73,22 +73,22 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
                 ComplexSort(data, invert, [](File const& file) { return G::ArchiveIndex[file.GetSourceKind()].GetFile(file.ID).FileSize; });
                 break;
             case CompressedSize:
-                ComplexSort(data, invert, [](File const& file) { return file.GetEntry().alloc.size; });
+                ComplexSort(data, invert, [](File const& file) { return file.GetMftEntry().alloc.size; });
                 break;
             case ExtraBytes:
-                ComplexSort(data, invert, [](File const& file) { return file.GetEntry().alloc.extraBytes; });
+                ComplexSort(data, invert, [](File const& file) { return file.GetMftEntry().alloc.extraBytes; });
                 break;
             case Flags:
-                ComplexSort(data, invert, [](File const& file) { return file.GetEntry().alloc.flags; });
+                ComplexSort(data, invert, [](File const& file) { return file.GetMftEntry().alloc.flags; });
                 break;
             case Stream:
-                ComplexSort(data, invert, [](File const& file) { return file.GetEntry().alloc.stream; });
+                ComplexSort(data, invert, [](File const& file) { return file.GetMftEntry().alloc.stream; });
                 break;
             case NextStream:
-                ComplexSort(data, invert, [](File const& file) { return file.GetEntry().alloc.nextStream; });
+                ComplexSort(data, invert, [](File const& file) { return file.GetMftEntry().alloc.nextStream; });
                 break;
             case CRC:
-                ComplexSort(data, invert, [](File const& file) { return file.GetEntry().alloc.crc; });
+                ComplexSort(data, invert, [](File const& file) { return file.GetMftEntry().alloc.crc; });
                 break;
             case Refs:
                 ComplexSort(data, invert, [](File const& file) { return G::Game.ReferencedFiles.contains(file.ID) ? 1 : 0; });
@@ -239,7 +239,7 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
                 {
                     scoped::WithID(I::GetIDWithSeed(file.ID, file.GetSourceLoadOrder()));
 
-                    auto entry = file.GetEntry();
+                    auto entry = file.GetMftEntry();
                     auto const& index = G::ArchiveIndex[file.GetSourceKind()];
                     auto const& cache = index.GetFile(file.ID);
                     auto const& metadata = index.GetMetadata(cache.MetadataIndex);
