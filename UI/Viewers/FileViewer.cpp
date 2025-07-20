@@ -96,7 +96,7 @@ void FileViewer::Draw()
 
 void FileViewer::DrawPreview()
 {
-    Controls::Texture(File.ID, { .Data = &RawData });
+    Controls::Texture(File.ID, { .Data = &RawData, .BestVersion = false });
 }
 
 std::unique_ptr<FileViewer> Init(uint32 id, bool newTab, FileViewer::TargetType file)
