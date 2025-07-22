@@ -322,7 +322,8 @@ void Manager::Update()
         }
     }
 
-    auto drawViewers = [this](std::list<std::unique_ptr<Viewers::Viewer>>& viewers, ImGuiID defaultDock)
+    static ImGuiID needReselectCurrentViewerInDockID = 0;
+    auto drawViewers = [this, reselectCurrentViewerInDockID = std::exchange(needReselectCurrentViewerInDockID, 0)](std::list<std::unique_ptr<Viewers::Viewer>>& viewers, ImGuiID defaultDock)
     {
         std::unique_ptr<Viewers::Viewer> const* toRemove = nullptr;
         for (auto& viewer : viewers)
@@ -347,7 +348,7 @@ void Manager::Update()
                                     if (int offset = I::TabBarGetTabOrder(tabBar, currentViewerTab) - I::TabBarGetTabOrder(tabBar, viewerTab) + 1)
                                         I::TabBarQueueReorder(tabBar, viewerTab, offset);
 
-                if (open && defaultDock == center && (!m_currentViewer || I::IsWindowFocused() || viewer->ImGuiWindow->TabId == I::GetWindowDockNode()->SelectedTabId))
+                if (open && defaultDock == center && (!m_currentViewer || I::IsWindowFocused(ImGuiHoveredFlags_ChildWindows) || reselectCurrentViewerInDockID && reselectCurrentViewerInDockID == viewer->ImGuiWindow->DockId) && viewer->ImGuiWindow->TabId == I::GetWindowDockNode()->SelectedTabId)
                     m_currentViewer = viewer.get();
 
                 viewer->Draw();
@@ -362,7 +363,10 @@ void Manager::Update()
         if (toRemove)
         {
             if (m_currentViewer == toRemove->get())
+            {
                 m_currentViewer = nullptr;
+                needReselectCurrentViewerInDockID = (*toRemove)->ImGuiWindow->DockId;
+            }
 
             viewers.erase(std::ranges::find(viewers, *toRemove));
         }

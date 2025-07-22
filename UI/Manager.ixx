@@ -58,7 +58,7 @@ public:
             *itr = std::move(newViewer);
 
             if (m_currentViewer == &oldViewer)
-                m_currentViewer = newViewer.get();
+                m_currentViewer = itr->get();
 
             return *(T*)itr->get();
         }
