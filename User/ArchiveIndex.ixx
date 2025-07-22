@@ -340,7 +340,7 @@ struct ArchiveIndex
             return CheckCacheResult::CacheCorrupted;
 
         if (!entry)
-            return CheckCacheResult::FileMissing;
+            return cache.Deleted ? CheckCacheResult::CacheValid : CheckCacheResult::FileMissing;
 
         if (cache.MFTCRC != entry->alloc.crc)
             return CheckCacheResult::FileChangedMFTCRC;
@@ -423,21 +423,21 @@ private:
         ScanResult result;
         auto process = [this, &options, &progress, &result](uint32 fileID, CacheFile& cache)
         {
-            if (!m_archiveSource->Archive.GetFileMftEntry(fileID))
-                return;
-
             ++result.Scanned;
             uint32 combinedBlockCRC = 0;
             bool hasCRC = false;
             bool fileChanged = false;
             switch (CheckCache(cache, fileID, &combinedBlockCRC))
             {
+                case CheckCacheResult::NoFile:
+                    --result.Scanned;
+                    return;
+
                 case CheckCacheResult::CacheValidOutdated:
                     cache.Version = CacheFile::CurrentVersion;
                     [[fallthrough]];
                 case CheckCacheResult::CacheValid:
-                case CheckCacheResult::NoFile:
-                    if (options.UpdateCategorized)
+                    if (options.UpdateCategorized && !cache.Deleted)
                         break;
                     return;
 
