@@ -6,9 +6,11 @@ import :Texture;
 import GW2Viewer.Data.Content;
 import GW2Viewer.UI.Viewers.Viewer;
 
-void OpenContent(GW2Viewer::Data::Content::ContentObject& content, GW2Viewer::UI::Viewers::OpenViewerOptions const& options);
+namespace GW2Viewer::UI::Controls
+{
+void OpenContent(Data::Content::ContentObject& content, Viewers::OpenViewerOptions const& options);
 
-export namespace GW2Viewer::UI::Controls
+export
 {
 
 struct ContentButtonOptions
@@ -63,6 +65,8 @@ void ContentButton(Data::Content::ContentObject* content, void const* id, Conten
             if (Texture(icon, { .Size = iconSize, .AdvanceCursor = false }))
                 bb.Min.x += iconSize.x;
     I::RenderTextClipped(bb.Min + padding, bb.Max - padding, textPostIcon.c_str(), textPostIcon.c_str() + textPostIcon.size(), &sizePostIcon, { }, &bb);
+}
+
 }
 
 }

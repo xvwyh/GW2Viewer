@@ -1,7 +1,19 @@
 ﻿module GW2Viewer.UI.Controls;
+import GW2Viewer.Data.Archive;
 import GW2Viewer.UI.Viewers.ContentViewer;
+import GW2Viewer.UI.Viewers.FileViewer;
 
-void OpenContent(GW2Viewer::Data::Content::ContentObject& content, GW2Viewer::UI::Viewers::OpenViewerOptions const& options)
+namespace GW2Viewer::UI::Controls
 {
-    GW2Viewer::UI::Viewers::ContentViewer::Open(content, options);
+
+void OpenContent(Data::Content::ContentObject& content, Viewers::OpenViewerOptions const& options)
+{
+    Viewers::ContentViewer::Open(content, options);
+}
+
+void OpenFile(Data::Archive::File const& file, Viewers::OpenViewerOptions const& options)
+{
+    Viewers::FileViewer::Open(file, options);
+}
+
 }

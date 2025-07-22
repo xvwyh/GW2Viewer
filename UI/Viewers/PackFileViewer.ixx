@@ -133,12 +133,7 @@ template<typename PointerType> struct DrawPackFileField<Data::Pack::FileNameBase
         ++p;
 
         I::SameLine();
-        I::Button(std::format("File <{}>", fileID).c_str());
-        if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
-            if (auto* file = G::Game.Archive.GetFileEntry(fileID))
-                UI::Viewers::FileViewer::Open(*file, { .MouseButton = button });
-        if (scoped::ItemTooltip(ImGuiHoveredFlags_DelayNone))
-            UI::Controls::Texture(fileID);
+        UI::Controls::FileButton(fileID);
     }
 };
 template<typename PointerType> struct DrawPackFileField<Data::Pack::String, PointerType>

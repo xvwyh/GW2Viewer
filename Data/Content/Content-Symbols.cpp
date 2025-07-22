@@ -265,12 +265,7 @@ void FileID::Draw(byte const* data, TypeInfo::Symbol& symbol) const
     I::InputTextReadOnly("##Input", std::format("{}", fileID));
 
     I::SameLine(0, 0);
-    I::Button("<FILE>##Preview");
-    if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
-        if (auto* file = G::Game.Archive.GetFileEntry(fileID))
-            UI::Viewers::FileViewer::Open(*file, { .MouseButton = button });
-    if (scoped::ItemTooltip(ImGuiHoveredFlags_DelayNone))
-        UI::Controls::Texture(fileID);
+    UI::Controls::FileButton(fileID);
 }
 
 void RawPointerT::Draw(byte const* data, TypeInfo::Symbol& symbol) const

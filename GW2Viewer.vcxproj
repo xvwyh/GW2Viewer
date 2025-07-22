@@ -164,6 +164,7 @@
     <ClCompile Include="UI\Controls\Controls-AsyncProgressBar.ixx" />
     <ClCompile Include="UI\Controls\Controls-ContentButton.ixx" />
     <ClCompile Include="UI\Controls\Controls-CopyButton.ixx" />
+    <ClCompile Include="UI\Controls\Controls-FileButton.ixx" />
     <ClCompile Include="UI\Controls\Controls-FilteredComboBox.ixx" />
     <ClCompile Include="UI\Controls\Controls-HexViewer.ixx" />
     <ClCompile Include="UI\Controls\Controls-MapLayout.ixx" />
