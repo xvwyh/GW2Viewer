@@ -185,7 +185,7 @@ union PrintableFourCC
     PrintableFourCC(uint32 fourCC) : Number(fourCC)
     {
         for (auto& c : Chars)
-            if (!c || !isprint(c) && !isspace(c))
+            if (c <= '\0' || !isprint(c) && !isspace(c))
                 c = '?';
         Chars[4] = '\0';
         for (auto& c : Chars | std::views::reverse)
