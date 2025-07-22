@@ -35,11 +35,13 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
     std::vector<File> FilteredList;
     Utils::Async::Scheduler AsyncFilter { true };
 
+    std::optional<File> ScrollTo;
+
     std::string FilterString;
     std::optional<std::pair<int32, int32>> FilterID;
     uint32 FilterRange { };
     std::optional<User::ArchiveIndex::Type> FilterType;
-    enum class FileSort { ID, Archive, FourCC, Type, Metadata, Added, Changed, Size, CompressedSize, ExtraBytes, Flags, Stream, NextStream, CRC, Refs } Sort { FileSort::ID };
+    enum class FileSort { ID, Archive, FourCC, Type, Metadata, Manifest, Added, Changed, Size, CompressedSize, ExtraBytes, Flags, Stream, NextStream, CRC, Refs } Sort { FileSort::ID };
     bool SortInvert { };
 
     void SortList(Utils::Async::Context context, std::vector<File>& data, FileSort sort, bool invert)
@@ -62,6 +64,9 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
                 break;
             case Metadata:
                 ComplexSort(data, invert, [](File const& file) { return G::ArchiveIndex[file.GetSourceKind()].GetFileMetadata(file.ID).DataToString(); });
+                break;
+            case Manifest:
+                ComplexSort(data, invert, [](File const& file) { return std::vector { std::from_range, file.GetManifestAsset().ManifestNames }; });
                 break;
             case Added:
                 ComplexSort(data, invert, [](File const& file) { return G::ArchiveIndex[file.GetSourceKind()].GetFileAddedTimestamp(file.ID).Build; });
@@ -202,14 +207,17 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
 
         if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, I::GetStyle().FramePadding))
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, I::GetStyle().ItemSpacing / 2))
-        if (scoped::Table("Table", 15, ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Sortable))
+        if (scoped::Table("Table", 18, ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Sortable))
         {
             I::TableSetupColumn("File ID", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth, 60, (ImGuiID)FileSort::ID);
+            I::TableSetupColumn("##Stream", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_NoSort, I::GetTextLineHeight());
             I::TableSetupColumn("Archive", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth, 60, (ImGuiID)FileSort::Archive);
             I::TableSetupColumn("FourCC", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth | ImGuiTableColumnFlags_DefaultHide, 30, (ImGuiID)FileSort::FourCC);
             I::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHeaderWidth, 2, (ImGuiID)FileSort::Type);
             I::TableSetupColumn("Metadata", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHeaderWidth, 3, (ImGuiID)FileSort::Metadata);
+            I::TableSetupColumn("Manifest", ImGuiTableColumnFlags_WidthStretch | ImGuiTableColumnFlags_NoHeaderWidth, 3, (ImGuiID)FileSort::Manifest);
             I::TableSetupColumn("Added", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth | ImGuiTableColumnFlags_PreferSortDescending, 50, (ImGuiID)FileSort::Added);
+            I::TableSetupColumn("##Version", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth | ImGuiTableColumnFlags_NoResize | ImGuiTableColumnFlags_NoSort, I::GetTextLineHeight());
             I::TableSetupColumn("Changed", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth | ImGuiTableColumnFlags_PreferSortDescending, 50, (ImGuiID)FileSort::Changed);
             I::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth | ImGuiTableColumnFlags_DefaultHide, 70, (ImGuiID)FileSort::Size);
             I::TableSetupColumn("Compressed Size", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth | ImGuiTableColumnFlags_DefaultHide, 70, (ImGuiID)FileSort::CompressedSize);
@@ -220,6 +228,8 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
             I::TableSetupColumn("CRC", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth | ImGuiTableColumnFlags_DefaultHide, 70, (ImGuiID)FileSort::CRC);
             I::TableSetupColumn("Refs", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoHeaderWidth | ImGuiTableColumnFlags_PreferSortDescending, 40, (ImGuiID)FileSort::Refs);
             I::TableSetupScrollFreeze(0, 1);
+            if (scoped::WithStyleVar(ImGuiStyleVar_FramePadding, ImVec2()))
+                I::TableUpdateLayout(I::GetCurrentTable());
             I::TableHeadersRow();
 
             if (auto specs = I::TableGetSortSpecs(); specs && specs->SpecsDirty && specs->SpecsCount > 0)
@@ -233,35 +243,45 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
             std::shared_lock __(Lock);
             ImGuiListClipper clipper;
             clipper.Begin(FilteredList.size());
+            auto scrollTo = std::exchange(ScrollTo, std::nullopt);
+            if (scrollTo)
+                if (auto const itr = std::ranges::find(FilteredList, *scrollTo); itr != FilteredList.end())
+                    clipper.IncludeItemByIndex(std::distance(FilteredList.begin(), itr));
             while (clipper.Step())
             {
                 for (File const& file : std::span(FilteredList.begin() + clipper.DisplayStart, FilteredList.begin() + clipper.DisplayEnd))
                 {
                     scoped::WithID(I::GetIDWithSeed(file.ID, file.GetSourceLoadOrder()));
 
-                    auto entry = file.GetMftEntry();
+                    auto const& entry = file.GetMftEntry();
                     auto const& index = G::ArchiveIndex[file.GetSourceKind()];
                     auto const& cache = index.GetFile(file.ID);
                     auto const& metadata = index.GetMetadata(cache.MetadataIndex);
                     auto const& addedTimestamp = index.GetTimestamp(cache.AddedTimestampIndex);
                     auto const& changedTimestamp = index.GetTimestamp(cache.ChangedTimestampIndex);
+                    auto const& asset = file.GetManifestAsset();
 
                     I::TableNextRow();
                     I::TableNextColumn();
                     I::SetNextItemAllowOverlap();
-                    I::Selectable(std::format("{}", file.ID).c_str(), FileViewer::Is(G::UI.GetCurrentViewer(), file), ImGuiSelectableFlags_SpanAllColumns);
+                    I::Selectable(std::format("<c=#{}>{}</c>", asset.BaseID && asset.FileID && asset.BaseID != asset.FileID && file.ID == asset.FileID ? "4" : asset.StreamBaseID ? "8" : "F", file.ID).c_str(), FileViewer::Is(G::UI.GetCurrentViewer(), file), ImGuiSelectableFlags_SpanAllColumns);
+                    if (scrollTo == file)
+                        I::ScrollToItem();
                     if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
                         FileViewer::Open(file, { .MouseButton = button });
                     if (scoped::PopupContextItem())
                     {
+                        uint64 const fileRef = (0x100 + file.ID / 0xFF00) << 16 | 0xFF + file.ID % 0xFF00;
                         Controls::CopyButton("ID", file.ID); I::SameLine();
-                        Controls::CopyButton("FileReference", (0x100 + file.ID / 0xFF00) << 16 | 0xFF + file.ID % 0xFF00);
+                        Controls::CopyButton("FileReference", fileRef); I::SameLine();
+                        Controls::CopyButton("FileReference", std::format("{:s}", std::span { (byte const*)&fileRef, 8 } | std::views::transform([](byte b) { return std::format("{:02X}", b); }) | std::views::join_with(" "sv)));
 
                         Controls::CopyButton("Archive Name", file.GetSourcePath().filename().wstring()); I::SameLine();
                         Controls::CopyButton("Archive Path", file.GetSourcePath().wstring());
 
                         Controls::CopyButton("Type", magic_enum::enum_name(metadata.Type)); I::SameLine();
                         Controls::CopyButton("Metadata", metadata.DataToString()); I::SameLine();
+                        Controls::CopyButton("Manifest", std::wstring { std::from_range, asset.ManifestNames | std::views::transform([](wchar_t const* manifestName) -> std::wstring_view { return manifestName; }) | std::views::join_with(L", "sv) }); I::SameLine();
                         Controls::CopyButton("FourCC", metadata.FourCCToString());
 
                         Controls::CopyButton("Added Build", addedTimestamp.Build); I::SameLine();
@@ -280,21 +300,98 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
                         Controls::CopyButton("Next Stream", entry.alloc.nextStream); I::SameLine();
                         Controls::CopyButton("CRC", std::format("{:08X}", entry.alloc.crc));
 
+                        I::Dummy({ 1, 10 });
+
+                        if (auto const version = G::Game.Archive.GetFileEntry(asset.BaseID); scoped::Disabled(!(version && asset.BaseID && asset.FileID && asset.BaseID != asset.FileID && file.ID == asset.FileID)))
+                            if (Controls::FileButton(asset.BaseID, version, { .Icon = ICON_FA_CHEVRONS_LEFT, .Text = "Base Version", .TooltipPreview = false }))
+                                ScrollTo = *version;
+                        I::SameLine();
+                        if (auto const version = G::Game.Archive.GetFileEntry(asset.FileID); scoped::Disabled(!(version && asset.BaseID && asset.FileID && asset.BaseID != asset.FileID && file.ID == asset.BaseID)))
+                            if (Controls::FileButton(asset.FileID, version, { .Icon = ICON_FA_CHEVRONS_RIGHT, .Text = "Latest Version", .TooltipPreview = false }))
+                                ScrollTo = *version;
+
+                        if (auto const version = G::Game.Archive.GetFileEntry(asset.ParentBaseID); scoped::Disabled(!version))
+                            if (Controls::FileButton(asset.ParentBaseID, version, { .Icon = ICON_FA_ARROW_DOWN_BIG_SMALL, .Text = "Lower Quality", .TextMissingFile = "Lower Quality", .TooltipPreviewBestVersion = false }))
+                                ScrollTo = *version;
+                        I::SameLine();
+                        if (auto const version = G::Game.Archive.GetFileEntry(asset.StreamBaseID); scoped::Disabled(!version))
+                            if (Controls::FileButton(asset.StreamBaseID, version, { .Icon = ICON_FA_ARROW_UP_BIG_SMALL, .Text = "Higher Quality", .TextMissingFile = "Higher Quality", .TooltipPreviewBestVersion = false }))
+                                ScrollTo = *version;
+                        if (ScrollTo)
+                            I::CloseCurrentPopup();
+
+                        I::Dummy({ 1, 10 });
+
                         if (I::Button("Search for Content References"))
                             G::Windows::ContentSearch.SearchForSymbolValue("FileID", file.ID);
+                    }
+                    I::TableNextColumn();
+                    assert(!(asset.ParentBaseID && asset.StreamBaseID));
+                    if (auto const parent = file.GetSource().GetFile(asset.ParentBaseID))
+                    {
+                        I::Selectable("<c=#4>" ICON_FA_ARROW_DOWN_BIG_SMALL "</c>");
+                        if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
+                            FileViewer::Open(ScrollTo.emplace(*parent), { .MouseButton = button });
+                        if (scoped::ItemTooltip())
+                            I::Text("Lower quality: %u", parent->ID);
+                    }
+                    else if (auto const stream = file.GetSource().GetFile(asset.StreamBaseID))
+                    {
+                        I::Selectable(ICON_FA_ARROW_UP_BIG_SMALL);
+                        if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
+                            FileViewer::Open(ScrollTo.emplace(*stream), { .MouseButton = button });
+                        if (scoped::ItemTooltip())
+                            I::Text("Higher quality: %u", stream->ID);
                     }
                     I::TableNextColumn(); I::Text("<c=#4>%s</c>", file.GetSourcePath().filename().string().c_str());
                     I::TableNextColumn(); I::Text("<c=#8>%s</c>", metadata.FourCCToString().c_str());
                     I::TableNextColumn(); I::Text(std::format("{}", magic_enum::enum_name(metadata.Type)).c_str());
                     I::TableNextColumn(); I::TextUnformatted(metadata.DataToString().c_str());
-                    auto timestamp = [](char const* id, User::ArchiveIndex::CacheTimestamp const& timestamp, std::string_view description)
+                    I::TableNextColumn();
+                    if (!asset.ManifestNames.empty())
                     {
-                        I::Selectable(std::format("<c=#{}>{}</c>##{}", G::Game.Build ? (timestamp.Build >= G::Game.Build ? "F00" : timestamp.Build + 100 >= G::Game.Build ? "F80" : timestamp.Build + 1000 >= G::Game.Build ? "FF0": timestamp.Build + 5000 >= G::Game.Build ? "FF8" : "F") : "F", timestamp.Build, id).c_str());
+                        I::Text(asset.ManifestNames.size() == 1 ? "%s" : "%s +%u", Utils::Encoding::ToUTF8(*asset.ManifestNames.begin()).c_str(), (uint32)(asset.ManifestNames.size() - 1));
+                        if (scoped::ItemTooltip(asset.ManifestNames.size() > 1 ? ImGuiHoveredFlags_DelayNone : ImGuiHoveredFlags_None))
+                        {
+                            I::TextUnformatted(asset.ManifestNames.size() > 1 ? "<c=#4>Included in manifests:</c>" : "<c=#4>Included in manifest:</c>");
+                            for (auto const& manifestName : asset.ManifestNames)
+                                I::TextUnformatted(Utils::Encoding::ToUTF8(manifestName).c_str());
+                        }
+                    }
+                    auto timestamp = [](User::ArchiveIndex::CacheTimestamp const& timestamp, std::string_view description)
+                    {
+                        I::Text("<c=#%s>%u</c>", G::Game.Build ? (timestamp.Build >= G::Game.Build ? "F00" : timestamp.Build + 100 >= G::Game.Build ? "F80" : timestamp.Build + 1000 >= G::Game.Build ? "FF0": timestamp.Build + 5000 >= G::Game.Build ? "FF8" : "F") : "F", timestamp.Build);
                         if (scoped::ItemTooltip())
-                            I::Text(std::format("{}:\nBuild: {}\nDate: {}", description, timestamp.Build, Utils::Format::DateTimeFullLocal(Time::FromTimestamp(timestamp.Timestamp))).c_str());
+                            I::Text(std::format("<c=#4>{}:</c>\nBuild: {}\nDate: {}", description, timestamp.Build, Utils::Format::DateTimeFullLocal(Time::FromTimestamp(timestamp.Timestamp))).c_str());
                     };
-                    I::TableNextColumn(); timestamp("AddedTimestamp", addedTimestamp, "File first scanned");
-                    I::TableNextColumn(); timestamp("ChangedTimestamp", changedTimestamp, "Last time file changed was scanned");
+                    I::TableNextColumn(); timestamp(addedTimestamp, "File first scanned");
+                    I::TableNextColumn();
+                    if (asset.BaseID && asset.FileID && asset.BaseID != asset.FileID)
+                    {
+                        if (file.ID == asset.FileID)
+                        {
+                            if (auto const base = file.GetSource().GetFile(asset.BaseID))
+                            {
+                                I::Selectable(ICON_FA_CHEVRONS_LEFT);
+                                if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
+                                    FileViewer::Open(ScrollTo.emplace(*base), { .MouseButton = button });
+                                if (scoped::ItemTooltip())
+                                    I::Text("Base version: %u", base->ID);
+                            }
+                        }
+                        else if (file.ID == asset.BaseID)
+                        {
+                            if (auto const latest = file.GetSource().GetFile(asset.FileID))
+                            {
+                                I::Selectable("<c=#4>" ICON_FA_CHEVRONS_RIGHT "</c>");
+                                if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
+                                    FileViewer::Open(ScrollTo.emplace(*latest), { .MouseButton = button });
+                                if (scoped::ItemTooltip())
+                                    I::Text("Latest version: %u", latest->ID);
+                            }
+                        }
+                    }
+                    I::TableNextColumn(); timestamp(changedTimestamp, "Last time file change was scanned");
                     I::TableNextColumn(); I::Text("%u", cache.FileSize);
                     I::TableNextColumn(); I::Text("%u", entry.alloc.size);
                     I::TableNextColumn(); I::Text(entry.alloc.extraBytes ? "%u" : "<c=#4>%u</c>", (uint32)entry.alloc.extraBytes);
