@@ -522,7 +522,7 @@ void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cach
                 .IconInverted = 5,
             });
         } },
-        { { "DefendPlacedGadget", "DefendSpawnedGadgets" }, [](Params const& params)
+        { { "DefendPlacedGadget", "DefendSpawnedGadget", "DefendSpawnedGadgets" }, [](Params const& params)
         {
             params.DrawProgress({
                 .DisplayedAsProgressBar = params.Objective.TargetCount <= 1,
@@ -537,7 +537,7 @@ void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cach
                 .ProgressBarStyleDef = G::Game.Content.GetByGUID(params.Objective.ProgressBarStyle),
             });
         } },
-        { { "DestroyPlacedGadget", "DestroySpawnedGadgets" }, [](Params const& params)
+        { { "DestroyPlacedGadget", "DestroySpawnedGadget", "DestroySpawnedGadgets" }, [](Params const& params)
         {
             params.DrawProgress({
                 .DisplayedAsProgressBar = params.Objective.TargetCount <= 1,
@@ -638,6 +638,10 @@ void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cach
                 .TextDefault = 46255,
             });
         } },
+        { { "LevelUp" }, [](Params const& params)
+        {
+
+        } },
         { { "Link" }, [](Params const& params)
         {
             if (scoped::ItemTooltip(ImGuiHoveredFlags_DelayNone))
@@ -693,7 +697,7 @@ void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cach
             I::Text("%f", ((float*)params.Objective.ExtraBlob.data())[1]);
             I::Text("%f", ((float*)params.Objective.ExtraBlob.data())[2]);
         } },
-        { { "QuestManual" }, [](Params const& params)
+        { { "Manual", "QuestManual" }, [](Params const& params)
         {
             
         } },
@@ -776,16 +780,16 @@ void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cach
             if (upgradeLineDef && params.Objective.ExtraInt)
             {
                 uint32 const tier = params.Objective.ExtraInt - 1;
-                uint32 const text = *std::next((*upgradeLineDef)["Tiers->TextName"].begin(), tier);
-                uint32 const timer = *std::next((*upgradeLineDef)["Tiers->Timer"].begin(), tier);
-                uint32 const costSupply = *std::next((*upgradeLineDef)["Tiers->UpgradeCostSupply"].begin(), tier);
-                if (PreviewProgress >= 0.5f && timer)
+                uint32 const textName = *std::next((*upgradeLineDef)["WvwObjectiveUpgradeInfo->TextName"].begin(), tier);
+                uint32 const buildTime = *std::next((*upgradeLineDef)["WvwObjectiveUpgradeInfo->BuildTime"].begin(), tier);
+                uint32 const supplyCost = *std::next((*upgradeLineDef)["WvwObjectiveUpgradeInfo->SupplyCost"].begin(), tier);
+                if (PreviewProgress >= 0.5f && buildTime)
                 {
-                    uint32 remainingTime = timer * (1.0f - (PreviewProgress * 2 - 1.0f));
-                    float remainingFraction = (float)remainingTime / (float)timer;
+                    uint32 remainingTime = buildTime * (1.0f - (PreviewProgress * 2 - 1.0f));
+                    float remainingFraction = (float)remainingTime / (float)buildTime;
                     params.DrawProgress({
                         .DisplayedAsProgressBar = params.Objective.Flags & 0x1,
-                        .AgentName = text,
+                        .AgentName = textName,
                         .TextDefault = 174716,
                         .TargetCount = 100,
                         .Count = (uint32)((1.0f - remainingFraction) * 100.0f),
@@ -793,13 +797,13 @@ void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cach
                 }
                 else
                 {
-                    uint32 remainingSupply = costSupply * (1.0f - PreviewProgress * 2);
+                    uint32 remainingSupply = supplyCost * (1.0f - PreviewProgress * 2);
                     params.DrawProgress({
                         .DisplayedAsProgressBar = params.Objective.Flags & 0x1,
-                        .AgentName = text,
+                        .AgentName = textName,
                         .TextDefault = 49668,
-                        .TargetCount = costSupply,
-                        .Count = costSupply - remainingSupply,
+                        .TargetCount = supplyCost,
+                        .Count = supplyCost - remainingSupply,
                     });
                 }
             }
@@ -830,7 +834,7 @@ void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cach
     };
 
     /*
-    static Event::Objective objective;
+    static Content::Event::Objective objective;
     if (static uint32 persist = 0; persist != objectivex.EventUID)
     {
         persist = objectivex.EventUID;

@@ -157,21 +157,21 @@ void MapLayout::AddBackdrop(float scale, uint32 unexploredFileID, uint32 explore
 
 MapLayout::Icon& MapLayout::AddIcon(uint32 textureFileID, ContentObject& mapDef, ImVec2 mapPosition, ImVec2 size)
 {
-    for (ContentObject& mapLayoutRegion : (*MapLayoutContinentFloor)["Regions->Region"])
+    for (ContentObject& mapLayoutRegion : (*MapLayoutContinentFloor)["Region->Name"])
     {
-        for (ContentObject& mapLayoutMap : mapLayoutRegion["Maps->Map"])
+        for (ContentObject& mapLayoutMap : mapLayoutRegion["Map->Name"])
         {
             ContentObject& mapDetailsMap = mapLayoutMap["Details"];
-            ContentObject& map = mapDetailsMap["Map"];
+            ContentObject& map = mapDetailsMap["Name"];
             if (&map == &mapDef)
             {
-                ImVec2 const& mapMin = mapLayoutMap["MapMin"];
-                ImVec2 const& mapMax = mapLayoutMap["MapMax"];
-                ImVec2 const& worldMapMin = mapLayoutMap["WorldMapMin"];
-                ImVec2 const& worldMapMax = mapLayoutMap["WorldMapMax"];
-                ImRect mapRect { { mapMin.x, mapMax.y } , { mapMax.x, mapMin.y } };
-                ImRect worldMapRect { worldMapMin, worldMapMax };
-                return AddIcon(textureFileID, worldMapRect.Min + worldMapRect.GetSize() * ((mapPosition - mapRect.Min) / mapRect.GetSize()), size);
+                ImVec2 const mapRectMin = mapLayoutMap["MapRectMin"];
+                ImVec2 const mapRectMax = mapLayoutMap["MapRectMax"];
+                ImVec2 const continentRectColorMin = mapLayoutMap["ContinentRectColorMin"];
+                ImVec2 const continentRectColorMax = mapLayoutMap["ContinentRectColorMax"];
+                ImRect const mapRect { { mapRectMin.x, mapRectMax.y } , { mapRectMax.x, mapRectMin.y } };
+                ImRect const continentRectColor { continentRectColorMin, continentRectColorMax };
+                return AddIcon(textureFileID, continentRectColor.Min + continentRectColor.GetSize() * ((mapPosition - mapRect.Min) / mapRect.GetSize()), size);
             }
         }
     }
@@ -181,47 +181,47 @@ MapLayout::Icon& MapLayout::AddIcon(uint32 textureFileID, ContentObject& mapDef,
 void MapLayout::Initialize()
 {
     ContentObject& mapDetailsContinentFloor = (*MapLayoutContinentFloor)["Details"];
-    AddBackdrop(32.0f, mapDetailsContinentFloor["UnexploredZoomLevel0"], mapDetailsContinentFloor["ExploredZoomLevel0"], true);
-    AddBackdrop( 8.0f, mapDetailsContinentFloor["UnexploredZoomLevel1"], mapDetailsContinentFloor["ExploredZoomLevel1"], true);
-    AddBackdrop( 4.0f, mapDetailsContinentFloor["UnexploredZoomLevel2"], mapDetailsContinentFloor["ExploredZoomLevel2"], true);
-    AddBackdrop( 2.0f, mapDetailsContinentFloor["UnexploredZoomLevel3"], mapDetailsContinentFloor["ExploredZoomLevel3"], true);
-    AddBackdrop( 1.0f, 0,                                                mapDetailsContinentFloor["ExploredZoomLevel4"], true);
+    AddBackdrop(32.0f, mapDetailsContinentFloor["FileBackdropParchment"],  mapDetailsContinentFloor["FileBackdropSatellite"],  true);
+    AddBackdrop( 8.0f, mapDetailsContinentFloor["FileContinentParchment"], mapDetailsContinentFloor["FileContinentSatellite"], true);
+    AddBackdrop( 4.0f, mapDetailsContinentFloor["FileRegionParchment"],    mapDetailsContinentFloor["FileRegionSatellite"],    true);
+    AddBackdrop( 2.0f, mapDetailsContinentFloor["FileMapParchment"],       mapDetailsContinentFloor["FileMapSatellite"],       true);
+    AddBackdrop( 1.0f, 0,                                                  mapDetailsContinentFloor["FileSectorSatellite"],    true);
 
-    for (ContentObject& mapLayoutRegion : (*MapLayoutContinentFloor)["Regions->Region"])
+    for (ContentObject& mapLayoutRegion : (*MapLayoutContinentFloor)["Region->Name"])
     {
-        for (ContentObject& mapLayoutMap : mapLayoutRegion["Maps->Map"])
+        for (ContentObject& mapLayoutMap : mapLayoutRegion["Map->Name"])
         {
-            ImVec2 const& mapMin = mapLayoutMap["MapMin"];
-            ImVec2 const& mapMax = mapLayoutMap["MapMax"];
-            ImVec2 const& worldMapMin = mapLayoutMap["WorldMapMin"];
-            ImVec2 const& worldMapMax = mapLayoutMap["WorldMapMax"];
-            auto convertPosition = [mapRect = ImRect { { mapMin.x, mapMax.y } , { mapMax.x, mapMin.y } }, worldMapRect = ImRect { worldMapMin, worldMapMax }](ImVec2 const& mapPosition)
+            ImVec2 const mapRectMin = mapLayoutMap["MapRectMin"];
+            ImVec2 const mapRectMax = mapLayoutMap["MapRectMax"];
+            ImVec2 const continentRectColorMin = mapLayoutMap["ContinentRectColorMin"];
+            ImVec2 const continentRectColorMax = mapLayoutMap["ContinentRectColorMax"];
+            auto convertPosition = [mapRect = ImRect { { mapRectMin.x, mapRectMax.y } , { mapRectMax.x, mapRectMin.y } }, continentRectColor = ImRect { continentRectColorMin, continentRectColorMax }](ImVec2 const& mapPosition)
             {
-                return worldMapRect.Min + worldMapRect.GetSize() * ((mapPosition - mapRect.Min) / mapRect.GetSize());
+                return continentRectColor.Min + continentRectColor.GetSize() * ((mapPosition - mapRect.Min) / mapRect.GetSize());
             };
 
             auto fillSources = [&](ObjectBase& object) -> ObjectBase& { return object.AddSource(*MapLayoutContinentFloor).AddSource(mapLayoutRegion).AddSource(mapLayoutMap); };
 
-            for (ContentObject& mapLayoutOutpost : mapLayoutMap["Outposts->Outpost"])
-                fillSources(AddIcon(961377, convertPosition(mapLayoutOutpost["Position"]), 32)).AddSource(mapLayoutOutpost);
+            for (ContentObject& mapLayoutOutpost : mapLayoutMap["Outpost->Name"])
+                fillSources(AddIcon(961377, convertPosition(mapLayoutOutpost["WorldPosition"]), 32)).AddSource(mapLayoutOutpost);
 
-            for (ContentObject& mapLayoutOrrTemple : mapLayoutMap["OrrTemples->OrrTemple"])
-                fillSources(AddIcon(347219, convertPosition(mapLayoutOrrTemple["Position"]), 32)).AddSource(mapLayoutOrrTemple);
+            for (ContentObject& mapLayoutOrrTemple : mapLayoutMap["OrrTemple->Name"])
+                fillSources(AddIcon(347219, convertPosition(mapLayoutOrrTemple["WorldPosition"]), 32)).AddSource(mapLayoutOrrTemple);
 
-            for (ContentObject& mapLayoutInteriorColor : mapLayoutMap["Interiors->Interior"])
+            for (ContentObject& mapLayoutInteriorColor : mapLayoutMap["InteriorColor->Name"])
             {
-                auto const& worldMapMin = convertPosition(mapLayoutInteriorColor["Min"]);
-                auto const& worldMapMax = convertPosition(mapLayoutInteriorColor["Max"]);
-                ImRect rect { { worldMapMin.x, worldMapMax.y }, { worldMapMax.x, worldMapMin.y } };
-                AddBackdrop(1.0f, 0, mapLayoutInteriorColor["Texture"], false, true);
+                auto const worldRectMin = convertPosition(mapLayoutInteriorColor["WorldRectMin"]);
+                auto const worldRectMax = convertPosition(mapLayoutInteriorColor["WorldRectMax"]);
+                ImRect rect { { worldRectMin.x, worldRectMax.y }, { worldRectMax.x, worldRectMin.y } };
+                AddBackdrop(1.0f, 0, mapLayoutInteriorColor["FileColor"], false, true);
             }
 
-            for (ContentObject& mapLayoutPacingTask : mapLayoutMap["PacingTasks->PacingTask"])
-                fillSources(AddIcon(102439, convertPosition(mapLayoutPacingTask["VendorPosition"]), 32)).AddSource(mapLayoutPacingTask);
+            for (ContentObject& mapLayoutPacingTask : mapLayoutMap["PacingTask->Name"])
+                fillSources(AddIcon(102439, convertPosition(mapLayoutPacingTask["WorldPosition"]), 32)).AddSource(mapLayoutPacingTask);
 
-            for (ContentObject& mapLayoutPointOfInterest : mapLayoutMap["PointsOfInterest->PointOfInterest"])
+            for (ContentObject& mapLayoutPointOfInterest : mapLayoutMap["PointOfInterest->Name"])
             {
-                ContentObject& pointOfInterestDef = mapLayoutPointOfInterest["PointOfInterest"];
+                ContentObject& pointOfInterestDef = mapLayoutPointOfInterest["Name"];
                 uint32 textureFileID = 0;
                 ImVec2 const size { 32, 32 };
                 switch ((uint32)pointOfInterestDef["Type"])
@@ -230,33 +230,36 @@ void MapLayout::Initialize()
                     case 1: textureFileID = 102348; break; // Res Shrine
                     case 2:
                     {
-                        for (ContentObject* markerDef : pointOfInterestDef["Marker::Details->Marker"])
+                        for (ContentObject* markerDef : pointOfInterestDef["Marker->Name"])
                             if (markerDef)
-                                textureFileID = (*markerDef)["MapIcon"];
+                                textureFileID = (*markerDef)["FileIcon"];
                         break;
                     }
                     case 3: textureFileID = 347213; break;
                 }
                 if (textureFileID)
-                    fillSources(AddIcon(textureFileID, convertPosition(mapLayoutPointOfInterest["Position"]), size))
+                {
+                    ImVec2i const offset = mapLayoutPointOfInterest["Label->Coord"];
+                    fillSources(AddIcon(textureFileID, convertPosition(mapLayoutPointOfInterest["WorldPosition"]) + ImVec2(offset.x, offset.y), size))
                         .AddSource(mapLayoutPointOfInterest)
                         .SetTooltip(Utils::Encoding::ToUTF8(std::format(L"{}\nMap: {}\nRegion: {}\nFloor: {}", mapLayoutPointOfInterest.GetDisplayName(), mapLayoutMap.GetDisplayName(), mapLayoutRegion.GetDisplayName(), MapLayoutContinentFloor->GetDisplayName())));
+                }
             }
 
-            for (ContentObject& mapLayoutSector : mapLayoutMap["Sectors->Sector"])
-                fillSources(AddSector({ std::from_range, mapLayoutSector["Polygon->Point"] | std::views::transform(convertPosition) })).AddSource(mapLayoutSector);
+            for (ContentObject& mapLayoutSector : mapLayoutMap["Sector->Name"])
+                fillSources(AddSector({ std::from_range, mapLayoutSector["Vertices->Point"] | std::views::transform(convertPosition) })).AddSource(mapLayoutSector);
 
-            for (ContentObject& mapLayoutSkillChallenge : mapLayoutMap["SkillChallenges->SkillChallenge"])
-                fillSources(AddIcon(102601, convertPosition(mapLayoutSkillChallenge["Position"]), 32)).AddSource(mapLayoutSkillChallenge);
+            for (ContentObject& mapLayoutSkillChallenge : mapLayoutMap["SkillChallenge->Name"])
+                fillSources(AddIcon(102601, convertPosition(mapLayoutSkillChallenge["WorldPosition"]), 32)).AddSource(mapLayoutSkillChallenge);
 
-            for (ContentObject& mapLayoutQuestTarget : mapLayoutMap["QuestTargets->QuestTarget"])
-                fillSources(AddIcon(102369, convertPosition(mapLayoutQuestTarget["Position"]), 32)).AddSource(mapLayoutQuestTarget);
+            for (ContentObject& mapLayoutQuestTarget : mapLayoutMap["QuestTarget->Name"])
+                fillSources(AddIcon(102369, convertPosition(mapLayoutQuestTarget["WorldPosition"]), 32)).AddSource(mapLayoutQuestTarget);
 
-            for (ContentObject& mapLayoutTrainingPoint : mapLayoutMap["TrainingPoints->TrainingPoint"])
+            for (ContentObject& mapLayoutTrainingPoint : mapLayoutMap["TrainingPoint->Name"])
             {
-                ContentObject& trainingPoint = mapLayoutTrainingPoint["TrainingPoint"];
+                ContentObject& trainingPoint = mapLayoutTrainingPoint["Name"];
                 ContentObject& trainingCategory = trainingPoint["Category"];
-                fillSources(AddIcon(trainingCategory["MapIcon"], convertPosition(mapLayoutTrainingPoint["Position"]), 32)).AddSource(mapLayoutTrainingPoint);
+                fillSources(AddIcon(trainingCategory["MapIcon"], convertPosition(mapLayoutTrainingPoint["WorldPosition"]), 32)).AddSource(mapLayoutTrainingPoint);
             }
         }
     }

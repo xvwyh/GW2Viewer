@@ -25,39 +25,40 @@ void ConversationViewer::Draw()
     static constexpr struct
     {
         uint32 FileID;
+        std::string_view Name;
         std::string_view Wiki;
     } iconInfo[]
     {
-        { 156127, "charisma" },
-        { 156128, "ferocity" },
-        { 156129, "charisma" },
-        { 156131, "charisma" },
-        { 156137, "dignity" },
-        { 156138, "ferocity" },
-        { 156139, "ferocity" },
-        { 156145, "dignity" },
-        { 156146, "dignity" },
-        { 156132, "ready" },
-        { 156148, "question mark" },
-        { 156149, "tick" },
-        { 156126, "back" },
-        { 156130, "more" },
-        { 156133, "end" },
-        { 156134, "more" },
-        { 156135, "combat" },
-        { 156136, "choice" },
-        { 567512, "ls talk" },
-        { 567513, "recap" },
-        { 156143, "give" },
-        { 156144, "story" },
-        { 3621055, "???????????????????????????????????????????????????????" },
-        { 156147, "more" },
-        { 156150, "sell" },
-        { 156151, "karma" },
-        { 156153, "yes" },
-        { 1228228, "legendary weapon" },
-        { 1973946, "collection" },
-        { 0, "???????????????????????????????????????????????????????" },
+        { 156127,  "Bargain",                "charisma" },
+        { 156128,  "Boast",                  "ferocity" },
+        { 156129,  "Charm",                  "charisma" },
+        { 156131,  "Deceive",                "charisma" },
+        { 156137,  "Inspire",                "dignity" },
+        { 156138,  "Insult",                 "ferocity" },
+        { 156139,  "Intimidate",             "ferocity" },
+        { 156145,  "Reason",                 "dignity" },
+        { 156146,  "Rebuke",                 "dignity" },
+        { 156132,  "EventStart",             "ready" },
+        { 156148,  "SkillChallenge",         "question mark" },
+        { 156149,  "SkillChallengeComplete", "tick" },
+        { 156126,  "Back",                   "back" },
+        { 156130,  "Continue",               "more" },
+        { 156133,  "Exit",                   "end" },
+        { 156134,  "Exposition",             "more" },
+        { 156135,  "Fight",                  "combat" },
+        { 156136,  "Important",              "choice" },
+        { 567512,  "",                       "ls talk" },
+        { 567513,  "",                       "recap" },
+        { 156143,  "Offer",                  "give" },
+        { 156144,  "Quest",                  "story" },
+        { 3621055, "",                       "story2" },
+        { 156147,  "Request",                "more" },
+        { 156150,  "Vendor",                 "sell" },
+        { 156151,  "VendorKarma",            "karma" },
+        { 156153,  "Yes",                    "yes" },
+        { 1228228, "",                       "legendary weapon" },
+        { 1973946, "",                       "collection" },
+        { 0,       "",                       "???????????????????????????????????????????????????????" },
     };
 
     std::shared_lock _(Content::conversationsLock);
@@ -285,7 +286,7 @@ void ConversationViewer::Draw()
                     draw(Diplomacy, 9);
                     draw(Unk, 3);
                     draw(Personality, 10);
-                    draw(Icon, { });
+                    draw(Icon, { }); I::SameLine(); I::Text("(%s)", iconInfo[iconToIconInfoIndex[transition.Icon]].Name.data());
                     draw(SkillDefDataID, 0);
                     #undef draw
                 }
