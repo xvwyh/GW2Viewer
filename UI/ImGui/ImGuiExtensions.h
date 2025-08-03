@@ -103,7 +103,7 @@ inline std::wstring StripMarkup(std::wstring const& str)
 inline bool InputTextReadOnly(const char* label, std::string const& str, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr)
 {
     auto size = CalcTextSize(str.c_str(), str.c_str() + str.size()) + GetStyle().FramePadding * 2;
-    if (GImGui->NextItemData.ItemFlags & ImGuiNextItemDataFlags_HasWidth)
+    if (GImGui->NextItemData.HasFlags & ImGuiNextItemDataFlags_HasWidth)
         size.x = CalcItemWidth();
     auto const avail = GetContentRegionAvail();
     if (size.x > avail.x)
