@@ -35,6 +35,8 @@ struct GUID
     GUID(std::vector<byte> const& data) : GUID(std::span(data)) { }
     GUID(std::string_view string);
     GUID(std::wstring_view string);
+    GUID(char const* string) : GUID(std::string_view(string)) { }
+    GUID(wchar_t const* string) : GUID(std::wstring_view(string)) { }
 
     constexpr auto operator<=>(GUID const&) const = default;
 };
