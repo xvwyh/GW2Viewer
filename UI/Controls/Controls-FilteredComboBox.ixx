@@ -17,7 +17,10 @@ struct FilteredComboBoxOptions
     };
     std::function<bool(T const& value, bool selected, FilteredComboBoxOptions const& options)> Draw = [](T const& value, bool selected, FilteredComboBoxOptions const& options)
     {
-        return I::Selectable(options.Formatter(value).c_str(), selected);
+        auto const result = I::Selectable(options.Formatter(value).c_str(), selected);
+        if (selected && I::IsWindowAppearing())
+            I::ScrollToItem();
+        return result;
     };
 };
 
