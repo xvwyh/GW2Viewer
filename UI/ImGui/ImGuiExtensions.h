@@ -481,4 +481,5 @@ namespace dear
         PopupContextItem(const char* str_id = NULL, ImGuiPopupFlags popup_flags = 1) noexcept : ScopeWrapper(ImGui::BeginPopupContextItem(str_id, popup_flags)) { }
         static void dtor() noexcept { ImGui::EndPopup(); }
     };
+    using Window = Begin;
 }

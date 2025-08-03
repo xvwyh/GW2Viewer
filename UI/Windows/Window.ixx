@@ -41,6 +41,9 @@ struct Window
 
     void Update()
     {
+        if (!m_shown)
+            return;
+
         if (scoped::Window(Title().c_str(), &m_shown, ImGuiWindowFlags_NoFocusOnAppearing))
             Draw();
     }

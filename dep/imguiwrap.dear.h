@@ -387,16 +387,6 @@ namespace dear
         float m_width;
 	};
 
-    struct Window : public ScopeWrapper<Window>
-    {
-        Window(const char* title, bool* open = nullptr, ImGuiWindowFlags flags = 0) noexcept : ScopeWrapper(!open || *open)
-        {
-            if (ok_)
-                ImGui::Begin(title, open, flags);
-        }
-        static void dtor() noexcept { ImGui::End(); }
-    };
-
 
 
 //// Text helpers
