@@ -496,13 +496,13 @@ std::string Manager::MakeDataLink(byte type, uint32 id)
             uint32 payloadSize = 0;
             if (Data::Content::ContentObject* item = G::Game.Content.GetByDataID(Content::ItemDef, id))
             {
-                if (auto const key = G::Game.Encryption.GetTextKey((*item)["Name"]); key && *key)
+                if (auto const key = G::Game.Encryption.GetTextKey((*item)["TextName"]); key && *key)
                 {
                     dataLink.ID |= HAS_KEY_NAME;
                     *(uint64*)&dataLink.Payload[payloadSize] = *key;
                     payloadSize += sizeof(uint64);
                 }
-                if (auto const key = G::Game.Encryption.GetTextKey((*item)["Description"]); key && *key)
+                if (auto const key = G::Game.Encryption.GetTextKey((*item)["TextDescription"]); key && *key)
                 {
                     dataLink.ID |= HAS_KEY_DESCRIPTION;
                     *(uint64*)&dataLink.Payload[payloadSize] = *key;
