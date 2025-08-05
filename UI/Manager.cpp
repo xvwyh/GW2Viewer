@@ -325,6 +325,8 @@ void Manager::Update()
     static ImGuiID needReselectCurrentViewerInDockID = 0;
     auto drawViewers = [this, reselectCurrentViewerInDockID = std::exchange(needReselectCurrentViewerInDockID, 0)](std::list<std::unique_ptr<Viewers::Viewer>>& viewers, ImGuiID defaultDock)
     {
+        static constexpr bool debugDrawCurrent = false;
+
         std::unique_ptr<Viewers::Viewer> const* toRemove = nullptr;
         for (auto& viewer : viewers)
         {
@@ -337,22 +339,23 @@ void Manager::Update()
             }
             I::SetNextWindowDockID(dock, ImGuiCond_Once);
             I::SetNextWindowClass(&windowClassViewer);
-            if (scoped::Window(std::format("{}###Viewer-{}", viewer->Title(), viewer->ID).c_str(), &open, viewer->SetSelected ? 0 : ImGuiWindowFlags_NoFocusOnAppearing))
-            {
-                viewer->ImGuiWindow = I::GetCurrentWindow();
-                if (viewer->SetAfterCurrent && I::GetWindowDockNode())
-                    if (m_currentViewer && m_currentViewer->ImGuiWindow && m_currentViewer->ImGuiWindow->DockNode == I::GetWindowDockNode())
-                        if (auto tabBar = I::GetWindowDockNode()->TabBar)
-                            if (auto currentViewerTab = I::TabBarFindTabByID(tabBar, I::GetWindowDockNode()->SelectedTabId))
-                                if (auto viewerTab = I::TabBarFindTabByID(tabBar, viewer->ImGuiWindow->TabId))
-                                    if (int offset = I::TabBarGetTabOrder(tabBar, currentViewerTab) - I::TabBarGetTabOrder(tabBar, viewerTab) + 1)
-                                        I::TabBarQueueReorder(tabBar, viewerTab, offset);
+            bool const visible = I::Begin(std::format("{}{}###Viewer-{}", viewer->Title(), debugDrawCurrent && m_currentViewer == viewer.get() ? "<CURRENT>" : "", viewer->ID).c_str(), &open, viewer->SetSelected ? 0 : ImGuiWindowFlags_NoFocusOnAppearing);
+            viewer->ImGuiWindow = I::GetCurrentWindow();
+            if (viewer->SetAfterCurrent && I::GetWindowDockNode())
+                if (m_currentViewer && m_currentViewer->ImGuiWindow && m_currentViewer->ImGuiWindow->DockNode == I::GetWindowDockNode())
+                    if (auto tabBar = I::GetWindowDockNode()->TabBar)
+                        if (auto currentViewerTab = I::TabBarFindTabByID(tabBar, I::GetWindowDockNode()->SelectedTabId))
+                            if (auto viewerTab = I::TabBarFindTabByID(tabBar, viewer->ImGuiWindow->TabId))
+                                if (int offset = I::TabBarGetTabOrder(tabBar, currentViewerTab) - I::TabBarGetTabOrder(tabBar, viewerTab) + 1)
+                                    I::TabBarQueueReorder(tabBar, viewerTab, offset);
 
-                if (open && defaultDock == center && (!m_currentViewer || I::IsWindowFocused(ImGuiHoveredFlags_ChildWindows) || reselectCurrentViewerInDockID && reselectCurrentViewerInDockID == viewer->ImGuiWindow->DockId) && viewer->ImGuiWindow->TabId == I::GetWindowDockNode()->SelectedTabId)
-                    m_currentViewer = viewer.get();
+            if (open && defaultDock == center && (!m_currentViewer || I::IsWindowFocused(ImGuiHoveredFlags_ChildWindows) || reselectCurrentViewerInDockID && reselectCurrentViewerInDockID == viewer->ImGuiWindow->DockId) && viewer->ImGuiWindow->TabId == I::GetWindowDockNode()->SelectedTabId)
+                m_currentViewer = viewer.get();
 
+            if (visible)
                 viewer->Draw();
-            }
+            I::End();
+
             if (!open)
                 toRemove = &viewer;
 
