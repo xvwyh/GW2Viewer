@@ -85,7 +85,7 @@ public:
             }
             catch (...)
             {
-                assert(false);
+                assert(false && "ProgressBarContext task threw an unknown exception");
             }
         }, std::ref(*this));
     }

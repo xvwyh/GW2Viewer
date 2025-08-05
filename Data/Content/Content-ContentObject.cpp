@@ -72,7 +72,7 @@ std::wstring ContentObject::GetDisplayName(bool skipCustom, bool skipColor) cons
             return itr->second;
         }
 
-        // Use name from a designated symbol is enabled and available
+        // Use name from a designated symbol if enabled and available
         if (auto const itr = G::Config.TypeInfo.find(Type->Index); itr != G::Config.TypeInfo.end())
         {
             bool wasEncrypted = false;

@@ -33,9 +33,9 @@ void VoiceButton(uint32 voiceID, VoiceButtonOptions const& options = { })
     {
         if (options.MenuItem)
             return I::MenuItem(text.c_str());
-            if (options.Selectable)
-                return I::Selectable(text.c_str());
-                return I::Button(text.c_str());
+        if (options.Selectable)
+            return I::Selectable(text.c_str());
+        return I::Button(text.c_str());
 
     }())
         G::UI.PlayVoice(voiceID);

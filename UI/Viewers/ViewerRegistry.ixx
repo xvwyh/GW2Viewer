@@ -55,7 +55,7 @@ struct ViewerRegistry
 template<typename Viewer, ViewerRegistry::Info Info>
 struct RegisterViewer
 {
-    inline static ViewerRegistry::Info const& ViewerInfo = ViewerRegistry::Register<Viewer>(Info);;
+    inline static ViewerRegistry::Info const& ViewerInfo = ViewerRegistry::Register<Viewer>(Info);
 };
 
 }
