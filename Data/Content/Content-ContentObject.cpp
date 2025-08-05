@@ -116,7 +116,7 @@ std::wstring ContentObject::GetFullDisplayName(bool skipCustom, bool skipColor) 
     if (auto* name = GetName(); name && name->FullName && *name->FullName && (!name->Name || !*name->Name || std::wstring_view(*name->Name) != *name->FullName))
         return *name->FullName;
     return Namespace
-        ? std::vformat(skipColor ? L"{}.{}" : L"<c=#8>{}.</c>{}", std::make_wformat_args(Namespace->GetFullDisplayName(), GetDisplayName(skipCustom, skipColor)))
+        ? std::vformat(skipColor ? L"{}.{}" : L"<c=#8>{}.</c>{}", std::make_wformat_args(Namespace->GetFullDisplayName(skipCustom, skipColor), GetDisplayName(skipCustom, skipColor)))
         : GetDisplayName(skipCustom, skipColor);
 }
 
