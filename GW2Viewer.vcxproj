@@ -224,6 +224,7 @@
     <ClCompile Include="Utils\Math.ixx" />
     <ClCompile Include="Utils\Scan.ixx" />
     <ClCompile Include="Utils\ScanPE.ixx" />
+    <ClCompile Include="Utils\Sort.ixx" />
     <ClCompile Include="Utils\String.ixx" />
     <ClCompile Include="Utils\Utils.ixx" />
     <ClCompile Include="Utils\Visitor.ixx" />

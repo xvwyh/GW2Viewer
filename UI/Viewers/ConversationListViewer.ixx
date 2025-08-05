@@ -14,6 +14,7 @@ import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.Utils.Async;
 import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Scan;
+import GW2Viewer.Utils.Sort;
 import std;
 
 export namespace GW2Viewer::UI::Viewers
@@ -38,6 +39,7 @@ struct ConversationListViewer : ListViewer<ConversationListViewer, { ICON_FA_COM
         std::scoped_lock _(Content::conversationsLock);
         switch (sort)
         {
+            using Utils::Sort::ComplexSort;
             using enum ConversationSort;
             case GenID:
                 std::ranges::sort(data, [invert](auto a, auto b) { return a < b ^ invert; });

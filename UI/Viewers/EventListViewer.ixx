@@ -14,6 +14,7 @@ import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.Utils.Async;
 import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Scan;
+import GW2Viewer.Utils.Sort;
 
 export namespace GW2Viewer::UI::Viewers
 {
@@ -38,6 +39,7 @@ struct EventListViewer : ListViewer<EventListViewer, { ICON_FA_SEAL " Events", "
         std::scoped_lock _(Content::eventsLock);
         switch (sort)
         {
+            using Utils::Sort::ComplexSort;
             using enum EventSort;
             case ID:
                 std::ranges::sort(data, [invert](auto a, auto b) { return a.UID < b.UID ^ invert; });

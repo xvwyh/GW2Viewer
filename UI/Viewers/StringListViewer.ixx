@@ -16,6 +16,7 @@ import GW2Viewer.Utils.Async;
 import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Scan;
+import GW2Viewer.Utils.Sort;
 import GW2Viewer.Utils.String;
 import std;
 import <ctype.h>;
@@ -43,6 +44,7 @@ struct StringListViewer : ListViewer<StringListViewer, { ICON_FA_TEXT " Strings"
         #define COMPARE(a, b) do { if (auto const result = (a) <=> (b); result != std::strong_ordering::equal) return result == std::strong_ordering::less; } while (false)
         switch (sort)
         {
+            using Utils::Sort::ComplexSort;
             using enum StringSort;
             case ID:
                 std::ranges::sort(data, [invert](auto a, auto b) { return a < b ^ invert; });

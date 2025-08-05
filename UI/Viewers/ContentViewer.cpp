@@ -12,6 +12,7 @@ import GW2Viewer.UI.Viewers.ListViewer;
 import GW2Viewer.UI.Windows.ListContentValues;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Exception;
+import GW2Viewer.Utils.Sort;
 
 namespace GW2Viewer::UI::Viewers
 {
@@ -86,6 +87,8 @@ void ContentViewer::Draw()
                     I::InputTextMultiline("##TypeNotes", &typeInfo.Notes, { -1, -1 }, ImGuiInputTextFlags_AllowTabInput);
             }
 
+            auto const referenceSorter = [](Data::Content::ContentObject::Reference const& ref) { return std::make_tuple(ref.Type, ref.Object->GetFullDisplayName(), ref.Object->GetFullName(), ref.Object->Type->Index, ref.Object->Index); };
+
             if (!Content.OutgoingReferences.empty())
                 I::PushStyleColor(ImGuiCol_Text, 0xFF00FF00);
             if (scoped::TabItem(std::format(ICON_FA_ARROW_RIGHT " Outgoing References ({})###OutgoingReferences", Content.OutgoingReferences.size()).c_str(), nullptr, ImGuiTabItemFlags_NoCloseButton | ImGuiTabItemFlags_NoCloseWithMiddleMouseButton | (Content.OutgoingReferences.empty() ? 0 : ImGuiTabItemFlags_UnsavedDocument)))
@@ -96,7 +99,7 @@ void ContentViewer::Draw()
                 I::SetNextWindowSizeConstraints({ }, { FLT_MAX, 300 });
                 if (scoped::Child("Scroll", { }, ImGuiChildFlags_AutoResizeY))
                 if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
-                for (auto const& [object, type] : Content.OutgoingReferences)
+                for (auto const& [object, type] : Utils::Sort::ComplexSorted(Content.OutgoingReferences, false, referenceSorter))
                     Controls::ContentButton(object, object, { .Icon = type == Root ? ICON_FA_ARROW_TURN_DOWN_RIGHT : type == Tracked ? ICON_FA_CHEVRONS_RIGHT : ICON_FA_ARROW_RIGHT });
             }
             else if (!Content.OutgoingReferences.empty())
@@ -112,7 +115,7 @@ void ContentViewer::Draw()
                 I::SetNextWindowSizeConstraints({ }, { FLT_MAX, 300 });
                 if (scoped::Child("Scroll", { }, ImGuiChildFlags_AutoResizeY))
                 if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
-                for (auto const& [object, type] : Content.IncomingReferences)
+                for (auto const& [object, type] : Utils::Sort::ComplexSorted(Content.IncomingReferences, false, referenceSorter))
                 {
                     Controls::ContentButton(object, object, { .Icon = type == Root ? ICON_FA_ARROW_TURN_LEFT_UP : type == Tracked ? ICON_FA_CHEVRONS_LEFT : ICON_FA_ARROW_LEFT });
                     if (object->Root)

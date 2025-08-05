@@ -19,6 +19,7 @@ import GW2Viewer.Utils.Async;
 import GW2Viewer.Utils.CRC;
 import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Scan;
+import GW2Viewer.Utils.Sort;
 import std;
 import magic_enum;
 
@@ -49,6 +50,7 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
         #define COMPARE(a, b) do { if (auto const result = (a) <=> (b); result != std::strong_ordering::equal) return result == std::strong_ordering::less; } while (false)
         switch (sort)
         {
+            using Utils::Sort::ComplexSort;
             using enum FileSort;
             case ID:
                 std::ranges::sort(data, [invert](auto a, auto b) { return a.ID < b.ID ^ invert; });
