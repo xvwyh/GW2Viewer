@@ -1,7 +1,7 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.UI.Controls:FilteredComboBox;
+import GW2Viewer.UI.ImGui;
+import std;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Controls
 {

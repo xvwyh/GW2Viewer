@@ -1,16 +1,18 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.UI.Windows.Parse;
+import GW2Viewer.Common;
 import GW2Viewer.Common.GUID;
 import GW2Viewer.Common.Token32;
 import GW2Viewer.Common.Token64;
 import GW2Viewer.Data.Content.Mangling;
 import GW2Viewer.Data.Pack;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Windows.Window;
 import GW2Viewer.Utils.ConstString;
+import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.Scan;
 import GW2Viewer.Utils.Visitor;
+import std;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Windows
 {

@@ -1,12 +1,11 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.UI.Windows.ListContentValues;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Content;
 import GW2Viewer.UI.Controls;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Windows.Window;
 import std;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Windows
 {

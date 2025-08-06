@@ -1,10 +1,9 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.Content.Conversation;
 import GW2Viewer.Common;
 import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Game;
+import GW2Viewer.UI.ImGui;
+import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.String;
 import std;
 

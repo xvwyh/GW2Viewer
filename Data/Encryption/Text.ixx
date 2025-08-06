@@ -1,9 +1,9 @@
 module;
-#include "UI/ImGui/ImGui.h"
 #include <ctime>
 
 export module GW2Viewer.Data.Encryption.Text;
 import GW2Viewer.Common;
+import GW2Viewer.UI.ImGui;
 import std;
 
 export namespace GW2Viewer::Data::Encryption

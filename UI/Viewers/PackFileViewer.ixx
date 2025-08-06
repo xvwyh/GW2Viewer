@@ -1,7 +1,3 @@
-module;
-#include "UI/ImGui/ImGui.h"
-#include "imgui_impl_dx11.h"
-
 export module GW2Viewer.UI.Viewers.PackFileViewer;
 import GW2Viewer.Common;
 import GW2Viewer.Common.FourCC;
@@ -11,9 +7,11 @@ import GW2Viewer.Data.Game;
 import GW2Viewer.Data.Pack;
 import GW2Viewer.Data.Pack.PackFile;
 import GW2Viewer.UI.Controls;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Viewers.FileViewer;
 import GW2Viewer.Utils.Encoding;
 import std;
+#include "Macros.h"
 
 namespace GW2Viewer
 {

@@ -1,6 +1,3 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.UI.Viewers.EventViewer;
 import GW2Viewer.Common;
 import GW2Viewer.Content.Event;
@@ -8,6 +5,7 @@ import GW2Viewer.Data.Content;
 import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.UI.Viewers.ViewerWithHistory;
 import std;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Viewers
 {

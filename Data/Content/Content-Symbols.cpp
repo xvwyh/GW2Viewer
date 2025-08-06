@@ -1,7 +1,4 @@
-﻿module;
-#include "UI/ImGui/ImGui.h"
-
-module GW2Viewer.Data.Content;
+﻿module GW2Viewer.Data.Content;
 import :ContentObject;
 import GW2Viewer.Common;
 import GW2Viewer.Common.GUID;
@@ -10,11 +7,13 @@ import GW2Viewer.Common.Token64;
 import GW2Viewer.Data.Encryption;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Viewers.FileViewer;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.String;
 import std;
+#include "Macros.h"
 
 namespace GW2Viewer::Data::Content::Symbols
 {

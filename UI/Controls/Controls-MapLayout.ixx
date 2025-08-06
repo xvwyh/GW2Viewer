@@ -1,8 +1,3 @@
-module;
-#include "Utils.h"
-#include "UI/ImGui/ImGui.h"
-#include <imgui_impl_dx11.h>
-
 export module GW2Viewer.UI.Controls:MapLayout;
 import :ContentButton;
 import :Texture;
@@ -11,12 +6,15 @@ import GW2Viewer.Data.Content;
 import GW2Viewer.Data.Game;
 import GW2Viewer.Data.Pack.PackFile;
 import GW2Viewer.Data.Texture;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.Utils;
 import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Math;
+import std;
 import <boost/container/small_vector.hpp>;
+#include "Macros.h"
 
 using GW2Viewer::Data::Content::ContentObject;
 

@@ -1,7 +1,3 @@
-module;
-#include "UI/ImGui/ImGui.h"
-#include "Utils/Async.h"
-
 export module GW2Viewer.UI.Viewers.ContentListViewer;
 import GW2Viewer.Common;
 import GW2Viewer.Common.GUID;
@@ -9,6 +5,7 @@ import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Content;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Viewers.ContentViewer;
 import GW2Viewer.UI.Viewers.ListViewer;
@@ -23,6 +20,7 @@ import GW2Viewer.Utils.Sort;
 import GW2Viewer.Utils.Visitor;
 import std;
 import <gsl/gsl>;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Viewers
 {

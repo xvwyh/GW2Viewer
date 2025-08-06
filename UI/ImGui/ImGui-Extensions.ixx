@@ -1,12 +1,18 @@
-﻿#pragma once
-#include "UI/ImGui/ImGui.h"
+module;
+#include <imgui.h>
+#include <imgui_internal.h>
 
+export module GW2Viewer.UI.ImGui:Extensions;
+import :Core;
+import :Wrap;
 import GW2Viewer.Common;
 import GW2Viewer.Utils.Encoding;
+import GW2Viewer.Utils.Enum;
 import std;
+#include "Macros.h"
 
-namespace I = ImGui;
-#define scoped auto _ = dear
+export
+{
 
 #define BITWISE_AND(    ENUM) inline ENUM  operator& (ENUM  a, ENUM b) { return static_cast<ENUM>(static_cast<std::underlying_type_t<ENUM>>(a) & static_cast<std::underlying_type_t<ENUM>>(b)); }
 #define BITWISE_OR(     ENUM) inline ENUM  operator| (ENUM  a, ENUM b) { return static_cast<ENUM>(static_cast<std::underlying_type_t<ENUM>>(a) | static_cast<std::underlying_type_t<ENUM>>(b)); }
@@ -21,12 +27,13 @@ BITWISE_ALL(ImGuiButtonFlags_)
 #undef BITWISE_XOR
 #undef BITWISE_ALL
 
-inline ImVec2 ImRound(ImVec2 const& v) { return { IM_ROUND(v.x), IM_ROUND(v.y) }; }
-inline ImVec2 ImRoundIf(ImVec2 const& v, bool condition) { return condition ? ImRound(v) : v; }
+ImVec2 ImRound(ImVec2 const& v) { return { IM_ROUND(v.x), IM_ROUND(v.y) }; }
+ImVec2 ImRoundIf(ImVec2 const& v, bool condition) { return condition ? ImRound(v) : v; }
 
 namespace ImGui
 {
-inline ImU32 ColorLerp(ImU32 a, ImU32 b, float t)
+
+ImU32 ColorLerp(ImU32 a, ImU32 b, float t)
 {
     auto const av = ColorConvertU32ToFloat4(a);
     auto const bv = ColorConvertU32ToFloat4(b);
@@ -38,15 +45,15 @@ inline ImU32 ColorLerp(ImU32 a, ImU32 b, float t)
     });
 }
 
-static inline constexpr ImGuiID SHARED = 1;
-inline ImGuiID GetSharedScopeID(std::string_view str) { return GetIDWithSeed(str.data(), str.data() + str.length(), SHARED); }
+constexpr ImGuiID SHARED = 1;
+ImGuiID GetSharedScopeID(std::string_view str) { return GetIDWithSeed(str.data(), str.data() + str.length(), SHARED); }
 
-inline ImVec2 GetFrameSquare() { return { GetFrameHeight(), GetFrameHeight() }; }
+ImVec2 GetFrameSquare() { return { GetFrameHeight(), GetFrameHeight() }; }
 
-inline bool IsDisabled() { return GetCurrentContext()->CurrentItemFlags & ImGuiItemFlags_Disabled; }
-inline bool IsEnabled() { return !IsDisabled(); }
+bool IsDisabled() { return GetCurrentContext()->CurrentItemFlags & ImGuiItemFlags_Disabled; }
+bool IsEnabled() { return !IsDisabled(); }
 
-inline bool CheckboxButton(char const* text, bool& checked, char const* tooltip, ImVec2 const& size = { })
+bool CheckboxButton(char const* text, bool& checked, char const* tooltip, ImVec2 const& size = { })
 {
     bool const changed = Button(std::format("<c=#{1}>{0}</c>###{0}", text, checked ? "F" : "4").c_str(), size);
     if (tooltip)
@@ -56,9 +63,9 @@ inline bool CheckboxButton(char const* text, bool& checked, char const* tooltip,
         checked ^= true;
     return changed;
 }
-inline bool CheckboxButton(char const* text, bool& checked, char const* tooltip, float const& size = { }) { return CheckboxButton(text, checked, tooltip, { size, size }); }
+bool CheckboxButton(char const* text, bool& checked, char const* tooltip, float const& size = { }) { return CheckboxButton(text, checked, tooltip, { size, size }); }
 
-inline bool ComboItem(const char* label, bool selected = false, ImGuiSelectableFlags flags = 0, const ImVec2& size = ImVec2(0, 0))
+bool ComboItem(const char* label, bool selected = false, ImGuiSelectableFlags flags = 0, const ImVec2& size = ImVec2(0, 0))
 {
     bool const result = Selectable(label, selected, flags, size);
     if (selected)
@@ -95,12 +102,12 @@ auto InputTextUTF8(char const* label, auto& container, auto const& key, std::wst
 };
 
 std::string StripMarkup(std::string const& str);
-inline std::wstring StripMarkup(std::wstring const& str)
+std::wstring StripMarkup(std::wstring const& str)
 {
     return GW2Viewer::Utils::Encoding::FromUTF8(StripMarkup(GW2Viewer::Utils::Encoding::ToUTF8(str)));
 }
 
-inline bool InputTextReadOnly(const char* label, std::string const& str, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr)
+bool InputTextReadOnly(const char* label, std::string const& str, ImGuiInputTextFlags flags = 0, ImGuiInputTextCallback callback = nullptr, void* user_data = nullptr)
 {
     auto size = CalcTextSize(str.c_str(), str.c_str() + str.size()) + GetStyle().FramePadding * 2;
     if (GImGui->NextItemData.HasFlags & ImGuiNextItemDataFlags_HasWidth)
@@ -118,7 +125,7 @@ inline bool InputTextReadOnly(const char* label, std::string const& str, ImGuiIn
     return InputTextEx(label, nullptr, (char*)str.c_str(), str.capacity() + 1, size, flags | ImGuiInputTextFlags_ReadOnly, callback, user_data);
 }
 
-[[nodiscard]] inline ImGuiButtonFlags_ IsItemMouseClickedWith(ImGuiButtonFlags_ buttons)
+[[nodiscard]] ImGuiButtonFlags_ IsItemMouseClickedWith(ImGuiButtonFlags_ buttons)
 {
     auto const& item = GetCurrentContext()->LastItemData;
     auto clicked = ImGuiButtonFlags_None;
@@ -148,14 +155,13 @@ inline bool InputTextReadOnly(const char* label, std::string const& str, ImGuiIn
 
 void OpenURL(wchar_t const* url);
 
-
-    static float GetMinimumStepAtDecimalPrecision(int decimal_precision)
-    {
-        static const float min_steps[10] = { 1.0f, 0.1f, 0.01f, 0.001f, 0.0001f, 0.00001f, 0.000001f, 0.0000001f, 0.00000001f, 0.000000001f };
-        if (decimal_precision < 0)
-            return FLT_MIN;
-        return (decimal_precision < IM_ARRAYSIZE(min_steps)) ? min_steps[decimal_precision] : ImPow(10.0f, (float)-decimal_precision);
-    }
+float GetMinimumStepAtDecimalPrecision(int decimal_precision)
+{
+    static const float min_steps[10] = { 1.0f, 0.1f, 0.01f, 0.001f, 0.0001f, 0.00001f, 0.000001f, 0.0000001f, 0.00000001f, 0.000000001f };
+    if (decimal_precision < 0)
+        return FLT_MIN;
+    return (decimal_precision < IM_ARRAYSIZE(min_steps)) ? min_steps[decimal_precision] : ImPow(10.0f, (float)-decimal_precision);
+}
 
 // This is called by DragBehavior() when the widget is active (held by mouse or being manipulated with Nav controls)
 template<typename TYPE, typename SIGNEDTYPE, typename FLOATTYPE, typename COERCE>
@@ -442,44 +448,4 @@ bool DragCoerceInt(const char* label, int* v, float v_speed = 1.0f, int v_min = 
 
 }
 
-namespace dear
-{
-    struct WithCursorPos : ScopeWrapper<WithCursorPos>
-    {
-        WithCursorPos(ImVec2 const& pos) noexcept : ScopeWrapper(true) { ImGui::SetCursorPos(pos); }
-        WithCursorPos(float x, float y) noexcept : WithCursorPos(ImVec2(x, y)) { }
-        void dtor() noexcept { ImGui::SetCursorPos(restore); ImGui::GetCurrentWindow()->DC.IsSetPos = false; }
-        ImVec2 const restore = ImGui::GetCursorPos();
-    };
-    struct WithCursorScreenPos : ScopeWrapper<WithCursorScreenPos>
-    {
-        WithCursorScreenPos(ImVec2 const& pos) noexcept : ScopeWrapper(true) { ImGui::SetCursorScreenPos(pos); }
-        WithCursorScreenPos(float x, float y) noexcept : WithCursorScreenPos(ImVec2(x, y)) { }
-        void dtor() noexcept { ImGui::SetCursorScreenPos(restore); ImGui::GetCurrentWindow()->DC.IsSetPos = false; }
-        ImVec2 const restore = ImGui::GetCursorScreenPos();
-    };
-    struct WithCursorOffset : ScopeWrapper<WithCursorOffset>
-    {
-        WithCursorOffset(ImVec2 const& offset) noexcept : ScopeWrapper(true) { ImGui::SetCursorScreenPos(restore + offset); }
-        WithCursorOffset(float x, float y) noexcept : WithCursorOffset(ImVec2(x, y)) { }
-        void dtor() noexcept { ImGui::SetCursorScreenPos(restore); ImGui::GetCurrentWindow()->DC.IsSetPos = false; }
-        ImVec2 const restore = ImGui::GetCursorScreenPos();
-    };
-    struct WithColorVar : ScopeWrapper<WithColorVar>
-    {
-        WithColorVar(ImGuiCol idx, ImVec4 const& col) noexcept : ScopeWrapper(true) { ImGui::PushStyleColor(idx, col); }
-        WithColorVar(ImGuiStyleVar idx, ImU32 col) noexcept : ScopeWrapper(true) { ImGui::PushStyleColor(idx, col); }
-        static void dtor() noexcept { ImGui::PopStyleColor(); }
-    };
-    struct Font : ScopeWrapper<Font>
-    {
-        Font(ImFont* font, float size) noexcept : ScopeWrapper(true) { ImGui::PushFont(font, size); }
-        static void dtor() noexcept { ImGui::PopFont(); }
-    };
-    struct PopupContextItem : ScopeWrapper<PopupContextItem>
-    {
-        PopupContextItem(const char* str_id = NULL, ImGuiPopupFlags popup_flags = 1) noexcept : ScopeWrapper(ImGui::BeginPopupContextItem(str_id, popup_flags)) { }
-        static void dtor() noexcept { ImGui::EndPopup(); }
-    };
-    using Window = Begin;
 }

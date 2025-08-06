@@ -1,8 +1,9 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.UI.Controls:CopyButton;
+import GW2Viewer.UI.ImGui;
+import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.Format;
+import std;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Controls
 {

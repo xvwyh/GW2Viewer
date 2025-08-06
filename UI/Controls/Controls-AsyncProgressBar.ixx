@@ -1,8 +1,7 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.UI.Controls:AsyncProgressBar;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.Utils.Async;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Controls
 {

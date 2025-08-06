@@ -1,8 +1,7 @@
 module;
-#include "Utils/Async.h"
+#include <magic_enum/magic_enum.hpp>
 #include <mio/mmap.hpp>
 #include <cassert>
-#include <magic_enum/magic_enum.hpp>
 
 export module GW2Viewer.User.ArchiveIndex;
 import GW2Viewer.Common;
@@ -15,6 +14,7 @@ import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Visitor;
 import std;
 import magic_enum;
+#include "Macros.h"
 
 export namespace GW2Viewer::User
 {

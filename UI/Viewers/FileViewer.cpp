@@ -1,13 +1,12 @@
-﻿module;
-#include "UI/ImGui/ImGui.h"
-
-module GW2Viewer.UI.Viewers.FileViewer;
+﻿module GW2Viewer.UI.Viewers.FileViewer;
 import GW2Viewer.Common.FourCC;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Viewers.FileViewers;
 import GW2Viewer.Utils.Exception;
+#include "Macros.h"
 
 namespace GW2Viewer::UI::Viewers
 {

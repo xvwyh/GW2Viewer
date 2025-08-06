@@ -172,7 +172,12 @@
     <ClCompile Include="UI\Controls\Controls-VoiceButton.ixx" />
     <ClCompile Include="UI\Controls\Controls.cpp" />
     <ClCompile Include="UI\Controls\Controls.ixx" />
-    <ClCompile Include="UI\ImGui\ImGuiExtensions.cpp" />
+    <ClCompile Include="UI\ImGui\ImGui-Core.ixx" />
+    <ClCompile Include="UI\ImGui\ImGui-Extensions.ixx" />
+    <ClCompile Include="UI\ImGui\ImGui-Platform.ixx" />
+    <ClCompile Include="UI\ImGui\ImGui-Wrap.ixx" />
+    <ClCompile Include="UI\ImGui\ImGui.cpp" />
+    <ClCompile Include="UI\ImGui\ImGui.ixx" />
     <ClCompile Include="UI\Manager.cpp" />
     <ClCompile Include="UI\Manager.ixx" />
     <ClCompile Include="UI\Viewers\BookmarkListViewer.ixx" />
@@ -233,7 +238,6 @@
     <Natvis Include="pf.natvis" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Common\JSON.h" />
     <ClInclude Include="dep\fmod\fmod.h" />
     <ClInclude Include="dep\fmod\fmod.hpp" />
     <ClInclude Include="dep\fmod\fmod_codec.h" />
@@ -275,13 +279,10 @@
     <ClInclude Include="dep\imgui\imstb_rectpack.h" />
     <ClInclude Include="dep\imgui\imstb_textedit.h" />
     <ClInclude Include="dep\imgui\imstb_truetype.h" />
+    <ClInclude Include="Macros.h" />
     <ClInclude Include="Resource.h" />
-    <ClInclude Include="UI\ImGui\IconsFontAwesome6.h" />
-    <ClInclude Include="UI\ImGui\ImGui.h" />
+    <ClInclude Include="dep\IconsFontAwesome6.h" />
     <ClInclude Include="UI\ImGui\ImGuiConfig.h" />
-    <ClInclude Include="UI\ImGui\ImGuiExtensions.h" />
-    <ClInclude Include="Utils.h" />
-    <ClInclude Include="Utils\Async.h" />
     <ClInclude Include="Utils\Scan.h" />
   </ItemGroup>
   <ItemGroup>

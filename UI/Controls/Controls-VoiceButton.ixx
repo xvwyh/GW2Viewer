@@ -1,14 +1,15 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.UI.Controls:VoiceButton;
+import GW2Viewer.Common;
 import GW2Viewer.Data.Content;
 import GW2Viewer.Data.Encryption;
 import GW2Viewer.Data.Encryption.Asset;
 import GW2Viewer.Data.Game;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Format;
+import std;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Controls
 {

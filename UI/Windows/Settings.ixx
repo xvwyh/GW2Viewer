@@ -1,10 +1,9 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.UI.Windows.Settings;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Windows.Window;
 import GW2Viewer.User.Config;
 import std;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Windows
 {

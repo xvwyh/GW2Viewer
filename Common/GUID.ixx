@@ -1,5 +1,4 @@
 module;
-#include "Common/JSON.h"
 #include "Utils/Scan.h"
 
 export module GW2Viewer.Common.GUID;
@@ -8,6 +7,7 @@ import GW2Viewer.Common.JSON;
 import GW2Viewer.Utils.ConstString;
 import GW2Viewer.Utils.Scan;
 import std;
+#include "Macros.h"
 
 export namespace GW2Viewer
 {

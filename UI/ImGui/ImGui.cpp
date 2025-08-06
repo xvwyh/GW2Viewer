@@ -1,7 +1,11 @@
-﻿#include "ImGuiExtensions.h"
+﻿module;
+#include <imgui.h>
+#include <imgui_internal.h>
 #include <Windows.h>
 #include <shellapi.h>
+#include <cassert>
 
+module GW2Viewer.UI.ImGui;
 import std;
 
 using GW2Viewer::byte;

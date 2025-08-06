@@ -1,12 +1,11 @@
-module;
-#include <UI/ImGui/ImGui.h>
-
 export module GW2Viewer.UI.Viewers.ViewerWithHistory;
 import GW2Viewer.Common;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Viewers.Viewer;
 import GW2Viewer.UI.Viewers.ViewerRegistry;
 import std;
+#include "Macros.h"
 
 template<typename T> struct ViewerHistoryType { using Type = T; };
 template<typename T> requires std::is_reference_v<T> struct ViewerHistoryType<T> { using Type = std::reference_wrapper<std::remove_reference_t<T>>; };// std::add_pointer_t<std::remove_reference_t<T>>; };

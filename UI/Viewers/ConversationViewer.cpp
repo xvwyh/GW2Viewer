@@ -1,18 +1,17 @@
-﻿module;
-#include "UI/ImGui/ImGui.h"
-
-module GW2Viewer.UI.Viewers.ConversationViewer;
+﻿module GW2Viewer.UI.Viewers.ConversationViewer;
 import GW2Viewer.Common.Time;
 import GW2Viewer.Content.Conversation;
 import GW2Viewer.Data.Encryption;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.String;
 import std;
 import <gsl/gsl>;
+#include "Macros.h"
 
 namespace GW2Viewer::UI::Viewers
 {

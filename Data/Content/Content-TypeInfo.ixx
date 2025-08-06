@@ -1,5 +1,4 @@
 module;
-#include "Common/JSON.h";
 #include "Utils/Scan.h";
 
 export module GW2Viewer.Data.Content:TypeInfo;
@@ -11,6 +10,7 @@ import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Scan;
 import std;
 import <cassert>;
+#include "Macros.h"
 
 export namespace GW2Viewer::Data::Content
 {

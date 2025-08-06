@@ -1,19 +1,19 @@
-module;
-#include "UI/ImGui/ImGui.h"
-#include "Utils/Async.h"
-
 export module GW2Viewer.UI.Windows.Demangle;
+import GW2Viewer.Common;
 import GW2Viewer.Common.Hash;
 import GW2Viewer.Data.Content;
 import GW2Viewer.Data.Content.Mangling;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Windows.Window;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Async;
+import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.Visitor;
 import std;
 import <experimental/generator>;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Windows
 {

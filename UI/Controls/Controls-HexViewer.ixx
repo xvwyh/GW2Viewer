@@ -1,6 +1,3 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.UI.Controls:HexViewer;
 import GW2Viewer.Common;
 import GW2Viewer.Common.Token32;
@@ -8,8 +5,10 @@ import GW2Viewer.Common.Token64;
 import GW2Viewer.Data.Game;
 import GW2Viewer.Data.Encryption;
 import GW2Viewer.Data.Pack;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.Utils.Encoding;
 import std;
+#include "Macros.h"
 
 namespace GW2Viewer
 {

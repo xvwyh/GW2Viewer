@@ -1,12 +1,10 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.UI.Viewers.MapLayoutViewer;
 import GW2Viewer.Common.GUID;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.Viewers.Viewer;
 import GW2Viewer.UI.Viewers.ViewerRegistry;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Viewers
 {

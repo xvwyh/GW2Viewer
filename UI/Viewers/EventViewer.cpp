@@ -1,18 +1,17 @@
-﻿module;
-#include "UI/ImGui/ImGui.h"
-
-module GW2Viewer.UI.Viewers.EventViewer;
+﻿module GW2Viewer.UI.Viewers.EventViewer;
 import GW2Viewer.Common.Time;
 import GW2Viewer.Content;
 import GW2Viewer.Data.Game;
 import GW2Viewer.Data.Text.Format;
 import GW2Viewer.UI.Controls;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.Exception;
 import GW2Viewer.Utils.Format;
 import magic_enum;
+#include "Macros.h"
 
 namespace GW2Viewer::UI::Viewers
 {

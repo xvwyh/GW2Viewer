@@ -1,5 +1,4 @@
 module;
-#include "Common/JSON.h"
 #include "Utils/Scan.h"
 
 export module GW2Viewer.User.Config;
@@ -9,6 +8,7 @@ import GW2Viewer.Common.JSON;
 import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Content;
 import std;
+#include "Macros.h"
 
 export namespace GW2Viewer::User
 {

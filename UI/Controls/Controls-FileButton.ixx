@@ -1,11 +1,10 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.UI.Controls:FileButton;
 import :Texture;
 import GW2Viewer.Data.Archive;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Viewers.Viewer;
 import std;
+#include "Macros.h"
 
 namespace GW2Viewer::UI::Controls
 {

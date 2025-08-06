@@ -1,8 +1,6 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.Data.Encryption;
 import std;
+#include "Macros.h"
 
 namespace GW2Viewer::Data::Encryption
 {

@@ -1,21 +1,21 @@
-module;
-#include "UI/ImGui/ImGui.h"
-#include "Utils/Async.h"
-
 export module GW2Viewer.UI.Viewers.ConversationListViewer;
+import GW2Viewer.Common;
 import GW2Viewer.Common.Time;
 import GW2Viewer.Content.Conversation;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Viewers.ConversationViewer;
 import GW2Viewer.UI.Viewers.ListViewer;
 import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.Utils.Async;
+import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Scan;
 import GW2Viewer.Utils.Sort;
 import std;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Viewers
 {

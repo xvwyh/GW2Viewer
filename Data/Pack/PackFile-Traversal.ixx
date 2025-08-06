@@ -1,6 +1,3 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.Data.Pack.PackFile:Traversal;
 import :Layout;
 import :PackFile;
@@ -8,6 +5,7 @@ import GW2Viewer.Common.GUID;
 import GW2Viewer.Common.Token32;
 import GW2Viewer.Common.Token64;
 import GW2Viewer.Data.Pack;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.Utils.Scan;
 import <boost/container/small_vector.hpp>;
 import <experimental/generator>;

@@ -1,8 +1,6 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.Data.Texture;
 import GW2Viewer.Common;
+import GW2Viewer.UI.ImGui;
 import std;
 
 export namespace GW2Viewer::Data::Texture

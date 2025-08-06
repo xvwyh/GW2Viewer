@@ -1,16 +1,15 @@
-﻿#include "UI/ImGui/ImGui.h"
-#include "Utils.h"
-
-module GW2Viewer.Data.Content;
+﻿module GW2Viewer.Data.Content;
 import :ContentObject;
 import :Symbols;
 import GW2Viewer.Common;
 import GW2Viewer.Common.JSON;
 import GW2Viewer.Data.Game;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.String;
 import std;
+#include "Macros.h"
 
 namespace GW2Viewer::Data::Content
 {

@@ -1,11 +1,9 @@
-﻿module;
-#include "UI/ImGui/ImGui.h"
-
-module GW2Viewer.UI.Viewers.ContentViewer;
+﻿module GW2Viewer.UI.Viewers.ContentViewer;
 import GW2Viewer.Common.GUID;
 import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Viewers.ContentListViewer;
 import GW2Viewer.UI.Viewers.ListViewer;
@@ -13,6 +11,7 @@ import GW2Viewer.UI.Windows.ListContentValues;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Exception;
 import GW2Viewer.Utils.Sort;
+#include "Macros.h"
 
 namespace GW2Viewer::UI::Viewers
 {

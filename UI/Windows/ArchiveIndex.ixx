@@ -1,12 +1,10 @@
-module;
-#include "UI/ImGui/ImGui.h"
-#include "Utils/Async.h"
-
 export module GW2Viewer.UI.Windows.ArchiveIndex;
+import GW2Viewer.Common;
 import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Archive;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Windows.Window;
 import GW2Viewer.User.ArchiveIndex;
@@ -14,6 +12,7 @@ import GW2Viewer.Utils.Async;
 import GW2Viewer.Utils.Container;
 import std;
 import magic_enum;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Windows
 {

@@ -1,12 +1,11 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.UI.Manager;
+import GW2Viewer.Common;
 import GW2Viewer.Common.GUID;
 import GW2Viewer.Common.Time;
 import GW2Viewer.Content.Event;
 import GW2Viewer.Data.Archive;
 import GW2Viewer.Data.Content;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Viewers.Viewer;
 import GW2Viewer.Utils.Async.ProgressBarContext;
 import std;

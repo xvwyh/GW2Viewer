@@ -1,15 +1,14 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.UI.Viewers.BookmarkListViewer;
 import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Viewers.ListViewer;
 import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Format;
 import std;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Viewers
 {

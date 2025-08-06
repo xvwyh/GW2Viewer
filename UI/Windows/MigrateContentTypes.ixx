@@ -1,15 +1,14 @@
-module;
-#include "UI/ImGui/ImGui.h"
-
 export module GW2Viewer.UI.Windows.MigrateContentTypes;
 import GW2Viewer.Common;
 import GW2Viewer.Content;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
+import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Windows.Window;
 import GW2Viewer.User.Config;
 import std;
 import magic_enum;
+#include "Macros.h"
 
 export namespace GW2Viewer::UI::Windows
 {
