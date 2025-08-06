@@ -304,19 +304,19 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
                         I::Dummy({ 1, 10 });
 
                         if (auto const version = G::Game.Archive.GetFileEntry(asset.BaseID); scoped::Disabled(!(version && asset.BaseID && asset.FileID && asset.BaseID != asset.FileID && file.ID == asset.FileID)))
-                            if (Controls::FileButton(asset.BaseID, version, { .Icon = ICON_FA_CHEVRONS_LEFT, .Text = "Base Version", .TooltipPreview = false }))
+                            if (Controls::FileButton(asset.BaseID, version, { .Icon = ICON_FA_CHEVRONS_LEFT, .Text = "Base Version", .InlinePreview = false, .TooltipPreview = false }))
                                 ScrollTo = *version;
                         I::SameLine();
                         if (auto const version = G::Game.Archive.GetFileEntry(asset.FileID); scoped::Disabled(!(version && asset.BaseID && asset.FileID && asset.BaseID != asset.FileID && file.ID == asset.BaseID)))
-                            if (Controls::FileButton(asset.FileID, version, { .Icon = ICON_FA_CHEVRONS_RIGHT, .Text = "Latest Version", .TooltipPreview = false }))
+                            if (Controls::FileButton(asset.FileID, version, { .Icon = ICON_FA_CHEVRONS_RIGHT, .Text = "Latest Version", .InlinePreview = false, .TooltipPreview = false }))
                                 ScrollTo = *version;
 
                         if (auto const version = G::Game.Archive.GetFileEntry(asset.ParentBaseID); scoped::Disabled(!version))
-                            if (Controls::FileButton(asset.ParentBaseID, version, { .Icon = ICON_FA_ARROW_DOWN_BIG_SMALL, .Text = "Lower Quality", .TextMissingFile = "Lower Quality", .TooltipPreviewBestVersion = false }))
+                            if (Controls::FileButton(asset.ParentBaseID, version, { .Icon = ICON_FA_ARROW_DOWN_BIG_SMALL, .Text = "Lower Quality", .TextMissingFile = "Lower Quality", .InlinePreview = false, .TooltipPreviewBestVersion = false }))
                                 ScrollTo = *version;
                         I::SameLine();
                         if (auto const version = G::Game.Archive.GetFileEntry(asset.StreamBaseID); scoped::Disabled(!version))
-                            if (Controls::FileButton(asset.StreamBaseID, version, { .Icon = ICON_FA_ARROW_UP_BIG_SMALL, .Text = "Higher Quality", .TextMissingFile = "Higher Quality", .TooltipPreviewBestVersion = false }))
+                            if (Controls::FileButton(asset.StreamBaseID, version, { .Icon = ICON_FA_ARROW_UP_BIG_SMALL, .Text = "Higher Quality", .TextMissingFile = "Higher Quality", .InlinePreview = false, .TooltipPreviewBestVersion = false }))
                                 ScrollTo = *version;
                         if (ScrollTo)
                             I::CloseCurrentPopup();

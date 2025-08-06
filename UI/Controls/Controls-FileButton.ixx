@@ -19,6 +19,7 @@ struct FileButtonOptions
     std::string_view Text = "File";
     std::string_view TextMissingFile = "<c=#F00>Missing File</c>";
     bool OpenViewer = true;
+    bool InlinePreview = true;
     bool TooltipPreview = true;
     bool TooltipPreviewBestVersion = true;
 };
@@ -37,6 +38,10 @@ bool FileButton(uint32 fileID, Data::Archive::File const* file, FileButtonOption
     if (options.TooltipPreview)
         if (scoped::ItemTooltip(ImGuiHoveredFlags_DelayNone))
             Texture(fileID, { .BestVersion = options.TooltipPreviewBestVersion });
+
+    I::SameLine();
+    Texture(fileID, { .Size = { 0, I::GetFrameHeight() }, .AdvanceCursor = false, .BestVersion = options.TooltipPreviewBestVersion });
+    I::NewLine();
 
     return result;
 }
