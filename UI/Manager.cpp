@@ -8,14 +8,11 @@ import GW2Viewer.Common.Time;
 import GW2Viewer.Content;
 import GW2Viewer.Data.Encryption.Asset;
 import GW2Viewer.Data.Encryption.RC4;
-import GW2Viewer.Data.External.Database;
 import GW2Viewer.Data.Game;
+import GW2Viewer.Tasks.StartupLoading;
 import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Notifications;
 import GW2Viewer.UI.Viewers.ContentListViewer;
-import GW2Viewer.UI.Viewers.ConversationListViewer;
-import GW2Viewer.UI.Viewers.EventListViewer;
-import GW2Viewer.UI.Viewers.FileListViewer;
 import GW2Viewer.UI.Viewers.ListViewer;
 import GW2Viewer.UI.Viewers.MapLayoutViewer;
 import GW2Viewer.UI.Viewers.StringListViewer;
@@ -27,7 +24,6 @@ import GW2Viewer.UI.Windows.Notes;
 import GW2Viewer.UI.Windows.Parse;
 import GW2Viewer.UI.Windows.Settings;
 import GW2Viewer.UI.Windows.Window;
-import GW2Viewer.User.ArchiveIndex;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Base64;
 import GW2Viewer.Utils.Scan;
@@ -274,19 +270,8 @@ void Manager::Update()
         {
             I::PushItemFlag(ImGuiItemFlags_AutoClosePopups, false);
             for (auto const lang : magic_enum::enum_values<Language>())
-            {
                 if (I::MenuItem(magic_enum::enum_name(lang).data(), nullptr, G::Config.Language == lang))
-                {
                     G::Config.Language = lang;
-                    if (!G::Game.Text.IsLoaded(lang))
-                    {
-                        m_progress[3].Run([lang](Utils::Async::ProgressBarContext& progress)
-                        {
-                            G::Game.Text.LoadLanguage(lang, *G::Game.Archive.GetSource(), progress);
-                        });
-                    }
-                }
-            }
             I::PopItemFlag();
         }
         if (scoped::Menu("Tools"))
@@ -298,29 +283,6 @@ void Manager::Update()
             I::MenuItem("Migrate Content Types", nullptr, &G::Windows::MigrateContentTypes.GetShown());
         }
         I::Text("<c=#8>Gw2: %u</c>", G::Game.Build);
-        for (auto const& progress : m_progress)
-        {
-            if (auto lock = progress.Lock(); progress.IsRunning())
-            {
-                if (progress.IsIndeterminate())
-                {
-                    I::SetCursorPosY(I::GetCursorPosY() + 2);
-                    I::ProgressBar(-I::GetTime(), { 100, 16 });
-                    I::SameLine();
-                    I::TextUnformatted(progress.GetDescription().c_str());
-                }
-                else
-                {
-                    auto [p, current, total] = progress.GetProgress();
-                    I::SetCursorPosY(I::GetCursorPosY() + 2);
-                    I::ProgressBar(p, { 100, 16 });
-                    I::SameLine();
-                    I::Text("%zu / %zu", current, total);
-                    I::SameLine();
-                    I::TextUnformatted(progress.GetDescription().c_str());
-                }
-            }
-        }
     }
 
     static ImGuiID needReselectCurrentViewerInDockID = 0;
@@ -380,88 +342,7 @@ void Manager::Update()
 
     G::Notifications.Draw();
     G::Game.Texture.UploadToGPU();
-    static bool firstTime = [&]
-    {
-        if (!G::Config.GameDatPath.empty())
-            G::Game.Archive.Add(Data::Archive::Kind::Game, G::Config.GameDatPath);
-        if (!G::Config.LocalDatPath.empty())
-            G::Game.Archive.Add(Data::Archive::Kind::Local, G::Config.LocalDatPath);
-        m_progress[0].Run([this](Utils::Async::ProgressBarContext& progress)
-        {
-            progress.Start("Preparing decryption key storage");
-            if (!G::Config.DecryptionKeysPath.empty())
-                G::Database.Load(G::Config.DecryptionKeysPath, progress);
-
-            G::Game.Archive.Load(progress);
-
-            progress.Start("Loading archive index");
-            for (auto const [kind, name] : magic_enum::enum_entries<Data::Archive::Kind>())
-                if (auto const source = G::Game.Archive.GetSource(kind))
-                    G::ArchiveIndex[kind].Load(*source, std::format("ArchiveIndex.{}.bin", name));
-
-            auto sourcePtr = G::Game.Archive.GetSource();
-            if (!sourcePtr)
-                return;
-            auto& source = *sourcePtr;
-
-            progress.Start("Creating file list");
-            G::Viewers::Notify(&Viewers::FileListViewer::UpdateFilter);
-
-            // Wait for PackFile layouts to load before continuing
-            while (!G::Game.Pack.IsLoaded())
-                std::this_thread::sleep_for(50ms);
-
-            m_progress[4].Run([](Utils::Async::ProgressBarContext& progress)
-            {
-                G::Game.Manifest.Load(progress);
-            });
-
-            // Can't parallelize currently, Archive supports only single-thread file loading
-
-            G::Game.Text.Load(source, progress);
-            progress.Start("Creating string list");
-            G::Viewers::Notify(&Viewers::StringListViewer::UpdateFilter);
-            progress.Start("Creating conversation list");
-            G::Viewers::Notify(&Viewers::ConversationListViewer::UpdateSearch);
-            progress.Start("Creating event list");
-            G::Viewers::Notify(&Viewers::EventListViewer::UpdateFilter);
-
-            G::Game.Voice.Load(source, progress);
-            m_progress[2].Run([&source](Utils::Async::ProgressBarContext& progress)
-            {
-                G::Game.Content.Load(source, progress);
-                G::Viewers::Notify(&Viewers::ContentListViewer::UpdateFilter, false);
-
-                progress.Start("Processing content types for migration");
-                if (!G::Config.LastNumContentTypes)
-                    G::Config.LastNumContentTypes = G::Game.Content.GetNumTypes();
-                if (G::Config.LastNumContentTypes == G::Game.Content.GetNumTypes())
-                {
-                    for (auto const& type : G::Game.Content.GetTypes())
-                    {
-                        auto const itr = G::Config.TypeInfo.find(type->Index);
-                        if (itr == G::Config.TypeInfo.end())
-                            continue;
-
-                        Data::Content::TypeInfo& typeInfo = itr->second;
-                        if (typeInfo.Examples.empty() && !type->Objects.empty() && type->GUIDOffset >= 0)
-                            typeInfo.Examples.insert_range(type->Objects | std::views::take(5) | std::views::transform([](Data::Content::ContentObject const* content) { return *content->GetGUID(); }));
-                    }
-                }
-                else
-                    G::Windows::MigrateContentTypes.Show();
-            });
-        });
-        m_progress[1].Run([](Utils::Async::ProgressBarContext& progress)
-        {
-            if (!G::Config.GameExePath.empty())
-            {
-                G::Game.Load(G::Config.GameExePath, progress);
-                G::Game.Pack.Load(G::Config.GameExePath, progress);
-            }
-        });
-        return true;
-    }();
+    G::Tasks::StartupLoading.Run();
 }
 
 void Manager::OpenWorldMap(bool newTab)
