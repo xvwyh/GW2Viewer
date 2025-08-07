@@ -666,6 +666,76 @@ begin:
     draw_list->_VtxCurrentIdx = vtx_index;
 }
 
+bool ImGui::CloseButton(ImGuiID id, const ImVec2& pos)
+{
+    ImGuiContext& g = *GImGui;
+    ImGuiWindow* window = g.CurrentWindow;
+
+    // Tweak 1: Shrink hit-testing area if button covers an abnormally large proportion of the visible region. That's in order to facilitate moving the window away. (#3825)
+    // This may better be applied as a general hit-rect reduction mechanism for all widgets to ensure the area to move window is always accessible?
+    const ImRect bb(pos, pos + ImVec2(g.FontSize, g.FontSize));
+    ImRect bb_interact = bb;
+    const float area_to_visible_ratio = window->OuterRectClipped.GetArea() / bb.GetArea();
+    if (area_to_visible_ratio < 1.5f)
+        bb_interact.Expand(ImTrunc(bb_interact.GetSize() * -0.25f));
+
+    // Tweak 2: We intentionally allow interaction when clipped so that a mechanical Alt,Right,Activate sequence can always close a window.
+    // (this isn't the common behavior of buttons, but it doesn't affect the user because navigation tends to keep items visible in scrolling layer).
+    bool is_clipped = !ItemAdd(bb_interact, id);
+
+    bool hovered, held;
+    bool pressed = ButtonBehavior(bb_interact, id, &hovered, &held);
+    if (is_clipped)
+        return pressed;
+
+    // Render
+    ImU32 bg_col = GetColorU32(held ? ImGuiCol_ButtonActive : ImGuiCol_ButtonHovered);
+    if (hovered)
+        window->DrawList->AddCircleFilled(bb.GetCenter(), ImMax(2.0f, g.FontSize * 0.5f + 1.0f), bg_col);
+    RenderNavCursor(bb, id, ImGuiNavRenderCursorFlags_Compact);
+    const ImU32 cross_col = GetColorU32(ImGuiCol_Text);
+    const ImVec2 cross_center = bb.GetCenter() - ImVec2(0.5f, 0.5f);
+    const float cross_extent = g.FontSize * 0.5f * 0.7071f - 1.0f;
+    const float cross_thickness = 1.0f; // FIXME-DPI
+    window->DrawList->AddLine(cross_center + ImVec2(+cross_extent, +cross_extent), cross_center + ImVec2(-cross_extent, -cross_extent), cross_col, cross_thickness);
+    window->DrawList->AddLine(cross_center + ImVec2(+cross_extent, -cross_extent), cross_center + ImVec2(-cross_extent, +cross_extent), cross_col, cross_thickness);
+
+    return pressed;
+}
+
+// The Collapse button also functions as a Dock Menu button.
+bool ImGui::CollapseButton(ImGuiID id, const ImVec2& pos, ImGuiDockNode* dock_node)
+{
+    ImGuiContext& g = *GImGui;
+    ImGuiWindow* window = g.CurrentWindow;
+
+    ImRect bb(pos, pos + ImVec2(g.FontSize, g.FontSize));
+    bool is_clipped = !ItemAdd(bb, id);
+    bool hovered, held;
+    bool pressed = ButtonBehavior(bb, id, &hovered, &held, ImGuiButtonFlags_None);
+    if (is_clipped)
+        return pressed;
+
+    // Render
+    //bool is_dock_menu = (window->DockNodeAsHost && !window->Collapsed);
+    ImU32 bg_col = GetColorU32((held && hovered) ? ImGuiCol_ButtonActive : hovered ? ImGuiCol_ButtonHovered : ImGuiCol_Button);
+    ImU32 text_col = GetColorU32(ImGuiCol_Text);
+    if (hovered || held)
+        window->DrawList->AddCircleFilled(bb.GetCenter() + ImVec2(0.0f, -0.5f), g.FontSize * 0.5f + 1.0f, bg_col);
+    RenderNavCursor(bb, id, ImGuiNavRenderCursorFlags_Compact);
+
+    if (dock_node)
+        RenderArrowDockMenu(window->DrawList, bb.Min, g.FontSize, text_col);
+    else
+        RenderArrow(window->DrawList, bb.Min, text_col, window->Collapsed ? ImGuiDir_Right : ImGuiDir_Down, 1.0f);
+
+    // Switch to moving the window after mouse is moved beyond the initial drag threshold
+    if (IsItemActive() && IsMouseDragging(0))
+        StartMouseMovingWindowOrNode(window, dock_node, true); // Undock from window/collapse menu button
+
+    return pressed;
+}
+
 std::string ImGui::StripMarkup(std::string const& str)
 {
     std::string stripped(str.length(), 0);
