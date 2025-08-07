@@ -44,7 +44,7 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
 
     auto GetSortedContentObjects(bool isNamespace, uint32 index, std::list<std::unique_ptr<Data::Content::ContentObject>> const& entries)
     {
-        auto timeout = G::UI.GetTime() + 10ms;
+        auto timeout = Time::FrameStart + 10ms;
         struct Cache
         {
             ContentSort Sort;

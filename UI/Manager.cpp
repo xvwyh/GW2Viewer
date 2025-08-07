@@ -4,6 +4,7 @@
 #include <cstddef>
 
 module GW2Viewer.UI.Manager;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Content;
 import GW2Viewer.Data.Encryption.Asset;
 import GW2Viewer.Data.Encryption.RC4;
@@ -179,10 +180,7 @@ void Manager::Unload()
 
 void Manager::Update()
 {
-    m_now = Time::PreciseNow();
-    static auto prev = m_now;
-    m_deltaTime = std::max(0.001f, Time::Between<Time::Us>(prev, m_now).count() / 1000000.0f);
-    prev = m_now;
+    Time::UpdateFrameTime();
 
     while (!m_deferred.empty())
     {

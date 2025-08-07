@@ -1,7 +1,6 @@
 export module GW2Viewer.UI.Manager;
 import GW2Viewer.Common;
 import GW2Viewer.Common.GUID;
-import GW2Viewer.Common.Time;
 import GW2Viewer.Content.Event;
 import GW2Viewer.Data.Archive;
 import GW2Viewer.Data.Content;
@@ -40,8 +39,6 @@ public:
     void ExportData(std::span<byte const> data, std::filesystem::path const& path);
 
     void Defer(std::function<void()>&& func) { m_deferred.emplace_back(std::move(func)); }
-    auto GetTime() const { return m_now; }
-    auto DeltaTime() const { return m_deltaTime; }
 
     template<typename T> requires std::is_base_of_v<Viewers::Viewer, T>
     auto GetCurrentViewer() const { return dynamic_cast<T*>(GetCurrentViewer()); }
@@ -68,9 +65,6 @@ private:
     bool m_loaded = false;
 
     std::list<std::function<void()>> m_deferred;
-
-    float m_deltaTime = 1.0f;
-    Time::PrecisePoint m_now;
 
     bool m_showOriginalNames = false;
 

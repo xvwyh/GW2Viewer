@@ -2,12 +2,12 @@ export module GW2Viewer.UI.Controls:MapLayout;
 import :ContentButton;
 import :Texture;
 import GW2Viewer.Common.FourCC;
+import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Content;
 import GW2Viewer.Data.Game;
 import GW2Viewer.Data.Pack.PackFile;
 import GW2Viewer.Data.Texture;
 import GW2Viewer.UI.ImGui;
-import GW2Viewer.UI.Manager;
 import GW2Viewer.Utils;
 import GW2Viewer.Utils.Encoding;
 import GW2Viewer.Utils.Format;
@@ -409,10 +409,7 @@ float4 main(PS_INPUT input) : SV_Target
         ViewportScaleChaseTarget = 1.0f;
 
     auto const oldMouseWorldPosition = unproject(ViewportScaleScreenTarget);
-    if (std::fabs(ViewportScale - ViewportScaleChaseTarget) < 0.00001f)
-        ViewportScale = ViewportScaleChaseTarget;
-    else
-        ViewportScale = Utils::Math::ExpDecay(ViewportScale, ViewportScaleChaseTarget, 15.0f, G::UI.DeltaTime());
+    Utils::Math::ExpDecayChase(ViewportScale, ViewportScaleChaseTarget, 15, 0.00001f);
     viewportWorldRect = { ViewportOffset - viewportSize / ViewportScale / 2, ViewportOffset + viewportSize / ViewportScale / 2 };
     ViewportOffset -= unproject(ViewportScaleScreenTarget) - oldMouseWorldPosition;
 

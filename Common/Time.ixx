@@ -68,4 +68,14 @@ template<typename Dur, typename From> Dur UntilNow(From from) { return Between<D
 Duration UntilNow(Point from) { return UntilNow<Duration>(from); }
 Secs UntilNowSecs(Point from) { return UntilNow<Secs>(from); }
 
+PrecisePoint FrameStart = PreciseNow();
+PreciseDuration Delta;
+float DeltaSecs = 0.0f;
+void UpdateFrameTime()
+{
+    auto const now = PreciseNow();
+    Delta = Between<Us>(std::exchange(FrameStart, now), now);
+    DeltaSecs = std::max(1z, Cast<Ms>(Delta).count()) / 1000.0f;
+}
+
 }

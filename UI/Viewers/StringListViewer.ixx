@@ -188,15 +188,14 @@ struct StringListViewer : ListViewer<StringListViewer, { ICON_FA_TEXT " Strings"
             UpdateSearch();
         Controls::AsyncProgressBar(AsyncFilter);
         I::SameLine();
-        auto now = G::UI.GetTime();
         static bool trackClipboard = false;
-        static auto trackClipboardCooldown = now;
+        static auto trackClipboardCooldown = Time::FrameStart;
         static std::string previousClipboardContents;
         if (I::CheckboxButton(ICON_FA_CLIPBOARD, trackClipboard, "Track Clipboard", I::GetFrameHeight()) && trackClipboard)
             previousClipboardContents = I::GetClipboardText();
-        if (trackClipboard && now >= trackClipboardCooldown)
+        if (trackClipboard && Time::FrameStart >= trackClipboardCooldown)
         {
-            trackClipboardCooldown = now + 100ms;
+            trackClipboardCooldown = Time::FrameStart + 100ms;
             if (auto clipboard = I::GetClipboardText(); clipboard && previousClipboardContents != clipboard)
             {
                 FilterString = previousClipboardContents = clipboard;
