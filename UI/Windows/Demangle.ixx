@@ -105,7 +105,7 @@ struct Demangle : Window
                 uniqueDictionary.emplace(std::from_range, word);
             uniqueDictionary.erase(L"");
 
-            std::vector<std::wstring> dictionary { std::from_range, uniqueDictionary };
+            std::vector dictionary { std::from_range, uniqueDictionary };
 
             /* Decent optimization, but ultimately meaningless considering that the bulk of the time is spent elsewhere
             static auto nameHashInUse = []

@@ -26,7 +26,6 @@ import GW2Viewer.UI.Windows.Settings;
 import GW2Viewer.UI.Windows.Window;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Base64;
-import GW2Viewer.Utils.Scan;
 import std;
 import magic_enum;
 #include "Macros.h"

@@ -27,7 +27,7 @@ void Game::Load(std::filesystem::path const& path, Utils::Async::ProgressBarCont
                                     break;
     }
 
-    progress.Start("Searching for embedded filenames", scanner.rdata.size());
+    progress.Start("Searching for embedded filenames", scanner.text.size());
     while (!G::Game.Archive.IsLoaded())
         std::this_thread::sleep_for(50ms);
 

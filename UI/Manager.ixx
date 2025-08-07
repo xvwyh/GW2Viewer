@@ -1,9 +1,5 @@
 export module GW2Viewer.UI.Manager;
 import GW2Viewer.Common;
-import GW2Viewer.Common.GUID;
-import GW2Viewer.Content.Event;
-import GW2Viewer.Data.Archive;
-import GW2Viewer.Data.Content;
 import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Viewers.Viewer;
 import std;
@@ -64,8 +60,6 @@ private:
     bool m_loaded = false;
 
     std::list<std::function<void()>> m_deferred;
-
-    bool m_showOriginalNames = false;
 
     std::list<std::unique_ptr<Viewers::Viewer>> m_listViewers;
     std::list<std::unique_ptr<Viewers::Viewer>> m_viewers;

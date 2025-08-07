@@ -20,7 +20,7 @@ void Manager::LoadRootManifest(uint32 fileID, Utils::Async::ProgressBarContext& 
             for (auto const& manifest : root["manifests"])
             {
                 auto const manifestName = ((std::wstring_view)manifest["name"]).data();
-                progress.SetDescription(std::format("Loading manifests: {}", Utils::Encoding::ToUTF8(manifestName)));
+                progress.SetDescription(std::format("Loading manifests:\n{}", Utils::Encoding::ToUTF8(manifestName)));
                 LinkAssetVersions(manifest["baseId"], manifest["fileId"], manifest["size"], manifest["flags"], manifestName);
                 LoadAssetManifest(manifest["baseId"], manifestName);
                 ++progress;

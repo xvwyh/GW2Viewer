@@ -1,6 +1,7 @@
 export module GW2Viewer.Data.Archive.Manager;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Archive;
+import GW2Viewer.Data.Manifest.Asset;
 import GW2Viewer.Data.Pack.PackFile;
 import GW2Viewer.Utils.Async.ProgressBarContext;
 import std;
@@ -83,6 +84,7 @@ public:
         for (auto& source : m_sources)
         {
             source.Archive.Open(source.Path, progress);
+            progress.Start(std::format("Loading {}: Creating file entries", source.Path.filename().string()));
             source.Files.assign_range(source.Archive.FileLookup | std::views::transform([&](auto const& pair) -> File { return { pair.first, source, *std::get<Archive::MftEntry*>(pair.second), *std::get<Archive::DirectoryEntry*>(pair.second), *std::get<Manifest::Asset*>(pair.second) }; }));
             for (auto const& file : source.Files)
                 source.FileLookup.emplace(file.ID, file);
