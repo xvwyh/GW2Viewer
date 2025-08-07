@@ -11,6 +11,7 @@ import GW2Viewer.Data.Encryption.RC4;
 import GW2Viewer.Data.External.Database;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.ImGui;
+import GW2Viewer.UI.Notifications;
 import GW2Viewer.UI.Viewers.ContentListViewer;
 import GW2Viewer.UI.Viewers.ConversationListViewer;
 import GW2Viewer.UI.Viewers.EventListViewer;
@@ -377,6 +378,7 @@ void Manager::Update()
     drawViewers(m_listViewers, left);
     drawViewers(m_viewers, center);
 
+    G::Notifications.Draw();
     G::Game.Texture.UploadToGPU();
     static bool firstTime = [&]
     {
