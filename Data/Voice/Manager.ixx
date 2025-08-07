@@ -15,25 +15,7 @@ export namespace GW2Viewer::Data::Voice
 class Manager
 {
 public:
-    void Load(Archive::Source& source, Utils::Async::ProgressBarContext& progress)
-    {
-        progress.Start("Loading sound bank index");
-        if (auto const file = source.Archive.GetPackFile(184774))
-        {
-            if (uint32 const bankIndexFileID = file->QueryChunk(fcc::AMSP)["audioSettings"]["bankIndexFileName"])
-            {
-                if (auto const bankIndex = source.Archive.GetPackFile(bankIndexFileID))
-                {
-                    for (auto const& language : bankIndex->QueryChunk(fcc::BIDX)["bankLanguage"])
-                    {
-                        std::ranges::transform(language["bankFileName"], std::back_inserter(m_files[(Language)language.GetArrayIndex()]), [&source](auto const& filename) { return source.GetFile(filename["fileName"]); });
-                        if (auto const maxID = m_voicesPerFile * language["bankFileName[]"].GetArraySize(); m_maxID < maxID)
-                            m_maxID = maxID;
-                    }
-                }
-            }
-        }
-    }
+    void Load(Utils::Async::ProgressBarContext& progress);
     bool WipeCache(uint32 voiceID)
     {
         if (voiceID >= m_maxID)

@@ -108,6 +108,7 @@
     <ClCompile Include="Data\Content\Content-TypeInfo.cpp" />
     <ClCompile Include="Data\Content\Content-TypeInfo.ixx" />
     <ClCompile Include="Data\Content\Content.ixx" />
+    <ClCompile Include="Data\Content\Manager.cpp" />
     <ClCompile Include="Data\Content\Manager.ixx" />
     <ClCompile Include="Data\Content\Mangling.ixx" />
     <ClCompile Include="Data\Encryption\Asset.ixx" />
@@ -136,6 +137,7 @@
     <ClCompile Include="Data\Text\Format.ixx" />
     <ClCompile Include="Data\Text\Manager.cpp" />
     <ClCompile Include="Data\Text\Manager.ixx" />
+    <ClCompile Include="Data\Voice\Manager.cpp" />
     <ClCompile Include="Data\Voice\Manager.ixx" />
     <ClCompile Include="dep\gw2browser\src\FileReader.cpp" />
     <ClCompile Include="dep\gw2browser\src\Readers\ImageReader.cpp" />

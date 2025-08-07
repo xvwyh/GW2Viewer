@@ -1,13 +1,11 @@
 export module GW2Viewer.Data.Text.Manager;
 import GW2Viewer.Common;
 import GW2Viewer.Common.FourCC;
-import GW2Viewer.Data.Archive;
 import GW2Viewer.Data.Encryption;
 import GW2Viewer.Data.Encryption.RC4;
-import GW2Viewer.Data.Pack.PackFile;
-import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Async.ProgressBarContext;
 import std;
+import magic_enum;
 import <boost/container/static_vector.hpp>;
 import <boost/thread/locks.hpp>;
 import <boost/thread/shared_mutex.hpp>;
@@ -18,47 +16,9 @@ export namespace GW2Viewer::Data::Text
 class Manager
 {
 public:
-    bool IsLoaded(Language language) const { return m_stringsFiles.contains(language); }
-    void Load(Archive::Source& source, Utils::Async::ProgressBarContext& progress)
-    {
-        progress.Start("Loading text manifest");
-        if (auto const file = source.Archive.GetPackFile(110865))
-        {
-            if (auto const manifest = file->QueryChunk(fcc::txtm))
-            {
-                m_stringsPerFile = manifest["stringsPerFile"];
-                for (auto const& language : manifest["languages"])
-                {
-                    std::ranges::copy(language["filenames"], std::back_inserter(m_fileIDs[(Language)language.GetArrayIndex()]));
-                    if (auto const maxID = m_stringsPerFile * language["filenames[]"].GetArraySize(); m_maxID < maxID)
-                        m_maxID = maxID;
-                }
-            }
-        }
-
-        progress.Start("Loading text variants");
-        if (auto const file = source.Archive.GetPackFile(198298))
-            for (auto const& variant : file->QueryChunk(fcc::vari)["variants"])
-                std::ranges::copy(variant["variantTextIds"], std::back_inserter(m_variants[variant["textId"]]));
-
-        progress.Start("Loading text voices");
-        if (auto const file = source.Archive.GetPackFile(198300))
-            for (auto const& voice : file->QueryChunk(fcc::txtv)["voices"])
-                m_voices.emplace(voice["textId"], voice["voiceId"]);
-
-        LoadLanguage(G::Config.Language, source, progress);
-    }
-    void LoadLanguage(Language language, Archive::Source& source, Utils::Async::ProgressBarContext& progress)
-    {
-        auto const& fileIDs = m_fileIDs[language];
-        progress.Start("Loading strings files", fileIDs.size());
-        m_stringsFiles[language].reserve(fileIDs.size());
-        for (auto const [fileIndex, fileID] : fileIDs | std::views::enumerate)
-        {
-            m_stringsFiles[language].emplace_back(source.Archive.GetFile(fileID), language, fileIndex, m_stringsPerFile);
-            ++progress;
-        }
-    }
+    bool IsLoaded(Language language) const { return m_languageLoaded[language]; }
+    void Load(Utils::Async::ProgressBarContext& progress);
+    void LoadLanguage(Language language, Utils::Async::ProgressBarContext& progress);
 
     auto GetMaxID() const { return m_maxID; }
     bool WipeCache(uint32 stringID)
@@ -69,7 +29,7 @@ public:
         bool result = false;
         uint32 const fileIndex = stringID / m_stringsPerFile;
         uint32 const stringIndex = stringID % m_stringsPerFile;
-        for (auto& files : m_stringsFiles | std::views::values)
+        for (auto& files : m_stringsFiles)
             if (fileIndex < files.size())
                 result |= files[fileIndex].Wipe(stringIndex);
 
@@ -221,7 +181,8 @@ private:
         std::unordered_map<uint32, TCache> Cache;
         boost::shared_mutex CacheLock;
     };
-    std::map<Language, std::vector<StringsFile>> m_stringsFiles;
+    magic_enum::containers::array<Language, std::vector<StringsFile>> m_stringsFiles;
+    magic_enum::containers::array<Language, bool> m_languageLoaded;
     StringsFile::TCache const& GetStringImpl(uint32 stringID);
     static std::wstring DecryptString(std::span<byte const> const encryptedText, uint64 const key, uint16 const decryptionOffset, uint32 const bitsPerSymbol)
     {

@@ -3,7 +3,6 @@ import GW2Viewer.Common;
 import GW2Viewer.Common.FourCC;
 import GW2Viewer.Common.GUID;
 import GW2Viewer.Content;
-import GW2Viewer.Data.Archive;
 import GW2Viewer.Data.Content;
 import GW2Viewer.Data.Pack;
 import GW2Viewer.Data.Pack.PackFile;
@@ -90,19 +89,7 @@ export namespace GW2Viewer::Data::Content
 class Manager
 {
 public:
-    void Load(Archive::Source& source, Utils::Async::ProgressBarContext& progress)
-    {
-        m_loadedContentFiles.resize(m_numContentFiles);
-        uint32 fileID = m_firstContentFileID;
-        progress.Start("Loading content files", m_loadedContentFiles.size());
-        for (auto& loaded : m_loadedContentFiles)
-        {
-            loaded.File = source.Archive.GetPackFile(fileID++);
-            ++progress;
-        }
-
-        Process(progress);
-    }
+    void Load(Utils::Async::ProgressBarContext& progress);
     void Process(Utils::Async::ProgressBarContext& progress)
     {
         std::array<std::tuple<PostProcessStage, char const*>, 3> STAGES

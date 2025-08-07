@@ -120,12 +120,11 @@ struct StartupLoading
         });
         AddTask({
             .Description = "Loading text",
-            .Requires = { Archive, Config },
+            .Requires = { Archive },
             .Provides = { Text },
             .Handler = [](ProgressBarContext& progress)
             {
-                if (auto const source = G::Game.Archive.GetSource())
-                    G::Game.Text.Load(*source, progress);
+                G::Game.Text.Load(progress);
             }
         });
         for (auto const& language : magic_enum::enum_values<Language>())
@@ -137,8 +136,7 @@ struct StartupLoading
                 .Condition = [language] { return G::Config.Language == language; },
                 .Handler = [language](ProgressBarContext& progress)
                 {
-                    if (auto const source = G::Game.Archive.GetSource())
-                        G::Game.Text.LoadLanguage(language, *source, progress);
+                    G::Game.Text.LoadLanguage(language, progress);
                 }
             });
         }
@@ -148,8 +146,7 @@ struct StartupLoading
             .Provides = { Voice },
             .Handler = [](ProgressBarContext& progress)
             {
-                if (auto const source = G::Game.Archive.GetSource())
-                    G::Game.Voice.Load(*source, progress);
+                G::Game.Voice.Load(progress);
             }
         });
         AddTask({
@@ -158,8 +155,7 @@ struct StartupLoading
             .Provides = { Content },
             .Handler = [](ProgressBarContext& progress)
             {
-                if (auto const source = G::Game.Archive.GetSource())
-                    G::Game.Content.Load(*source, progress);
+                G::Game.Content.Load(progress);
                 if (G::Game.Content.IsLoaded())
                 {
                     progress.Start("Processing content types for migration");
