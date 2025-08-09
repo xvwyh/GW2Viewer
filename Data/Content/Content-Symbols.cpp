@@ -251,10 +251,7 @@ void StringID::Draw(byte const* data, TypeInfo::Symbol& symbol) const
         I::ItemSize({ 100, 0 });
     if (context.Draw == TypeInfo::Symbol::DrawType::TableRow)
         I::SetNextItemWidth(-FLT_MIN);
-    if (text.contains('\n'))
-        I::InputTextMultiline("##Input", &text, { }, ImGuiInputTextFlags_ReadOnly);
-    else
-        I::InputTextReadOnly("##Input", text);
+    I::InputTextReadOnly("##Input", text, text.contains('\n') ? ImGuiInputTextFlags_Multiline : 0);
 }
 
 void FileID::Draw(byte const* data, TypeInfo::Symbol& symbol) const
