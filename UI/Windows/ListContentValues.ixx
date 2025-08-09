@@ -4,6 +4,7 @@ import GW2Viewer.Data.Content;
 import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Windows.Window;
+import GW2Viewer.Utils.Sort;
 import std;
 #include "Macros.h"
 
@@ -28,7 +29,8 @@ struct ListContentValues : Window
     {
         Data::Content::TypeInfo::Symbol Symbol;
         byte const* Data;
-        std::set<Data::Content::ContentObject*> Objects;
+        std::unordered_set<Data::Content::ContentObject*> Objects;
+        std::vector<Data::Content::ContentObject*> ObjectsSorted;
         bool IsFolded = true;
     };
 
@@ -83,6 +85,8 @@ struct ListContentValues : Window
                 }
             }
         }
+        for (auto& value : Results | std::views::values)
+            value.ObjectsSorted = Utils::Sort::ComplexSorted(value.Objects, false, [](Data::Content::ContentObject const* object) { return std::make_tuple(object->GetFullDisplayName(), object->GetFullName(), object->Type->Index, object->Index); });
     }
 
     std::string Title() override { return "List Content Values"; }
@@ -116,8 +120,8 @@ struct ListContentValues : Window
                 int offset = 0;
                 for (auto& [key, value] : Results)
                 {
-                    int numToDisplay = value.IsFolded ? 1 : value.Objects.size();
-                    auto displayedObjects = value.Objects | std::views::take(numToDisplay) | std::views::drop(std::max(0, clipper.DisplayStart - offset)) | std::views::take(clipper.DisplayEnd - clipper.DisplayStart - drawn);
+                    int numToDisplay = value.IsFolded ? 1 : value.ObjectsSorted.size();
+                    auto displayedObjects = value.ObjectsSorted | std::views::take(numToDisplay) | std::views::drop(std::max(0, clipper.DisplayStart - offset)) | std::views::take(clipper.DisplayEnd - clipper.DisplayStart - drawn);
                     bool const canAdjustY = !value.IsFolded && displayedObjects.size() > 1;
                     bool first = !keyDrawn.contains(key);
                     for (auto* object : displayedObjects)
@@ -136,7 +140,7 @@ struct ListContentValues : Window
                         }
 
                         I::TableNextColumn();
-                        if (first && value.Objects.size() > 1)
+                        if (first && value.ObjectsSorted.size() > 1)
                         {
                             if (yOffset)
                                 I::SetCursorPosY(I::GetCursorPosY() + yOffset);

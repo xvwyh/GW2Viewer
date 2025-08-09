@@ -29,7 +29,7 @@ constexpr void ComplexSort(Range& data, bool invert, Transform&& transform, Comp
 template<typename Range, typename Index = typename Range::value_type, typename Transform, typename ComplexIndex = std::invoke_result_t<Transform, Index>, typename Comparison = bool(Index, Index, ComplexIndex const&, ComplexIndex const&)>
 constexpr std::vector<Index> ComplexSorted(Range const& data, bool invert, Transform&& transform, Comparison&& comparison = defaultComplexSortComparison)
 {
-    std::vector<Index> sorted = data;
+    std::vector<Index> sorted { std::from_range, data };
     ComplexSort(sorted, invert, std::move(transform), std::move(comparison));
     return sorted;
 }
