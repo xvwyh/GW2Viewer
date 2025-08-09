@@ -54,7 +54,7 @@ struct String : TypeInfo::SymbolType
     static_assert(sizeof(Struct) == 8 + 4 + 4);
     static constexpr bool IsWide = std::is_same_v<T, wchar_t>;
     [[nodiscard]] static Struct const& GetStruct(byte const* data) { return *(Struct const*)data; }
-    [[nodiscard]] static std::conditional_t<IsWide, std::wstring_view, std::string_view> GetStringView(byte const* data) { return GetStruct(data).Pointer; }
+    [[nodiscard]] static std::conditional_t<IsWide, std::wstring_view, std::string_view> GetStringView(byte const* data) { if (auto const str = GetStruct(data).Pointer) return str; return { }; }
     [[nodiscard]] static auto GetString(byte const* data) { return std::conditional_t<IsWide, std::wstring, std::string> { GetStringView(data) }; }
 
     [[nodiscard]] std::strong_ordering CompareDataForSearch(byte const* dataA, byte const* dataB) const override;

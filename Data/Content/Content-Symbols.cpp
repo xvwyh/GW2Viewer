@@ -108,14 +108,14 @@ template<typename T> void String<T>::Draw(byte const* data, TypeInfo::Symbol& sy
 
 template<typename T> std::string StringPointer<T>::GetDisplayText(byte const* data) const
 {
-    if (auto const target = (typename String<T>::Struct const* const*)data; *target)
-        return GetTargetSymbolType()->GetDisplayText((byte const*)*target);
+    if (auto const target = *(typename String<T>::Struct const* const*)data)
+        return GetTargetSymbolType()->GetDisplayText((byte const*)target);
     return "";
 }
 template<typename T> void StringPointer<T>::Draw(byte const* data, TypeInfo::Symbol& symbol) const
 {
-    if (auto const target = (typename String<T>::Struct const* const*)data; *target)
-        GetTargetSymbolType()->Draw((byte const*)*target, symbol);
+    if (auto const target = *(typename String<T>::Struct const* const*)data)
+        GetTargetSymbolType()->Draw((byte const*)target, symbol);
 }
 
 std::string Color::GetDisplayText(byte const* data) const
