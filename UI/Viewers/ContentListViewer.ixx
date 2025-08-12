@@ -33,6 +33,7 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
     Data::Content::ContentFilter ContentFilter;
     Utils::Async::Scheduler AsyncFilter { true };
     std::optional<bool> SearchResultsReady;
+    std::optional<std::vector<Data::Content::ContentObject*>> Flatten;
 
     Data::Content::ContentTypeInfo const* FilterType { };
     std::string FilterString;
@@ -43,7 +44,7 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
     enum class ContentSort { GUID, UID, DataID, Type, Name } Sort { ContentSort::GUID };
     bool SortInvert { };
 
-    auto GetSortedContentObjects(bool isNamespace, uint32 index, std::list<std::unique_ptr<Data::Content::ContentObject>> const& entries)
+    auto GetSortedContentObjects(bool isNamespace, uint32 index, auto const& entries)
     {
         auto timeout = Time::FrameStart + 10ms;
         struct Cache
@@ -51,6 +52,7 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             ContentSort Sort;
             bool Invert;
             std::vector<uint32> Objects;
+            bool Reset = true;
         };
         static std::unordered_map<uint32, Cache> namespaces, rootObjects;
         if (m_clearCache)
@@ -60,19 +62,21 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             m_clearCache = false;
         }
         auto& cache = (isNamespace ? namespaces : rootObjects)[index];
-        bool reset = false;
-        if (cache.Objects.size() != entries.size())
+        if (cache.Objects.size() != std::ranges::size(entries))
         {
             cache.Objects.assign_range(entries | std::views::transform([](auto const& ptr) { return ptr->Index; }));
-            reset = true;
+            cache.Reset = true;
         }
-        if ((reset || cache.Sort != Sort || cache.Invert != SortInvert) && Time::PreciseNow() < timeout)
-            SortList(cache.Objects, (cache.Sort = Sort), (cache.Invert = SortInvert));
+        if ((cache.Reset || cache.Sort != Sort || cache.Invert != SortInvert) && Time::PreciseNow() < timeout)
+        {
+            SortList(cache.Objects, (cache.Sort = Sort), (cache.Invert = SortInvert), Flatten.has_value());
+            cache.Reset = false;
+        }
         return cache.Objects | std::views::transform([](uint32 index) { return G::Game.Content.GetByIndex(index); });
     }
     void ClearCache() { m_clearCache = true; }
 
-    void SortList(std::vector<uint32>& data, ContentSort sort, bool invert)
+    void SortList(std::vector<uint32>& data, ContentSort sort, bool invert, bool flatten)
     {
         #define COMPARE(a, b) do { if (auto const result = (a) <=> (b); result != std::strong_ordering::equal) return result == std::strong_ordering::less; } while (false)
         switch (sort)
@@ -80,12 +84,19 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             using Utils::Sort::ComplexSort;
             using enum ContentSort;
             case GUID:
-                std::ranges::sort(data, [invert](auto a, auto b) { return a < b ^ invert; });
+                if (flatten)
+                    ComplexSort(data, invert, [](uint32 id) { return *G::Game.Content.GetByIndex(id)->GetGUID(); });
+                else
+                    std::ranges::sort(data, [invert](auto a, auto b) { return a < b ^ invert; });
                 break;
             case UID:
-                ComplexSort(data, invert, [](uint32 id) { return G::Game.Content.GetByIndex(id); }, [invert](uint32 a, uint32 b, auto const& aInfo, auto const& bInfo)
+                ComplexSort(data, invert, [](uint32 id) { return G::Game.Content.GetByIndex(id); }, [invert, flatten](uint32 a, uint32 b, auto const& aInfo, auto const& bInfo)
                 {
                     COMPARE((invert ? bInfo : aInfo)->Type->Index, (invert ? aInfo : bInfo)->Type->Index);
+                    if (flatten)
+                        if (auto const* aUID = aInfo->GetUID())
+                            if (auto const* bUID = bInfo->GetUID())
+                                COMPARE(*aUID, *bUID);
                     COMPARE(a, b);
                     return false;
                 });
@@ -102,7 +113,7 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                 });
                 break;
             case Type:
-                ComplexSort(data, invert, [](uint32 id) { return G::Game.Content.GetByIndex(id); }, [this, invert](uint32 a, uint32 b, auto const& aInfo, auto const& bInfo)
+                ComplexSort(data, invert, [](uint32 id) { return G::Game.Content.GetByIndex(id); }, [invert](uint32 a, uint32 b, auto const& aInfo, auto const& bInfo)
                 {
                     COMPARE(aInfo->Type->Index, bInfo->Type->Index);
                     COMPARE((invert ? bInfo : aInfo)->GetDisplayName(G::Config.ShowOriginalNames, true), (invert ? aInfo : bInfo)->GetDisplayName(G::Config.ShowOriginalNames, true));
@@ -112,9 +123,12 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                 });
                 break;
             case Name:
-                ComplexSort(data, invert, [](uint32 id) { return G::Game.Content.GetByIndex(id); }, [this](uint32 a, uint32 b, auto const& aInfo, auto const& bInfo)
+                ComplexSort(data, invert, [](uint32 id) { return G::Game.Content.GetByIndex(id); }, [flatten](uint32 a, uint32 b, auto const& aInfo, auto const& bInfo)
                 {
-                    COMPARE(aInfo->GetDisplayName(G::Config.ShowOriginalNames, true), bInfo->GetDisplayName(G::Config.ShowOriginalNames, true));
+                    if (flatten)
+                        COMPARE(aInfo->GetFullDisplayName(G::Config.ShowOriginalNames, true), bInfo->GetFullDisplayName(G::Config.ShowOriginalNames, true));
+                    else
+                        COMPARE(aInfo->GetDisplayName(G::Config.ShowOriginalNames, true), bInfo->GetDisplayName(G::Config.ShowOriginalNames, true));
                     //if (_wcsicmp(aInfo->GetDisplayName(G::Config.ShowOriginalNames, true).c_str(), bInfo->GetDisplayName(G::Config.ShowOriginalNames, true).c_str()) < 0) return true;
                     COMPARE(a, b);
                     return false;
@@ -214,6 +228,8 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             ContentFilter = std::move(filter);
             if (SearchResultsReady)
                 SearchResultsReady.emplace(true);
+            if (Flatten)
+                Flatten->clear();
             context->Finish();
         });
     }
@@ -266,9 +282,10 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             }
         }
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
-        if (scoped::Table("Filter", 4, ImGuiTableFlags_NoSavedSettings))
+        if (scoped::Table("Filter", 5, ImGuiTableFlags_NoSavedSettings))
         {
             I::TableSetupColumn("Type");
+            I::TableSetupColumn("Flatten", ImGuiTableColumnFlags_WidthFixed);
             I::TableSetupColumn("Locate", ImGuiTableColumnFlags_WidthFixed);
             I::TableSetupColumn("Expand", ImGuiTableColumnFlags_WidthFixed);
             I::TableSetupColumn("Collapse", ImGuiTableColumnFlags_WidthFixed);
@@ -324,6 +341,16 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                 UpdateFilter();
 
             I::TableNextColumn();
+            if (I::Button(std::format("<c=#{}>{}</c> <c=#{}>{}</c>", Flatten ? "4" : "F", ICON_FA_FOLDER_TREE, Flatten ? "F" : "4", ICON_FA_LIST).c_str()))
+            {
+                if (Flatten)
+                    Flatten.reset();
+                else
+                    Flatten.emplace();
+            }
+            I::SetItemTooltip("Flatten the Content Tree");
+
+            I::TableNextColumn();
             auto const viewer = dynamic_cast<ContentViewer*>(G::UI.GetCurrentViewer());
             if (scoped::Disabled(!viewer))
             if (I::Button(ICON_FA_FOLDER_MAGNIFYING_GLASS))
@@ -331,11 +358,13 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             I::SetItemTooltip("Locate:\n%s", viewer ? viewer->Title().c_str() : "<no content selected>");
 
             I::TableNextColumn();
+            if (scoped::Disabled(Flatten.has_value()))
             if (I::Button(ICON_FA_FOLDER_OPEN))
                 context.ExpandAll = true;
             I::SetItemTooltip("Expand All Namespaces");
 
             I::TableNextColumn();
+            if (scoped::Disabled(Flatten.has_value()))
             if (I::Button(ICON_FA_FOLDER_CLOSED))
                 context.CollapseAll = true;
             I::SetItemTooltip("Collapse All Namespaces");
@@ -384,8 +413,20 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                     }
                 }
 
-                if (auto* root = G::Game.Content.GetNamespaceRoot())
-                    ProcessNamespace(*root, context, 0); // Dry run to count elements
+                std::function<void()> process;
+                if (Flatten)
+                {
+                    if (Flatten->empty())
+                    {
+                        Flatten->reserve(ContentFilter.IsFilteringObjects() ? ContentFilter.GetFilteredObjectsCount() : G::Game.Content.GetObjects().size());
+                        Flatten->assign_range(G::Game.Content.GetObjects() | std::views::filter([this](auto const& object) { return object->MatchesFilter(ContentFilter); }));
+                    }
+                    process = [&, sorted = GetSortedContentObjects(true, -1, *Flatten)] { ProcessEntries(sorted, context, -1); };
+                }
+                else
+                    process = [&] { ProcessNamespace(*G::Game.Content.GetNamespaceRoot(), context, 0); };
+
+                process(); // Dry run to count elements
 
                 context.clipper.Begin(context.VirtualIndex, I::GetFrameHeight());
                 if (context.navigateLeft() && context.focusedParentNamespaceIndex >= 0)
@@ -395,8 +436,7 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                 while (context.clipper.Step())
                 {
                     context.VirtualIndex = 0;
-                    if (auto* root = G::Game.Content.GetNamespaceRoot())
-                        ProcessNamespace(*root, context, 0);
+                    process();
                 }
             }
         }
@@ -633,7 +673,7 @@ private:
                 if (auto const icon = entry.GetIcon())
                     if (Controls::Texture(icon, { .Size = { 0, I::GetFrameHeight() } }))
                         I::SameLine();
-                I::Text("%s", Utils::Encoding::ToUTF8(entry.GetDisplayName(G::Config.ShowOriginalNames)).c_str());
+                I::Text("%s", Utils::Encoding::ToUTF8(Flatten ? entry.GetFullDisplayName(G::Config.ShowOriginalNames) : entry.GetDisplayName(G::Config.ShowOriginalNames)).c_str());
 
                 I::TableNextColumn(); I::TextUnformatted(Utils::Encoding::ToUTF8(entry.Type->GetDisplayName()).c_str());
                 I::TableNextColumn(); I::Text("%u", entry.Data.size());

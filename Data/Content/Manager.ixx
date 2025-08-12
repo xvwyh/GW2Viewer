@@ -107,6 +107,7 @@ public:
                 ++progress;
             }
         }
+        assert(GetNamespaceRoot());
 
         m_loadedObjects = true;
 
