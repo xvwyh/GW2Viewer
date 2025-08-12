@@ -15,6 +15,7 @@ enum class Category
 
 struct ViewerRegistry
 {
+    inline static struct { } EmptyConfig;
     struct Info
     {
         char const* Title;
@@ -52,10 +53,11 @@ struct ViewerRegistry
     }
 };
 
-template<typename Viewer, ViewerRegistry::Info Info>
+template<typename Viewer, ViewerRegistry::Info Info, auto& Config = ViewerRegistry::EmptyConfig>
 struct RegisterViewer
 {
     inline static ViewerRegistry::Info const& ViewerInfo = ViewerRegistry::Register<Viewer>(Info);
+    inline static auto& ViewerConfig = Config;
 };
 
 }

@@ -13,8 +13,8 @@ template<typename T> requires std::is_reference_v<T> struct ViewerHistoryType<T>
 export namespace GW2Viewer::UI::Viewers
 {
 
-template<typename Self, typename Target, ViewerRegistry::Info Info>
-struct ViewerWithHistory : Viewer, RegisterViewer<Self, Info>
+template<typename Self, typename Target, ViewerRegistry::Info Info, auto& Config = ViewerRegistry::EmptyConfig>
+struct ViewerWithHistory : Viewer, RegisterViewer<Self, Info, Config>
 {
     using Base = ViewerWithHistory;
     using ViewerType = Self;
