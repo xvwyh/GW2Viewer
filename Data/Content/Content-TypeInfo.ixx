@@ -210,6 +210,7 @@ struct TypeInfo
     std::vector<std::string> MapFields;
     byte DataLinkType = 0;
     std::string Notes;
+    bool Favorite = false;
     std::set<GUID> Examples; // In case content types get shifted when new types are added in the middle, auto-repair NYI
 
     NLOHMANN_DEFINE_TYPE_ORDERED_INTRUSIVE_WITH_DEFAULT_OMITTED(TypeInfo
@@ -221,6 +222,7 @@ struct TypeInfo
         , MapFields
         , DataLinkType
         , Notes
+        , Favorite
         , Examples
     )
 

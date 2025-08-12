@@ -277,7 +277,13 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             I::SetNextItemWidth(-FLT_MIN);
             std::vector<Data::Content::ContentTypeInfo const*> values(1, nullptr);
             if (G::Game.Content.AreTypesLoaded())
-                values.append_range(G::Game.Content.GetTypes() | std::views::transform([](auto const& ptr) { return ptr.get(); }));
+            {
+                values.append_range(Utils::Sort::ComplexSorted(G::Game.Content.GetTypes() | std::views::transform([](auto const& ptr) { return ptr.get(); }), false, [](Data::Content::ContentTypeInfo const* type)
+                {
+                    auto const itr = G::Config.TypeInfo.find(type->Index);
+                    return std::make_tuple(!(itr != G::Config.TypeInfo.end() ? itr->second.Favorite : false), type->Index);
+                }));
+            }
             if (Controls::FilteredComboBox("##Type", FilterType, values,
             {
                 .MaxHeight = 500,
@@ -295,6 +301,24 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                         return filter.Filters.empty();
 
                     return filter.PassFilter(std::format("{}", type->Index).c_str()) || filter.PassFilter(Utils::Encoding::ToUTF8(type->GetDisplayName()).c_str());
+                },
+                .Draw = [](auto const& type, bool selected, auto const& options)
+                {
+                    I::SetNextItemAllowOverlap();
+                    auto const result = I::Selectable(options.Formatter(type).c_str(), selected, 0, { type ? I::GetCurrentWindow()->WorkRect.GetWidth() - I::GetFrameHeight() - I::GetStyle().ItemSpacing.x : 0, 0 });
+                    if (selected && I::IsWindowAppearing())
+                        I::ScrollToItem();
+                    if (type)
+                    {
+                        if (auto const itr = G::Config.TypeInfo.find(type->Index); itr != G::Config.TypeInfo.end())
+                        {
+                            I::SameLine(0, I::GetStyle().ItemSpacing.x);
+                            if (scoped::WithStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 0)))
+                            if (I::Selectable(std::format("<c=#{}>" ICON_FA_STAR "</c>##{}", itr->second.Favorite ? "F" : "4", type->Index).c_str(), false, 0, { I::GetFrameHeight(), 0 }))
+                                itr->second.Favorite ^= true;
+                        }
+                    }
+                    return result;
                 },
             }))
                 UpdateFilter();

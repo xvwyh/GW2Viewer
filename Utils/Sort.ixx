@@ -18,7 +18,7 @@ auto defaultComplexSortComparison(Index const a, Index const b, ComplexIndex con
 export
 {
 
-template<typename Range, typename Index = typename Range::value_type, typename Transform, typename ComplexIndex = std::invoke_result_t<Transform, Index>, typename Comparison = bool(Index, Index, ComplexIndex const&, ComplexIndex const&)>
+template<typename Range, typename Index = std::ranges::range_value_t<Range>, typename Transform, typename ComplexIndex = std::invoke_result_t<Transform, Index>, typename Comparison = bool(Index, Index, ComplexIndex const&, ComplexIndex const&)>
 constexpr void ComplexSort(Range& data, bool invert, Transform&& transform, Comparison&& comparison = defaultComplexSortComparison)
 {
     std::vector sortable { std::from_range, data | std::views::transform([transform = std::move(transform)](auto const& id) { return std::pair { id, transform(id) }; }) };
@@ -26,7 +26,7 @@ constexpr void ComplexSort(Range& data, bool invert, Transform&& transform, Comp
     data.assign_range(sortable | std::views::keys);
 }
 
-template<typename Range, typename Index = typename Range::value_type, typename Transform, typename ComplexIndex = std::invoke_result_t<Transform, Index>, typename Comparison = bool(Index, Index, ComplexIndex const&, ComplexIndex const&)>
+template<typename Range, typename Index = std::ranges::range_value_t<Range>, typename Transform, typename ComplexIndex = std::invoke_result_t<Transform, Index>, typename Comparison = bool(Index, Index, ComplexIndex const&, ComplexIndex const&)>
 constexpr std::vector<Index> ComplexSorted(Range const& data, bool invert, Transform&& transform, Comparison&& comparison = defaultComplexSortComparison)
 {
     std::vector<Index> sorted { std::from_range, data };
