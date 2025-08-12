@@ -46,6 +46,11 @@ ContentNamespace const* ContentNamespace::GetRoot() const
     return current;
 }
 
+bool ContentNamespace::Contains(ContentObject const& object) const
+{
+    return object.Namespace && (object.Namespace == this || Contains(*object.Namespace));
+}
+
 bool ContentNamespace::MatchesFilter(ContentFilter& filter) const
 {
     if (!filter.IsFilteringNamespaces())

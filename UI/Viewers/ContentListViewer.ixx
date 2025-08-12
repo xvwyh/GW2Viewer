@@ -266,11 +266,13 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             }
         }
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
-        if (scoped::Table("Filter", 3, ImGuiTableFlags_NoSavedSettings))
+        if (scoped::Table("Filter", 4, ImGuiTableFlags_NoSavedSettings))
         {
             I::TableSetupColumn("Type");
+            I::TableSetupColumn("Locate", ImGuiTableColumnFlags_WidthFixed);
             I::TableSetupColumn("Expand", ImGuiTableColumnFlags_WidthFixed);
             I::TableSetupColumn("Collapse", ImGuiTableColumnFlags_WidthFixed);
+
             I::TableNextColumn();
             I::SetNextItemWidth(-FLT_MIN);
             std::vector<Data::Content::ContentTypeInfo const*> values(1, nullptr);
@@ -296,10 +298,21 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                 },
             }))
                 UpdateFilter();
-            if (I::TableNextColumn(); I::Button(ICON_FA_FOLDER_OPEN))
+
+            I::TableNextColumn();
+            auto const viewer = dynamic_cast<ContentViewer*>(G::UI.GetCurrentViewer());
+            if (scoped::Disabled(!viewer))
+            if (I::Button(ICON_FA_FOLDER_MAGNIFYING_GLASS))
+                context.Locate = &viewer->Content;
+            I::SetItemTooltip("Locate:\n%s", viewer ? viewer->Title().c_str() : "<no content selected>");
+
+            I::TableNextColumn();
+            if (I::Button(ICON_FA_FOLDER_OPEN))
                 context.ExpandAll = true;
             I::SetItemTooltip("Expand All Namespaces");
-            if (I::TableNextColumn(); I::Button(ICON_FA_FOLDER_CLOSED))
+
+            I::TableNextColumn();
+            if (I::Button(ICON_FA_FOLDER_CLOSED))
                 context.CollapseAll = true;
             I::SetItemTooltip("Collapse All Namespaces");
         }
@@ -353,6 +366,8 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                 context.clipper.Begin(context.VirtualIndex, I::GetFrameHeight());
                 if (context.navigateLeft() && context.focusedParentNamespaceIndex >= 0)
                     context.clipper.IncludeItemByIndex(context.focusedParentNamespaceIndex);
+                if (context.Locate && context.LocateIndex >= 0)
+                    context.clipper.IncludeItemByIndex(context.LocateIndex);
                 while (context.clipper.Step())
                 {
                     context.VirtualIndex = 0;
@@ -372,6 +387,8 @@ private:
         bool CollapseAll = false;
         int VirtualIndex = 0;
         ImGuiButtonFlags_ OpenObjectButton = ImGuiButtonFlags_None;
+        Data::Content::ContentObject const* Locate = nullptr;
+        int LocateIndex = -1;
 
         int focusedParentNamespaceIndex = -1;
         ImGuiListClipper clipper;
@@ -392,7 +409,7 @@ private:
         if (!ns.MatchesFilter(ContentFilter))
             return;
 
-        if (context.ExpandAll) I::SetNextItemOpen(true);
+        if (context.ExpandAll || context.Locate && ns.Contains(*context.Locate)) I::SetNextItemOpen(true);
         if (context.CollapseAll) I::SetNextItemOpen(false);
 
         bool open;
@@ -489,6 +506,8 @@ private:
                 I::TreePushOverrideID(id);
         }
 
+        I::GetCurrentContext()->NextItemData.ClearFlags();
+
         if (open)
         {
             auto pop = gsl::finally(&I::TreePop);
@@ -524,7 +543,7 @@ private:
             bool const hasEntries = !entry.Entries.empty();
             if (hasEntries)
             {
-                if (context.ExpandAll) I::SetNextItemOpen(true);
+                if (context.ExpandAll || context.Locate && entry.Contains(*context.Locate)) I::SetNextItemOpen(true);
                 if (context.CollapseAll) I::SetNextItemOpen(false);
             }
 
@@ -536,6 +555,11 @@ private:
                 I::TableNextRow();
                 I::TableNextColumn(); I::SetNextItemAllowOverlap(); open = I::TreeNodeEx(&entry, ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_FramePadding | (entry.Entries.empty() ? ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen : ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick) | (currentViewer && &currentViewer->Content == &entry ? ImGuiTreeNodeFlags_Selected : 0), "") && hasEntries;
                 context.storeFocusedParentInfo(namespaceIndex);
+                if (context.Locate == &entry)
+                {
+                    I::ScrollToItem();
+                    I::FocusItem();
+                }
                 if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle) | context.OpenObjectButton)
                     ContentViewer::Open(entry, { .MouseButton = button });
                 if (scoped::PopupContextItem())
@@ -596,11 +620,16 @@ private:
             }
             else
             {
+                if (context.Locate == &entry)
+                    context.LocateIndex = index;
+
                 auto const id = I::GetCurrentWindow()->GetID(&entry);
                 context.storeFocusedParentInfo(namespaceIndex, id);
                 if (hasEntries && (open = I::TreeNodeUpdateNextOpen(id, 0) || context.CollapseAll))
                     I::TreePushOverrideID(id);
             }
+
+            I::GetCurrentContext()->NextItemData.ClearFlags();
 
             if (open)
             {

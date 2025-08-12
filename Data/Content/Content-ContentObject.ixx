@@ -66,6 +66,9 @@ struct ContentObject
 
     QuerySymbolDataResult::Generator operator[](std::string_view path) { return QuerySymbolData(*this, path); }
 
+    [[nodiscard]] bool Contains(ContentObject const& object) const { return object.Root == this; }
+    [[nodiscard]] bool ContainedIn(ContentObject const& object) const { return object.Contains(*this); }
+    [[nodiscard]] bool ContainedIn(ContentNamespace const& ns) const { return ns.Contains(*this); }
     bool MatchesFilter(ContentFilter& filter) const;
 };
 

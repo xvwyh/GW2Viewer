@@ -23,6 +23,15 @@ struct ContentNamespace
 
     [[nodiscard]] ContentNamespace const* GetRoot() const;
 
+    [[nodiscard]] bool Contains(ContentNamespace const& ns) const
+    {
+        for (auto parent = ns.Parent; parent; parent = parent->Parent)
+            if (parent == this)
+                return true;
+        return false;
+    }
+    [[nodiscard]] bool Contains(ContentObject const& object) const;
+    [[nodiscard]] bool ContainedIn(ContentNamespace const& ns) const { return ns.Contains(*this); }
     bool MatchesFilter(ContentFilter& filter) const;
 };
 
