@@ -37,6 +37,36 @@ struct Config
     std::string LocalDatPath;
     std::string DecryptionKeysPath;
     Language Language = Language::English;
+
+    struct UI
+    {
+        struct Viewers
+        {
+            struct ContentListViewer
+            {
+                bool AutoExpandSearchResults = true;
+                uint32 AutoExpandSearchMaxResults = 5;
+                bool AutoOpenSearchResult = false;
+                bool AutoOpenSearchResultInBackgroundTab = false;
+
+                NLOHMANN_DEFINE_TYPE_ORDERED_INTRUSIVE_WITH_DEFAULT(ContentListViewer
+                    , AutoExpandSearchResults
+                    , AutoExpandSearchMaxResults
+                    , AutoOpenSearchResult
+                    , AutoOpenSearchResultInBackgroundTab
+                )
+            } ContentListViewer;
+
+            NLOHMANN_DEFINE_TYPE_ORDERED_INTRUSIVE_WITH_DEFAULT(Viewers
+                , ContentListViewer
+            )
+        } Viewers;
+
+        NLOHMANN_DEFINE_TYPE_ORDERED_INTRUSIVE_WITH_DEFAULT(UI
+            , Viewers
+        )
+    } UI;
+
     bool ShowImGuiDemo = false;
     bool ShowOriginalNames = false;
     bool ShowValidRawPointers = false;
@@ -60,6 +90,9 @@ struct Config
         , LocalDatPath
         , DecryptionKeysPath
         , Language
+
+        , UI
+
         , ShowImGuiDemo
         , ShowOriginalNames
         , ShowValidRawPointers

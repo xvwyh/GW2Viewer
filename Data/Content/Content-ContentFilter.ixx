@@ -22,6 +22,8 @@ struct ContentFilter
 
     [[nodiscard]] auto IsFilteringNamespaces() const { return !FilteredNamespaces.empty(); }
     [[nodiscard]] auto IsFilteringObjects() const { return !FilteredObjects.empty(); }
+    [[nodiscard]] auto GetFilteredNamespacesCount() const { return std::ranges::count(FilteredNamespaces, true); }
+    [[nodiscard]] auto GetFilteredObjectsCount() const { return std::ranges::count(FilteredObjects, true); }
 
     operator bool() const { return Type || !NameSearch.empty() || GUIDSearch || UIDSearch || DataIDSearch; }
 };

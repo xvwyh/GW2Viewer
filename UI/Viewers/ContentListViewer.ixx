@@ -25,13 +25,14 @@ import <gsl/gsl>;
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE " Content", "Content", Category::ListViewer }>
+struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE " Content", "Content", Category::ListViewer }, G::Config.UI.Viewers.ContentListViewer>
 {
     ContentListViewer(uint32 id, bool newTab) : Base(id, newTab) { }
 
     std::shared_mutex Lock;
     Data::Content::ContentFilter ContentFilter;
     Utils::Async::Scheduler AsyncFilter { true };
+    std::optional<bool> SearchResultsReady;
 
     Data::Content::ContentTypeInfo const* FilterType { };
     std::string FilterString;
@@ -211,20 +212,59 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             CHECK_ASYNC;
             std::unique_lock _(Lock);
             ContentFilter = std::move(filter);
+            if (SearchResultsReady)
+                SearchResultsReady.emplace(true);
             context->Finish();
         });
+    }
+    void UpdateSearch()
+    {
+        std::unique_lock _(Lock);
+        SearchResultsReady.emplace(false);
+        UpdateFilter(true);
     }
 
     void Draw() override
     {
         ProcessContext context;
-        I::SetNextItemWidth(-FLT_MIN);
-        if (I::InputTextWithHint("##Search", ICON_FA_MAGNIFYING_GLASS " Search...", &FilterString))
+        if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
+        if (scoped::Table("Search", 2, ImGuiTableFlags_NoSavedSettings))
         {
-            G::Windows::Demangle.MatchRecursively(Utils::Encoding::FromUTF8(FilterString));
-            UpdateFilter(true);
+            I::TableSetupColumn("Search");
+            I::TableSetupColumn("Settings", ImGuiTableColumnFlags_WidthFixed);
+
+            I::TableNextColumn();
+            I::SetNextItemWidth(-FLT_MIN);
+            if (I::InputTextWithHint("##Search", ICON_FA_MAGNIFYING_GLASS " Search...", &FilterString))
+            {
+                G::Windows::Demangle.MatchRecursively(Utils::Encoding::FromUTF8(FilterString));
+                UpdateSearch();
+            }
+            Controls::AsyncProgressBar(AsyncFilter);
+
+            I::TableNextColumn();
+            if (I::Button(ICON_FA_GEAR))
+                I::OpenPopup("ViewerConfig");
+
+            I::SetNextWindowPos(I::GetCurrentContext()->LastItemData.Rect.GetBR(), ImGuiCond_Always, { 1, 0 });
+            if (scoped::Popup("ViewerConfig"))
+            {
+                I::Checkbox("Auto-expand namespaces if ", &ViewerConfig.AutoExpandSearchResults);
+                I::SameLine(0, 0);
+                I::SetNextItemWidth(30);
+                if (scoped::Disabled(!ViewerConfig.AutoExpandSearchResults))
+                    I::DragInt("##AutoExpandMaxResults", (int*)&ViewerConfig.AutoExpandSearchMaxResults, 0.1f, 1, 10000000);
+                if (I::IsItemHovered())
+                    I::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+                I::SameLine(0, 0);
+                I::TextUnformatted(" results or fewer");
+
+                I::Checkbox("Auto-open singular search result ", &ViewerConfig.AutoOpenSearchResult);
+                I::SameLine(0, 0);
+                if (scoped::Disabled(!ViewerConfig.AutoOpenSearchResult))
+                    I::Checkbox("in background tab", &ViewerConfig.AutoOpenSearchResultInBackgroundTab);
+            }
         }
-        Controls::AsyncProgressBar(AsyncFilter);
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
         if (scoped::Table("Filter", 3, ImGuiTableFlags_NoSavedSettings))
         {
@@ -293,8 +333,23 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             if (G::Game.Content.AreObjectsLoaded())
             {
                 I::GetCurrentWindow()->SkipItems = false; // Workaround for bug with Expand/Collapse buttons not working if the last column is hidden
+
+                if (SearchResultsReady && *SearchResultsReady)
+                {
+                    SearchResultsReady.reset();
+                    if (ContentFilter.IsFilteringObjects())
+                    {
+                        auto const filteredObjects = ContentFilter.GetFilteredObjectsCount();
+                        if (ViewerConfig.AutoOpenSearchResult && filteredObjects == 1)
+                            context.OpenObjectButton = ViewerConfig.AutoOpenSearchResultInBackgroundTab ? ImGuiButtonFlags_MouseButtonMiddle : ImGuiButtonFlags_MouseButtonLeft;
+                        if (ViewerConfig.AutoExpandSearchResults && filteredObjects >= 1 && filteredObjects <= ViewerConfig.AutoExpandSearchMaxResults)
+                            context.ExpandAll = true;
+                    }
+                }
+
                 if (auto* root = G::Game.Content.GetNamespaceRoot())
                     ProcessNamespace(*root, context, 0); // Dry run to count elements
+
                 context.clipper.Begin(context.VirtualIndex, I::GetFrameHeight());
                 if (context.navigateLeft() && context.focusedParentNamespaceIndex >= 0)
                     context.clipper.IncludeItemByIndex(context.focusedParentNamespaceIndex);
@@ -316,6 +371,7 @@ private:
         bool ExpandAll = false;
         bool CollapseAll = false;
         int VirtualIndex = 0;
+        ImGuiButtonFlags_ OpenObjectButton = ImGuiButtonFlags_None;
 
         int focusedParentNamespaceIndex = -1;
         ImGuiListClipper clipper;
@@ -480,7 +536,7 @@ private:
                 I::TableNextRow();
                 I::TableNextColumn(); I::SetNextItemAllowOverlap(); open = I::TreeNodeEx(&entry, ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_FramePadding | (entry.Entries.empty() ? ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen : ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick) | (currentViewer && &currentViewer->Content == &entry ? ImGuiTreeNodeFlags_Selected : 0), "") && hasEntries;
                 context.storeFocusedParentInfo(namespaceIndex);
-                if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
+                if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle) | context.OpenObjectButton)
                     ContentViewer::Open(entry, { .MouseButton = button });
                 if (scoped::PopupContextItem())
                 {
