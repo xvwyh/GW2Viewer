@@ -20,6 +20,9 @@ struct ContentFilter
     std::vector<size_t> FilteredNamespaces;
     std::vector<size_t> FilteredObjects;
 
+    [[nodiscard]] auto IsFilteringNamespaces() const { return !FilteredNamespaces.empty(); }
+    [[nodiscard]] auto IsFilteringObjects() const { return !FilteredObjects.empty(); }
+
     operator bool() const { return Type || !NameSearch.empty() || GUIDSearch || UIDSearch || DataIDSearch; }
 };
 

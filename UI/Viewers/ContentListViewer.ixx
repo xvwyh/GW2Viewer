@@ -183,30 +183,25 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             filter.FilteredObjects.resize(G::Game.Content.GetRootedObjects().size() + G::Game.Content.GetUnrootedObjects().size(), Data::Content::ContentFilter::UNCACHED_RESULT);
             CHECK_ASYNC;
             context->SetTotal(filter.FilteredObjects.size() + filter.FilteredNamespaces.size());
-            auto passesFilter = Utils::Visitor::Overloaded
-            {
-                [&](Data::Content::ContentNamespace const& ns) { return ns.MatchesFilter(filter); },
-                [&](Data::Content::ContentObject const& entry) { return entry.MatchesFilter(filter); },
-            };
             uint32 processed = 0;
             for (auto* container : { &G::Game.Content.GetRootedObjects(), &G::Game.Content.GetUnrootedObjects() })
             {
-                std::for_each(std::execution::par_unseq, container->begin(), container->end(), [&passesFilter, context, &processed](Data::Content::ContentObject* object)
+                std::for_each(std::execution::par_unseq, container->begin(), container->end(), [&filter, context, &processed](Data::Content::ContentObject* object)
                 {
                     CHECK_SHARED_ASYNC;
-                    passesFilter(*object);
+                    object->MatchesFilter(filter); // caches result inside filter
                     if (static constexpr uint32 interval = 1000; !(++processed % interval)) // processed will like exhibit race conditions, but we don't really care how accurate it is
                         context->InterlockedIncrement(interval);
                 });
             }
             CHECK_ASYNC;
-            auto recurseNamespaces = [&passesFilter, context, &processed](Data::Content::ContentNamespace& ns, auto& recurseNamespaces) mutable -> void
+            auto recurseNamespaces = [&filter, context, &processed](Data::Content::ContentNamespace& ns, auto& recurseNamespaces) mutable -> void
             {
                 CHECK_ASYNC;
                 for (auto&& child : ns.Namespaces)
                     recurseNamespaces(*child, recurseNamespaces);
                 CHECK_ASYNC;
-                passesFilter(ns);
+                ns.MatchesFilter(filter); // caches result inside filter
                 if (static constexpr uint32 interval = 1000; !(++processed % interval))
                     context->InterlockedIncrement(interval);
             };
@@ -292,11 +287,6 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             }
 
             std::shared_lock __(Lock);
-            auto passesFilter = Utils::Visitor::Overloaded
-            {
-                [&](Data::Content::ContentNamespace const& ns) { return ContentFilter.FilteredNamespaces.empty() || ns.MatchesFilter(ContentFilter); },
-                [&](Data::Content::ContentObject const& entry) { return ContentFilter.FilteredObjects.empty() || entry.MatchesFilter(ContentFilter); },
-            };
 
             // Virtualizing tree
 
@@ -343,7 +333,7 @@ private:
 
     void ProcessNamespace(Data::Content::ContentNamespace& ns, ProcessContext& context, int parentNamespaceIndex)
     {
-        if (!(ContentFilter.FilteredNamespaces.empty() || ns.MatchesFilter(ContentFilter)))
+        if (!ns.MatchesFilter(ContentFilter))
             return;
 
         if (context.ExpandAll) I::SetNextItemOpen(true);
@@ -386,7 +376,7 @@ private:
                 if (I::Button("Recursively"))
                     G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", ns.GetFullDisplayName(false, true)), &ns, true, false, true);
             }
-            if (open && ContentFilter && (!ContentFilter.FilteredNamespaces.empty() || !ContentFilter.FilteredObjects.empty()))
+            if (open && ContentFilter && (ContentFilter.IsFilteringNamespaces() || ContentFilter.IsFilteringObjects()))
             {
                 I::SameLine();
                 if (std::ranges::any_of(ns.Namespaces, [this](auto const& child) { return !ContentFilter.FilteredNamespaces[child->Index]; }) ||
@@ -397,7 +387,7 @@ private:
                         auto const recurse = I::GetIO().KeyShift;
                         auto process = Utils::Visitor::Overloaded
                         {
-                            [this, recurse](Data::Content::ContentNamespace& parent, auto& process) -> void
+                            [this, recurse](Data::Content::ContentNamespace const& parent, auto& process) -> void
                             {
                                 for (auto const& child : parent.Namespaces)
                                 {
@@ -412,7 +402,7 @@ private:
                                         process(*child, process);
                                 }
                             },
-                            [this, recurse](Data::Content::ContentObject& parent, auto& process) -> void
+                            [this, recurse](Data::Content::ContentObject const& parent, auto& process) -> void
                             {
                                 for (auto const& child : parent.Entries)
                                 {
@@ -472,7 +462,7 @@ private:
         for (auto* child : entries)
         {
             Data::Content::ContentObject& entry = *child;
-            if (!(ContentFilter.FilteredObjects.empty() || entry.MatchesFilter(ContentFilter)))
+            if (!entry.MatchesFilter(ContentFilter))
                 continue;
 
             bool const hasEntries = !entry.Entries.empty();
@@ -524,7 +514,7 @@ private:
                 }
 
                 I::SameLine(0, 0);
-                if (open && ContentFilter && !ContentFilter.FilteredObjects.empty())
+                if (open && ContentFilter && ContentFilter.IsFilteringObjects())
                 {
                     if (std::ranges::any_of(entry.Entries, [this](auto const& child) { return !ContentFilter.FilteredObjects[child->Index]; }))
                     {

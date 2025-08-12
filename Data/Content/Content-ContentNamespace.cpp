@@ -48,6 +48,9 @@ ContentNamespace const* ContentNamespace::GetRoot() const
 
 bool ContentNamespace::MatchesFilter(ContentFilter& filter) const
 {
+    if (!filter.IsFilteringNamespaces())
+        return true;
+
     auto& result = filter.FilteredNamespaces[Index];
     if (result == ContentFilter::UNCACHED_RESULT)
     {

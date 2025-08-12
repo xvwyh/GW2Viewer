@@ -185,6 +185,9 @@ ContentObject* ContentObject::GetMap() const
 
 bool ContentObject::MatchesFilter(ContentFilter& filter) const
 {
+    if (!filter.IsFilteringObjects())
+        return true;
+
     auto& result = filter.FilteredObjects[Index];
     if (result == ContentFilter::UNCACHED_RESULT)
     {
