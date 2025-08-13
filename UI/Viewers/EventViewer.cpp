@@ -758,7 +758,7 @@ void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cach
             auto const wvwObjectiveDef = G::Game.Content.GetByGUID(params.Objective.ExtraGUID);
             params.DrawProgress({
                 .DisplayedAsProgressBar = false,
-                .AgentName = wvwObjectiveDef ? (uint32)(*wvwObjectiveDef)["Name"] : 0,
+                .AgentName = wvwObjectiveDef ? (uint32)(*wvwObjectiveDef)["TextName"] : 0,
                 .TextDefault = 48515,
             });
         } },
