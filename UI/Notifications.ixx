@@ -77,7 +77,7 @@ struct NotificationManager
             if (active.OffsetY == FLT_MAX)
                 active.OffsetY = rawPosition.y - positionStart.y;
             Utils::Math::ExpDecayChase(active.OffsetY, rawPosition.y - positionStart.y, 3, 0.1f);
-            Utils::Math::ExpDecayChase(active.Alpha, active.Closing ? 0.0f : 1.0f, active.Closing ? 5 : 20, 0.001f);
+            Utils::Math::ExpDecayChase(active.Alpha, active.Closing ? 0.0f : 1.0f, active.Closing ? 5 : 15, 0.001f);
 
             position.y = positionStart.y + active.OffsetY;
 
@@ -117,7 +117,7 @@ struct NotificationManager
                         return timed.Remaining <= 0s;
                     },
                     [](ActiveNotification::Persistent const& persistent) { return persistent.CloseRequested; }
-                }, active.Type))
+                }, active.Type) && active.Alpha >= 1) // Alpha check is not necessary, it's there to delay the notification from closing too fast, preventing it from being shown entirely
                     active.Closing = true;
 
                 if (active.Notification.Draw)
