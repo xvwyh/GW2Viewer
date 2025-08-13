@@ -33,6 +33,10 @@ struct LoadingOperation
         std::function<void()> PostHandler = nullptr;
     };
 
+    std::string Table;
+
+    LoadingOperation(std::string_view table) : Table(table) { }
+
     virtual ~LoadingOperation() = default;
     virtual void Process(sqlite::database& db) = 0;
     virtual void PostProcess() = 0;
@@ -42,7 +46,6 @@ struct LoadingOperation
 template<typename... Args>
 struct LoadingOperationT : LoadingOperation
 {
-    std::string Table;
     std::string Columns;
     std::function<void(Args...)> Handler;
     Options Options;
@@ -50,7 +53,7 @@ struct LoadingOperationT : LoadingOperation
     sqlite_int64 MaxRowID = -1;
     sqlite_int64 LastMaxRowID = -1;
 
-    LoadingOperationT(std::string_view table, std::string_view columns, std::function<void(Args...)>&& handler, LoadingOperation::Options&& options) : Table(table), Columns(columns), Handler(std::move(handler)), Options(std::move(options)) { }
+    LoadingOperationT(std::string_view table, std::string_view columns, std::function<void(Args...)>&& handler, LoadingOperation::Options&& options) : LoadingOperation(table), Columns(columns), Handler(std::move(handler)), Options(std::move(options)) { }
 
     template<typename T> struct CoerceArgumentType { using Type = T; };
     template<> struct CoerceArgumentType<uint64> { using Type = sqlite_uint64; };
@@ -261,22 +264,36 @@ public:
             ),
         };
         static bool exitRequested = false;
-        static auto load = [=]
+        static auto load = [](Utils::Async::ProgressBarContext* progress)
         {
             while (!exitRequested)
             {
-                try
+                for (auto&& operation : operations)
                 {
-                    for (auto&& operation : operations)
-                        operation->Process(db);
+                    if (progress)
+                        progress->SetDescription(std::format("Loading external DB:\n{}", operation->Table));
+
+                    retry:
+                    try { operation->Process(db); }
+                    catch (errors::busy const&)
+                    {
+                        std::this_thread::sleep_for(1s);
+                        goto retry;
+                    }
+
+                    if (progress)
+                        ++*progress;
                 }
-                catch (errors::busy const&) { }
                 for (auto&& operation : operations)
                     operation->PostProcess();
+                if (progress)
+                    return;
                 std::this_thread::sleep_for(1s);
             }
         };
-        static std::thread thread(load);
+        progress.Start("Loading external DB", std::size(operations));
+        load(&progress);
+        static std::thread thread(load, nullptr);
         std::atexit([]
         {
             exitRequested = true;
