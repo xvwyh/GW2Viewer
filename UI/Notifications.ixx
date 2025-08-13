@@ -17,15 +17,15 @@ struct Notification
 {
     struct Handle
     {
-        uint32 ID;
+        uint32 ID = -1;
 
         Handle(uint32 id);
+        Handle(Handle&& source) noexcept : ID(std::exchange(source.ID, -1)) { } // No RefCounter changes
         ~Handle();
 
         Handle(Handle const&) = delete;
-        Handle(Handle&&) = delete;
         Handle& operator=(Handle const&) = delete;
-        Handle& operator=(Handle&&) = delete;
+        Handle& operator=(Handle&& source) noexcept { ID = std::exchange(source.ID, -1); return *this; } // No RefCounter changes
 
         void Close() const;
         bool HasClosed() const;
@@ -171,13 +171,12 @@ private:
     };
     std::map<uint32, ActiveNotification> m_active;
     uint32 m_nextID = 0;
-    auto GetByID(uint32 id)
+    [[nodiscard]] auto GetByID(uint32 id)
     {
-        std::scoped_lock lock(m_mutex);
-        ActiveNotification* result = nullptr;
+        std::pair<std::unique_lock<decltype(m_mutex)>, ActiveNotification*> result { m_mutex, nullptr };
         if (auto const itr = m_active.find(id); itr != m_active.end())
-            result = &itr->second;
-        return std::pair<std::scoped_lock<std::recursive_mutex>, ActiveNotification*>(m_mutex, result);
+            result.second = &itr->second;
+        return result;
     }
 
     friend Notification::Handle;

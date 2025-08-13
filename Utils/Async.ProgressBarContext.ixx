@@ -2,8 +2,12 @@ module;
 #include <assert.h>
 
 export module GW2Viewer.Utils.Async.ProgressBarContext;
+import GW2Viewer.Common.Time;
+import GW2Viewer.UI.ImGui;
+import GW2Viewer.UI.Notifications;
 import GW2Viewer.Utils.Encoding;
 import std;
+#include "Macros.h"
 
 export namespace GW2Viewer::Utils::Async
 {
@@ -15,6 +19,8 @@ class ProgressBarContext
     size_t m_total = 0;
     mutable std::recursive_mutex m_mutex;
     std::future<void> m_task;
+    std::optional<UI::Notification::Handle> m_notification;
+    mutable std::recursive_mutex m_notificationMutex;
 
 public:
     void Start(std::string_view description, size_t total = 0, size_t current = 0)
@@ -71,13 +77,22 @@ public:
         return { IsIndeterminate() ? 0.0f : (float)m_current / (float)m_total, m_current, m_total };
     }
 
-    void Run(std::function<void(ProgressBarContext&)>&& func)
+    ProgressBarContext& Run(std::function<void(ProgressBarContext&)>&& func)
     {
         m_task = std::async(std::launch::async, [this, func = std::move(func)](ProgressBarContext& context)
         {
             try
             {
                 func(context);
+
+                std::scoped_lock _(m_notificationMutex);
+                if (m_notification)
+                {
+                    m_notification->Close();
+                    while (!m_notification->HasClosed())
+                        std::this_thread::sleep_for(10ms);
+                    m_notification.reset();
+                }
             }
             catch (std::exception const& ex)
             {
@@ -88,6 +103,36 @@ public:
                 assert(false && "ProgressBarContext task threw an unknown exception");
             }
         }, std::ref(*this));
+        return *this;
+    }
+    ProgressBarContext& ShowNotification()
+    {
+        std::scoped_lock _(m_notificationMutex);
+        if (!m_notification)
+        {
+            m_notification.emplace(G::Notifications.AddPersistent({
+                .WidthMin = 300,
+                .WidthMax = 300,
+                .Draw = [this](UI::Notification::Handle const& notification)
+                {
+                    if (auto lock = Lock(); IsRunning())
+                    {
+                        I::TextWrapped("%s", GetDescription().c_str());
+                        if (IsIndeterminate())
+                        {
+                            I::ProgressBar(-I::GetTime(), { -FLT_MIN, 8 }, "");
+                        }
+                        else if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
+                        {
+                            auto [p, current, total] = GetProgress();
+                            I::Text("<c=#8>%zu / %zu</c>", current, total);
+                            I::ProgressBar(p, { -FLT_MIN, 8 }, "");
+                        }
+                    }
+                }
+            }));
+        }
+        return *this;
     }
 };
 

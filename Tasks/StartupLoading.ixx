@@ -308,38 +308,13 @@ private:
             task.Started = true;
             task.Running = true;
             run = std::make_unique<RunningTask>(task);
-            run->Progress.Run([this, run = run.get()](Utils::Async::ProgressBarContext& progress)
+            if (!task.Task.Description.empty())
+                run->Progress.Start(task.Task.Description);
+            run->Progress.ShowNotification().Run([this, run = run.get()](Utils::Async::ProgressBarContext& progress)
             {
-                if (!run->ScheduledTask.Task.Description.empty())
-                    progress.Start(run->ScheduledTask.Task.Description);
-                auto handle = G::Notifications.AddPersistent({
-                    .WidthMin = 300,
-                    .WidthMax = 300,
-                    .Draw = [run](UI::Notification::Handle const& notification)
-                    {
-                        auto& progress = run->Progress;
-                        if (auto lock = progress.Lock(); progress.IsRunning())
-                        {
-                            I::TextWrapped("%s", progress.GetDescription().c_str());
-                            if (progress.IsIndeterminate())
-                            {
-                                I::ProgressBar(-I::GetTime(), { -FLT_MIN, 8 }, "");
-                            }
-                            else if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
-                            {
-                                auto [p, current, total] = progress.GetProgress();
-                                I::Text("<c=#8>%zu / %zu</c>", current, total);
-                                I::ProgressBar(p, { -FLT_MIN, 8 }, "");
-                            }
-                        }
-                    }
-                });
                 run->ScheduledTask.Task.Handler(progress);
                 for (auto const& tag : run->ScheduledTask.Task.Provides)
                     ProvideTag(tag);
-                handle.Close();
-                while (!handle.HasClosed())
-                    std::this_thread::sleep_for(10ms);
                 run->ScheduledTask.Running = false;
             });
             return;
