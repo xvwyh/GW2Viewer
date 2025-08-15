@@ -71,5 +71,10 @@ struct PopupContextItem : ScopeWrapper<PopupContextItem>
     PopupContextItem(const char* str_id = NULL, ImGuiPopupFlags popup_flags = 1) noexcept : ScopeWrapper(ImGui::BeginPopupContextItem(str_id, popup_flags)) { }
     static void dtor() noexcept { ImGui::EndPopup(); }
 };
+struct TableBackgroundChannel : ScopeWrapper<TableBackgroundChannel>
+{
+    TableBackgroundChannel() noexcept : ScopeWrapper(true) { ImGui::TablePushBackgroundChannel(); }
+    static void dtor() noexcept { ImGui::TablePopBackgroundChannel(); }
+};
 
 }

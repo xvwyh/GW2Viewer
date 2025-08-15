@@ -283,6 +283,8 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                 I::Separator();
 
                 I::Checkbox("Draw tree lines", &ViewerConfig.DrawTreeLines);
+                I::Checkbox("Draw separators between patches", &ViewerConfig.DrawSeparatorsBetweenReleases);
+                I::SetItemTooltip("Speculative, determined by DataID and GUID desynchronizing their ordering.\nReleases before 2015 don't follow this rule.\nOnly works when sorting by DataID.");
             }
         }
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
@@ -443,6 +445,7 @@ private:
         bool CollapseAll = false;
         ImGuiButtonFlags_ OpenObjectButton = ImGuiButtonFlags_None;
         std::optional<Item> Locate;
+        Data::Content::ContentObject const* PreviousObject = nullptr;
 
         void Draw(std::function<void()>&& process)
         {
@@ -685,6 +688,7 @@ private:
                 if (context.CanSkip())
                     return;
             }
+            context.PreviousObject = nullptr;
             ProcessEntries(GetSortedContentObjects(true, ns.Index, ns.Entries), context, index);
         }
     }
@@ -719,8 +723,10 @@ private:
 
                 I::TableNextColumn();
                 I::SetNextItemAllowOverlap();
+                auto const cursorRowStart = I::GetCursorScreenPos();
                 open = I::TreeNodeEx(&entry, flags, "") && canOpen;
                 context.CommitItem();
+                auto const rect = I::GetCurrentContext()->LastItemData.Rect;
 
                 if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle) | context.OpenObjectButton)
                     ContentViewer::Open(entry, { .MouseButton = button });
@@ -780,6 +786,14 @@ private:
                 I::TableNextColumn(); if (auto* uid = entry.GetUID()) I::Text("%i", *uid);
                 I::TableNextColumn(); if (auto* guid = entry.GetGUID()) { I::TextUnformatted(std::format("{}", *guid).c_str()); I::SetItemTooltip(std::format("{}", *guid).c_str()); }
                 I::TableNextColumn(); if (!entry.IncomingReferences.empty()) I::TextColored({ 0, 1, 0, 1 }, ICON_FA_ARROW_LEFT "%u", (uint32)entry.IncomingReferences.size());
+
+                if (auto const prev = std::exchange(context.PreviousObject, &entry))
+                {
+                    if (ViewerConfig.DrawSeparatorsBetweenReleases && Sort == ContentSort::DataID && prev->Type == entry.Type)
+                        if (auto const guidPrev = prev->GetGUID(), guidCurrent = entry.GetGUID(); guidPrev && guidCurrent && *guidPrev > *guidCurrent != SortInvert)
+                            if (scoped::TableBackgroundChannel())
+                                I::GetWindowDrawList()->AddLine({ cursorRowStart.x + I::GetFontSize() + I::GetStyle().FramePadding.x * 2, rect.GetTL().y }, rect.GetTR(), I::GetColorU32(ImGuiCol_SeparatorActive));
+                }
             }
 
             I::GetCurrentContext()->NextItemData.ClearFlags();
@@ -791,6 +805,7 @@ private:
                 if (context.CanSkip())
                     continue;
 
+                context.PreviousObject = nullptr;
                 ProcessEntries(GetSortedContentObjects(false, entry.Index, entry.Entries), context, context.GetCurrentIndex());
             }
 
