@@ -413,7 +413,6 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                     }
                 }
 
-                std::function<void()> process;
                 if (Flatten)
                 {
                     if (Flatten->empty())
@@ -421,23 +420,10 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                         Flatten->reserve(ContentFilter.IsFilteringObjects() ? ContentFilter.GetFilteredObjectsCount() : G::Game.Content.GetObjects().size());
                         Flatten->assign_range(G::Game.Content.GetObjects() | std::views::filter([this](auto const& object) { return object->MatchesFilter(ContentFilter); }));
                     }
-                    process = [&, sorted = GetSortedContentObjects(true, -1, *Flatten)] { ProcessEntries(sorted, context, -1); };
+                    context.Draw([&, sorted = GetSortedContentObjects(true, -1, *Flatten)] { ProcessEntries(sorted, context, -1); });
                 }
                 else
-                    process = [&] { ProcessNamespace(*G::Game.Content.GetNamespaceRoot(), context, 0); };
-
-                process(); // Dry run to count elements
-
-                context.clipper.Begin(context.VirtualIndex, I::GetFrameHeight());
-                if (context.navigateLeft() && context.focusedParentNamespaceIndex >= 0)
-                    context.clipper.IncludeItemByIndex(context.focusedParentNamespaceIndex);
-                if (context.Locate && context.LocateIndex >= 0)
-                    context.clipper.IncludeItemByIndex(context.LocateIndex);
-                while (context.clipper.Step())
-                {
-                    context.VirtualIndex = 0;
-                    process();
-                }
+                    context.Draw([&] { ProcessNamespace(*G::Game.Content.GetNamespaceRoot(), context, 0); });
             }
         }
     }
@@ -447,47 +433,145 @@ private:
 
     struct ProcessContext
     {
+        using Item = std::variant<Data::Content::ContentNamespace const*, Data::Content::ContentObject const*>;
+
         bool ExpandAll = false;
         bool CollapseAll = false;
-        int VirtualIndex = 0;
         ImGuiButtonFlags_ OpenObjectButton = ImGuiButtonFlags_None;
-        Data::Content::ContentObject const* Locate = nullptr;
-        int LocateIndex = -1;
+        std::optional<Item> Locate;
 
-        int focusedParentNamespaceIndex = -1;
-        ImGuiListClipper clipper;
-        auto navigateLeft()
+        void Draw(std::function<void()>&& process)
+        {
+            process(); // Dry run to count elements
+            while (Step())
+                process();
+        }
+
+        bool IsRealItem(bool& open, bool canOpen, Item item, int parentIndex, ImGuiDockNodeFlags flags)
+        {
+            m_currentItem = item;
+            m_currentIndex = m_virtualIndex++;
+            m_currentParentIndex = parentIndex;
+
+            if (canOpen)
+            {
+                if (ExpandAll || LocateContainedIn(item)) I::SetNextItemOpen(true);
+                if (CollapseAll) I::SetNextItemOpen(false);
+            }
+
+            // Real item
+            if (m_currentIndex >= m_clipper.DisplayStart && m_currentIndex < m_clipper.DisplayEnd)
+                return true;
+
+            // Virtual item
+            auto const window = I::GetCurrentWindow();
+            auto const table = I::GetCurrentTable();
+            auto const id = window->GetID(std::visit([](auto const* item) -> void const* { return item; }, m_currentItem));
+
+            if (!m_drawing && m_focusedParentIndex == -1 && I::GetFocusID() == id)
+                m_focusedParentIndex = m_currentParentIndex;
+
+            if (!m_drawing && Locate && *Locate == m_currentItem)
+                m_locateIndex = m_currentIndex;
+
+            if ((open = canOpen && (I::TreeNodeUpdateNextOpen(id, 0) || CollapseAll)))
+                I::TreePushOverrideID(id);
+            return false;
+        }
+        void CommitItem() const
+        {
+            if (WantsToNavigateLeft() && m_currentIndex == m_focusedParentIndex)
+                I::NavMoveRequestResolveWithLastItem(&I::GetCurrentContext()->NavMoveResultLocal);
+
+            if (Locate && *Locate == m_currentItem)
+            {
+                I::ScrollToItem();
+                I::FocusItem();
+            }
+        }
+
+        int GetCurrentIndex() const { return m_currentIndex; }
+        bool CanSkip() const
+        {
+            // Optimization: skip traversing the tree when all required items were drawn
+            if (m_canSkip && m_virtualIndex >= m_clipper.DisplayEnd)
+                return true;
+
+            // Optimization: don't traverse the tree when clipper is only measuring the first item's height
+            if (m_measuring)
+                return true;
+
+            return false;
+        }
+
+    private:
+        bool m_drawing = false;
+        bool m_measuring = false;
+        bool m_canSkip = false;
+
+        Item m_currentItem;
+        int m_currentIndex = -1;
+        int m_currentParentIndex = -1;
+        int m_virtualIndex = 0;
+        ImGuiListClipper m_clipper;
+        bool Step()
+        {
+            if (!m_drawing)
+            {
+                m_drawing = true;
+                m_canSkip = !ViewerConfig.DrawTreeLines;
+                m_clipper.Begin(m_virtualIndex, I::GetFrameHeight());
+                if (WantsToNavigateLeft() && m_focusedParentIndex >= 0)
+                    m_clipper.IncludeItemByIndex(m_focusedParentIndex);
+                if (Locate && m_locateIndex >= 0)
+                    m_clipper.IncludeItemByIndex(m_locateIndex);
+            }
+            bool const result = m_clipper.Step();
+            m_measuring = m_clipper.DisplayStart == 0 && m_clipper.DisplayEnd == 1;
+            m_virtualIndex = 0;
+            return result;
+        }
+
+        int m_focusedParentIndex = -1;
+        auto WantsToNavigateLeft() const
         {
             auto& g = *I::GetCurrentContext();
-            return clipper.ItemsCount && g.NavMoveScoringItems && g.NavWindow && g.NavWindow->RootWindowForNav == g.CurrentWindow->RootWindowForNav && g.NavMoveClipDir == ImGuiDir_Left;
-        };
-        void storeFocusedParentInfo(int parentIndex, std::optional<ImGuiID> id = { })
+            return m_drawing && g.NavMoveScoringItems && g.NavWindow && g.NavWindow->RootWindowForNav == g.CurrentWindow->RootWindowForNav && g.NavMoveClipDir == ImGuiDir_Left;
+        }
+
+        int m_locateIndex = -1;
+        bool LocateContainedIn(Item const& item) const
         {
-            if (!clipper.ItemsCount && focusedParentNamespaceIndex == -1 && id ? I::GetFocusID() == *id : I::IsItemFocused())
-                focusedParentNamespaceIndex = parentIndex;
-        };
+            return Locate && std::visit(Utils::Visitor::Overloaded
+            {
+                [](Data::Content::ContentObject const* object, Data::Content::ContentNamespace const* locate) { return false; },
+                [](auto const* parent, auto const* locate) { return parent->Contains(*locate); }
+            }, item, *Locate);
+        }
     };
 
-    void ProcessNamespace(Data::Content::ContentNamespace& ns, ProcessContext& context, int parentNamespaceIndex)
+    void ProcessNamespace(Data::Content::ContentNamespace& ns, ProcessContext& context, int parentIndex)
     {
         if (!ns.MatchesFilter(ContentFilter))
             return;
 
-        if (context.ExpandAll || context.Locate && ns.Contains(*context.Locate)) I::SetNextItemOpen(true);
-        if (context.CollapseAll) I::SetNextItemOpen(false);
+        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_NavLeftJumpsToParent;
 
         bool open;
-        int namespaceIndex;
-        if (auto const index = namespaceIndex = context.VirtualIndex++; index >= context.clipper.DisplayStart && index < context.clipper.DisplayEnd || context.navigateLeft() && namespaceIndex == context.focusedParentNamespaceIndex)
+        if (context.IsRealItem(open, true, &ns, parentIndex, flags))
         {
             static constexpr char const* DOMAINS[] { "System", "Game", "Common", "Template", "World", "Continent", "Region", "Map", "Section", "Tool" };
+
             I::TableNextRow();
-            I::TableNextColumn(); I::SetNextItemAllowOverlap(); open = I::TreeNodeEx(&ns, ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_NavLeftJumpsToParent, ICON_FA_FOLDER " %s", Utils::Encoding::ToUTF8(ns.GetDisplayName(G::Config.ShowOriginalNames)).c_str());
-            context.storeFocusedParentInfo(parentNamespaceIndex);
-            if (context.navigateLeft() && namespaceIndex == context.focusedParentNamespaceIndex)
-                I::NavMoveRequestResolveWithLastItem(&I::GetCurrentContext()->NavMoveResultLocal);
+
+            I::TableNextColumn();
+            I::SetNextItemAllowOverlap();
+            open = I::TreeNodeEx(&ns, flags, ICON_FA_FOLDER " %s", Utils::Encoding::ToUTF8(ns.GetDisplayName(G::Config.ShowOriginalNames)).c_str());
+            context.CommitItem();
+
             if (I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft) && I::GetIO().KeyCtrl)
                 G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", ns.GetFullDisplayName()), nullptr, true);
+
             if (scoped::PopupContextItem())
             {
                 I::Text("Full Name: %s", Utils::Encoding::ToUTF8(ns.GetFullName()).c_str());
@@ -513,6 +597,7 @@ private:
                 if (I::Button("Recursively"))
                     G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", ns.GetFullDisplayName(false, true)), &ns, true, false, true);
             }
+
             if (open && ContentFilter && (ContentFilter.IsFilteringNamespaces() || ContentFilter.IsFilteringObjects()))
             {
                 I::SameLine();
@@ -555,19 +640,13 @@ private:
                         I::TextUnformatted("Show all children\nHold Shift to recurse");
                 }
             }
+
             I::TableNextColumn(); I::TextColored({ 1, 1, 1, 0.15f }, "Namespace");
             I::TableNextColumn(); I::TextUnformatted("");
             I::TableNextColumn(); I::TextColored({ 1, 1, 1, 0.15f }, DOMAINS[ns.Domain]); I::SetItemTooltip("Domain");
             I::TableNextColumn(); I::TextUnformatted("");
             I::TableNextColumn(); I::TextUnformatted("");
             I::TableNextColumn(); I::TextUnformatted("");
-        }
-        else
-        {
-            auto const id = I::GetCurrentWindow()->GetID(&ns);
-            context.storeFocusedParentInfo(parentNamespaceIndex, id);
-            if ((open = I::TreeNodeUpdateNextOpen(id, 0) || context.CollapseAll))
-                I::TreePushOverrideID(id);
         }
 
         I::GetCurrentContext()->NextItemData.ClearFlags();
@@ -576,27 +655,22 @@ private:
         {
             auto pop = gsl::finally(&I::TreePop);
 
-            // Optimization: skip traversing the tree when all required items were drawn
-            if (context.clipper.ItemsCount && context.VirtualIndex >= context.clipper.DisplayEnd)
+            if (context.CanSkip())
                 return;
 
-            // Optimization: don't traverse the tree when clipper is only measuring the first item's height
-            if (context.clipper.DisplayStart == 0 && context.clipper.DisplayEnd == 1)
-                return;
-
+            auto const index = context.GetCurrentIndex();
             for (auto const& child : ns.Namespaces)
             {
-                ProcessNamespace(*child, context, namespaceIndex);
+                ProcessNamespace(*child, context, index);
 
-                // Optimization: stop traversing the tree early when all required items were drawn
-                if (context.clipper.ItemsCount && context.VirtualIndex >= context.clipper.DisplayEnd)
+                if (context.CanSkip())
                     return;
             }
-            ProcessEntries(GetSortedContentObjects(true, ns.Index, ns.Entries), context, namespaceIndex);
+            ProcessEntries(GetSortedContentObjects(true, ns.Index, ns.Entries), context, index);
         }
     }
 
-    void ProcessEntries(auto const& entries, ProcessContext& context, int namespaceIndex)
+    void ProcessEntries(auto const& entries, ProcessContext& context, int parentIndex)
     {
         for (auto* child : entries)
         {
@@ -604,28 +678,32 @@ private:
             if (!entry.MatchesFilter(ContentFilter))
                 continue;
 
-            bool const hasEntries = !entry.Entries.empty();
-            if (hasEntries)
-            {
-                if (context.ExpandAll || context.Locate && entry.Contains(*context.Locate)) I::SetNextItemOpen(true);
-                if (context.CollapseAll) I::SetNextItemOpen(false);
-            }
+            bool const canOpen = !entry.Entries.empty();
+
+            ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_NavLeftJumpsToParent;
+            if (canOpen)
+                flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
+            else
+                flags |= ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen;
 
             bool open = false;
-            if (auto const index = context.VirtualIndex++; index >= context.clipper.DisplayStart && index < context.clipper.DisplayEnd)
+            if (context.IsRealItem(open, canOpen, &entry, parentIndex, flags))
             {
-                auto const* currentViewer = G::UI.GetCurrentViewer<ContentViewer>();
+                if (auto const* currentViewer = G::UI.GetCurrentViewer<ContentViewer>())
+                    if (currentViewer->IsCurrent(entry))
+                        flags |= ImGuiTreeNodeFlags_Selected;
+
                 entry.Finalize();
                 I::TableNextRow();
-                I::TableNextColumn(); I::SetNextItemAllowOverlap(); open = I::TreeNodeEx(&entry, ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_FramePadding | (entry.Entries.empty() ? ImGuiTreeNodeFlags_Leaf | ImGuiTreeNodeFlags_NoTreePushOnOpen : ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick) | (currentViewer && &currentViewer->Content == &entry ? ImGuiTreeNodeFlags_Selected : 0), "") && hasEntries;
-                context.storeFocusedParentInfo(namespaceIndex);
-                if (context.Locate == &entry)
-                {
-                    I::ScrollToItem();
-                    I::FocusItem();
-                }
+
+                I::TableNextColumn();
+                I::SetNextItemAllowOverlap();
+                open = I::TreeNodeEx(&entry, flags, "") && canOpen;
+                context.CommitItem();
+
                 if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle) | context.OpenObjectButton)
                     ContentViewer::Open(entry, { .MouseButton = button });
+
                 if (scoped::PopupContextItem())
                 {
                     I::Text("Full Name: %s", Utils::Encoding::ToUTF8(entry.GetFullName()).c_str());
@@ -682,16 +760,6 @@ private:
                 I::TableNextColumn(); if (auto* guid = entry.GetGUID()) { I::TextUnformatted(std::format("{}", *guid).c_str()); I::SetItemTooltip(std::format("{}", *guid).c_str()); }
                 I::TableNextColumn(); if (!entry.IncomingReferences.empty()) I::TextColored({ 0, 1, 0, 1 }, ICON_FA_ARROW_LEFT "%u", (uint32)entry.IncomingReferences.size());
             }
-            else
-            {
-                if (context.Locate == &entry)
-                    context.LocateIndex = index;
-
-                auto const id = I::GetCurrentWindow()->GetID(&entry);
-                context.storeFocusedParentInfo(namespaceIndex, id);
-                if (hasEntries && (open = I::TreeNodeUpdateNextOpen(id, 0) || context.CollapseAll))
-                    I::TreePushOverrideID(id);
-            }
 
             I::GetCurrentContext()->NextItemData.ClearFlags();
 
@@ -699,19 +767,13 @@ private:
             {
                 auto pop = gsl::finally(&I::TreePop);
 
-                // Optimization: skip traversing the tree when all required items were drawn
-                if (context.clipper.ItemsCount && context.VirtualIndex >= context.clipper.DisplayEnd)
+                if (context.CanSkip())
                     continue;
 
-                // Optimization: don't traverse the tree when clipper is only measuring the first item's height
-                if (context.clipper.DisplayStart == 0 && context.clipper.DisplayEnd == 1)
-                    continue;
-
-                ProcessEntries(GetSortedContentObjects(false, entry.Index, entry.Entries), context, namespaceIndex);
+                ProcessEntries(GetSortedContentObjects(false, entry.Index, entry.Entries), context, context.GetCurrentIndex());
             }
 
-            // Optimization: stop traversing the tree early when all required items were drawn
-            if (context.clipper.ItemsCount && context.VirtualIndex >= context.clipper.DisplayEnd)
+            if (context.CanSkip())
                 break;
         }
     }
