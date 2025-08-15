@@ -287,6 +287,7 @@
     <ClInclude Include="Resource.h" />
     <ClInclude Include="dep\IconsFontAwesome6.h" />
     <ClInclude Include="UI\ImGui\ImGuiConfig.h" />
+    <ClInclude Include="UI\ImGui\ImGuiExtensions.h" />
     <ClInclude Include="Utils\Scan.h" />
   </ItemGroup>
   <ItemGroup>

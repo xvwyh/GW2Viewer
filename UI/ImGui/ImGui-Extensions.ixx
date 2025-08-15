@@ -1,6 +1,7 @@
 module;
 #include <imgui.h>
 #include <imgui_internal.h>
+#include "ImGuiExtensions.h"
 
 export module GW2Viewer.UI.ImGui:Extensions;
 import :Core;
@@ -445,6 +446,8 @@ bool DragCoerceInt(const char* label, int* v, float v_speed = 1.0f, int v_min = 
 {
     return DragCoerceScalar<ImGuiDataType_S32>(label, v, v_speed, &v_min, &v_max, format, flags, std::forward<COERCE>(coerce));
 }
+
+using ::TreeNodeStoreStackData;
 
 }
 

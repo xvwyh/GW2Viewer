@@ -6615,7 +6615,7 @@ bool ImGui::TreeNodeUpdateNextOpen(ImGuiID storage_id, ImGuiTreeNodeFlags flags)
 
 // Store ImGuiTreeNodeStackData for just submitted node.
 // Currently only supports 32 level deep and we are fine with (1 << Depth) overflowing into a zero, easy to increase.
-static void TreeNodeStoreStackData(ImGuiTreeNodeFlags flags, float x1)
+void TreeNodeStoreStackData(ImGuiTreeNodeFlags flags, float x1)
 {
     ImGuiContext& g = *GImGui;
     ImGuiWindow* window = g.CurrentWindow;
@@ -6934,7 +6934,7 @@ void ImGui::TreeNodeDrawLineToChildNode(const ImVec2& target_pos)
     float y = ImTrunc(target_pos.y);
     float rounding = (g.Style.TreeLinesRounding > 0.0f) ? ImMin(x2 - x1, g.Style.TreeLinesRounding) : 0.0f;
     parent_data->DrawLinesToNodesY2 = ImMax(parent_data->DrawLinesToNodesY2, y - rounding);
-    if (x1 >= x2)
+    if (x1 >= x2 || y - rounding > window->ClipRect.Max.y)
         return;
     if (rounding > 0.0f)
     {

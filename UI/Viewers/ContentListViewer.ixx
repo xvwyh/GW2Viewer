@@ -279,6 +279,10 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                 I::SameLine(0, 0);
                 if (scoped::Disabled(!ViewerConfig.AutoOpenSearchResult))
                     I::Checkbox("in background tab", &ViewerConfig.AutoOpenSearchResultInBackgroundTab);
+
+                I::Separator();
+
+                I::Checkbox("Draw tree lines", &ViewerConfig.DrawTreeLines);
             }
         }
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
@@ -474,8 +478,21 @@ private:
             if (!m_drawing && Locate && *Locate == m_currentItem)
                 m_locateIndex = m_currentIndex;
 
+            if (m_drawing && ViewerConfig.DrawTreeLines && I::GetCursorScreenPos().y + I::GetFrameHeight() >= window->ClipRect.Max.y)
+                I::TreeNodeDrawLineToChildNode({ table->Columns[0].WorkMinX + window->DC.Indent.x - table->HostIndentX, I::GetCursorScreenPos().y + I::GetFrameHeight() });
+
             if ((open = canOpen && (I::TreeNodeUpdateNextOpen(id, 0) || CollapseAll)))
+            {
+                if (m_drawing && ViewerConfig.DrawTreeLines && I::GetCursorScreenPos().y <= window->ClipRect.Min.y)
+                {
+                    ImVec2 const pos { table->Columns[0].WorkMinX + window->DC.Indent.x - table->HostIndentX, I::GetCursorScreenPos().y - I::GetFrameHeight() };
+                    I::GetCurrentContext()->LastItemData.ID = id;
+                    I::GetCurrentContext()->LastItemData.NavRect = { pos, pos + I::GetFrameSquare() };
+                    I::TreeNodeStoreStackData(flags, pos.x);
+                }
+
                 I::TreePushOverrideID(id);
+            }
             return false;
         }
         void CommitItem() const
@@ -556,6 +573,8 @@ private:
             return;
 
         ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_NavLeftJumpsToParent;
+        if (ViewerConfig.DrawTreeLines)
+            flags |= ImGuiTreeNodeFlags_DrawLinesToNodes;
 
         bool open;
         if (context.IsRealItem(open, true, &ns, parentIndex, flags))
@@ -681,6 +700,8 @@ private:
             bool const canOpen = !entry.Entries.empty();
 
             ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_SpanAllColumns | ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_NavLeftJumpsToParent;
+            if (ViewerConfig.DrawTreeLines)
+                flags |= ImGuiTreeNodeFlags_DrawLinesToNodes;
             if (canOpen)
                 flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
             else

@@ -48,12 +48,14 @@ struct Config
                 uint32 AutoExpandSearchMaxResults = 5;
                 bool AutoOpenSearchResult = false;
                 bool AutoOpenSearchResultInBackgroundTab = false;
+                bool DrawTreeLines = true;
 
                 NLOHMANN_DEFINE_TYPE_ORDERED_INTRUSIVE_WITH_DEFAULT(ContentListViewer
                     , AutoExpandSearchResults
                     , AutoExpandSearchMaxResults
                     , AutoOpenSearchResult
                     , AutoOpenSearchResultInBackgroundTab
+                    , DrawTreeLines
                 )
             } ContentListViewer;
 
