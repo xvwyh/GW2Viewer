@@ -746,6 +746,12 @@ private:
                     Controls::CopyButton("Type Index", entry.Type->Index);
                     I::SameLine();
                     Controls::CopyButton("Type Name", entry.Type->GetDisplayName());
+                    I::SameLine();
+                    if (I::Button(ICON_FA_FILTER))
+                    {
+                        FilterType = entry.Type;
+                        UpdateFilter();
+                    }
 
                     Controls::CopyButton("Mangled Name", entry.GetName() ? *entry.GetName()->Name : L"", entry.GetName());
                     I::SameLine();
