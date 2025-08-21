@@ -64,24 +64,24 @@ struct ListContentValues : Window
         {
             for (auto& result : Data::Content::QuerySymbolData(*object, path))
             {
-                if (CachedKey key { { result.Data, result.Symbol->Size() }, result.Symbol->GetType() }; IncludeZero || std::ranges::any_of(key.Data, std::identity())) // Only show non-zero values
+                if (CachedKey key { { &result.Data<byte>(), result.Symbol.Size() }, result.Symbol.GetType() }; IncludeZero || std::ranges::any_of(key.Data, std::identity())) // Only show non-zero values
                 {
-                    if (auto const e = result.Symbol->GetEnum(); e && e->Flags && AsFlags)
+                    if (auto const e = result.Symbol.GetEnum(); e && e->Flags && AsFlags)
                     {
-                        if (auto value = key.Type->GetValueForCondition(result.Data).value_or(0))
+                        if (auto value = key.Type->GetValueForCondition({ &result.Data<byte>(), *object, result.Symbol }).value_or(0))
                         {
                             for (decltype(value) flag = 1; flag; flag <<= 1)
                             {
                                 if (value & flag)
                                 {
                                     auto data = (byte const*)&*ExternalKeyStorage.emplace(flag).first;
-                                    Results.try_emplace({ { data, sizeof(decltype(ExternalKeyStorage)::value_type) } }, *result.Symbol, data).first->second.Objects.emplace(object);
+                                    Results.try_emplace({ { data, sizeof(decltype(ExternalKeyStorage)::value_type) } }, result.Symbol, data).first->second.Objects.emplace(object);
                                 }
                             }
                             continue;
                         }
                     }
-                    Results.try_emplace(key, *result.Symbol, result.Data).first->second.Objects.emplace(object);
+                    Results.try_emplace(key, result.Symbol, &result.Data<byte>()).first->second.Objects.emplace(object);
                 }
             }
         }

@@ -81,6 +81,7 @@ struct TypeInfo
 
         char const* GetFormat() const { return Flags ? FLAGS_FORMAT : FORMAT; }
     };
+    struct Context;
     struct Symbol;
     struct SymbolType
     {
@@ -90,19 +91,19 @@ struct TypeInfo
         virtual ~SymbolType() = default;
 
         [[nodiscard]] virtual std::strong_ordering CompareDataForSearch(byte const* dataA, byte const* dataB) const;
-        [[nodiscard]] virtual std::optional<Condition::ValueType> GetValueForCondition(byte const* data) const = 0;
-        [[nodiscard]] virtual std::string GetDisplayText(byte const* data) const = 0;
-        [[nodiscard]] virtual std::optional<uint32> GetIcon(byte const* data) const { return { }; };
-        [[nodiscard]] virtual std::optional<ContentObject const*> GetMap(byte const* data) const { return { }; };
+        [[nodiscard]] virtual std::optional<Condition::ValueType> GetValueForCondition(Context const& context) const = 0;
+        [[nodiscard]] virtual std::string GetDisplayText(Context const& context) const = 0;
+        [[nodiscard]] virtual std::optional<uint32> GetIcon(Context const& context) const { return { }; };
+        [[nodiscard]] virtual std::optional<ContentObject const*> GetMap(Context const& context) const { return { }; };
         [[nodiscard]] virtual bool IsArray() const { return false; }
-        [[nodiscard]] virtual std::optional<uint32> GetArrayCount(byte const* data) const { return { }; }
-        [[nodiscard]] virtual std::optional<byte const*> GetPointer(byte const* data) const { return nullptr; }
+        [[nodiscard]] virtual std::optional<uint32> GetArrayCount(Context const& context) const { return { }; }
+        [[nodiscard]] virtual std::optional<byte const*> GetPointer(Context const& context) const { return nullptr; }
         [[nodiscard]] virtual bool IsContent() const { return false; }
-        [[nodiscard]] virtual std::optional<ContentObject const*> GetContent(byte const* data) const { return nullptr; }
+        [[nodiscard]] virtual std::optional<ContentObject const*> GetContent(Context const& context) const { return nullptr; }
         [[nodiscard]] virtual bool IsInline() const { return true; }
         [[nodiscard]] virtual uint32 Alignment() const { return 1; }
         [[nodiscard]] virtual uint32 Size() const = 0;
-        virtual void Draw(byte const* data, Symbol& symbol) const = 0;
+        virtual void Draw(Context const& context) const = 0;
     };
     using SymbolMap = std::multimap<uint32, Symbol>;
     struct StructLayout
@@ -169,14 +170,9 @@ struct TypeInfo
             TableHeader,
             TableRow,
         };
-        static struct Context
-        {
-            DrawType Draw;
-            ContentObject* Content;
-        } CurrentContext;
 
-        [[nodiscard]] std::optional<Condition::ValueType> GetValueForCondition(ContentObject const& content, LayoutStack const& layoutStack) const;
-        [[nodiscard]] bool TestCondition(ContentObject const& content, LayoutStack const& layoutStack) const;
+        [[nodiscard]] std::optional<Condition::ValueType> GetValueForCondition(ContentObject const& content, LayoutStack const& layoutStack);
+        [[nodiscard]] bool TestCondition(ContentObject const& content, LayoutStack const& layoutStack);
         struct TraversalInfo
         {
             SymbolType const* Type;
@@ -187,10 +183,10 @@ struct TypeInfo
 
             [[nodiscard]] operator bool() const { return Start && *Start && (!ArrayCount || *ArrayCount && *ArrayCount <= 20000) && (ForceInline || Type->IsInline()); }
         };
-        [[nodiscard]] TraversalInfo GetTraversalInfo(byte const* data, bool forceInline = false) const
+        [[nodiscard]] TraversalInfo GetTraversalInfo(Context const& context, bool forceInline = false) const
         {
             auto const type = GetType();
-            return { type, ElementSize, type->GetPointer(data), type->GetArrayCount(data), forceInline };
+            return { type, ElementSize, type->GetPointer(context), type->GetArrayCount(context), forceInline };
         }
         void DrawOptions(TypeInfo& typeInfo, LayoutStack const& layoutStack, std::string_view parentPath, bool create, std::string const& placeholderName);
         void Draw(byte const* data, DrawType draw, ContentObject const& content);
@@ -205,6 +201,19 @@ struct TypeInfo
         }
 
         bool operator==(Symbol const&) const = default;
+    };
+    struct Context
+    {
+        template<typename T> decltype(auto) Data() const { return *(T const*)m_data; }
+        ContentObject const& Content;
+        Symbol& Symbol;
+        Symbol::DrawType Draw;
+
+        template<typename T> Context(T const* data, ContentObject const& content, struct Symbol& symbol, Symbol::DrawType draw = { }) : Content(content), Symbol(symbol), Draw(draw), m_data((byte const*)data) { }
+        template<typename T> Context(T const* data, Context const& source) : Context((byte const*)data, source.Content, source.Symbol, source.Draw) { }
+
+    private:
+        byte const* m_data;
     };
 
     std::string Name;

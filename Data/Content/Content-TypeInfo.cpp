@@ -15,8 +15,6 @@ import std;
 namespace GW2Viewer::Data::Content
 {
 
-STATIC(TypeInfo::Symbol::CurrentContext) { };
-
 std::strong_ordering TypeInfo::SymbolType::CompareDataForSearch(byte const* dataA, byte const* dataB) const
 {
     std::span const a { dataA, Size() };
@@ -42,7 +40,7 @@ TypeInfo::StructLayout& TypeInfo::Symbol::GetElementLayout()
     return ElementLayout;
 }
 
-std::optional<TypeInfo::Condition::ValueType> TypeInfo::Symbol::GetValueForCondition(ContentObject const& content, LayoutStack const& layoutStack) const
+std::optional<TypeInfo::Condition::ValueType> TypeInfo::Symbol::GetValueForCondition(ContentObject const& content, LayoutStack const& layoutStack)
 {
     if (!Condition || Condition->Field.empty())
         return { };
@@ -58,12 +56,12 @@ std::optional<TypeInfo::Condition::ValueType> TypeInfo::Symbol::GetValueForCondi
 
     auto const& top = layoutStack.top();
     if (auto const itr = std::ranges::find_if(top.Layout->Symbols, [field = /*parts.back()*/Condition->Field](auto const& pair) { return pair.second.Name == field; }); itr != top.Layout->Symbols.end())
-        if (auto const value = itr->second.GetType()->GetValueForCondition(&top.Content->Data[top.DataStart + itr->first]))
+        if (auto const value = itr->second.GetType()->GetValueForCondition({ &top.Content->Data[top.DataStart + itr->first], *top.Content, *this }))
             return value;
 
     return { };
 }
-bool TypeInfo::Symbol::TestCondition(ContentObject const& content, LayoutStack const& layoutStack) const
+bool TypeInfo::Symbol::TestCondition(ContentObject const& content, LayoutStack const& layoutStack)
 {
     if (!Condition || Condition->Field.empty())
         return true;
@@ -371,15 +369,9 @@ void TypeInfo::Symbol::Draw(byte const* data, DrawType draw, ContentObject const
     if (draw == DrawType::TableCountColumns)
         return;
 
-    CurrentContext =
-    {
-        .Draw = draw,
-        .Content = &content
-    };
-
     auto* type = GetType();
     std::string typeName = type->Name;
-    if (auto const contentPtr = type->GetContent(data))
+    if (auto const contentPtr = type->GetContent({ data, content, *this, draw }))
     {
         if (auto const content = *contentPtr)
             Utils::String::ReplaceAll(typeName, "Content", Utils::Encoding::ToUTF8(content->Type->GetDisplayName()));
@@ -419,7 +411,7 @@ void TypeInfo::Symbol::Draw(byte const* data, DrawType draw, ContentObject const
             [[fallthrough]];
         case DrawType::TableRow:
             if (scoped::WithID(data))
-                type->Draw(data, *this);
+                type->Draw({ data, content, *this, draw });
             break;
     }
 }

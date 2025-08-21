@@ -423,7 +423,7 @@ void ContentViewer::Draw()
 
                     unmappedStart = i += symbolAlignedSize;
 
-                    if (auto const traversal = symbol.GetTraversalInfo(p))
+                    if (auto const traversal = symbol.GetTraversalInfo({ p, *context.Content, symbol, context.Draw }))
                     {
                         if (render && I::IsMouseHoveringRect(cursor, I::GetCurrentContext()->LastItemData.Rect.GetBR()))
                             highlightPointer = *traversal.Start;

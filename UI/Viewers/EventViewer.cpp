@@ -72,6 +72,7 @@ void EventViewer::Draw()
             {
                 if (!event.Objectives.empty())
                 {
+                    Data::Content::ContentObject dummyContent { };
                     auto const objectiveIndex = *Selected->second;
                     auto variants = event.Objectives | std::views::filter([objectiveIndex](Content::Event::Objective const& objective) { return objective.EventObjectiveIndex == objectiveIndex; });
                     auto const& objective = eventID.UID ? *std::next(variants.begin(), cache.Objectives.at(objectiveIndex).SelectedVariant) : *std::next(event.Objectives.begin(), objectiveIndex);
@@ -81,8 +82,8 @@ void EventViewer::Draw()
                     I::InputTextReadOnly("Event Objective Index", std::format("{}", objective.EventObjectiveIndex));
                     if (auto const itrType = G::Config.SharedEnums.find("ObjectiveType"); itrType != G::Config.SharedEnums.end())
                     {
-                        Data::Content::TypeInfo::Symbol dummy { .Enum = Data::Content::TypeInfo::Enum {.Name = "ObjectiveType" } };
-                        I::AlignTextToFramePadding(); I::TextUnformatted("Type:"); I::SameLine(); Data::Content::Symbols::GetByName("uint32")->Draw((byte const*)&objective.Type, dummy);
+                        Data::Content::TypeInfo::Symbol dummySymbol { .Enum = Data::Content::TypeInfo::Enum {.Name = "ObjectiveType" } };
+                        I::AlignTextToFramePadding(); I::TextUnformatted("Type:"); I::SameLine(); Data::Content::Symbols::GetByName("uint32")->Draw({ &objective.Type, dummyContent, dummySymbol });
                     }
                     else
                         I::InputTextReadOnly("Type", std::format("{}", objective.Type));
@@ -90,9 +91,9 @@ void EventViewer::Draw()
                     I::InputTextReadOnly("TargetCount", std::format("{}", objective.TargetCount));
                     I::InputTextReadOnly("ProgressBarStyle", std::format("{}", objective.ProgressBarStyle)); Controls::ContentButton(G::Game.Content.GetByGUID(objective.ProgressBarStyle), &objective.ProgressBarStyle);
 
-                    Data::Content::TypeInfo::Symbol dummy;
-                    I::AlignTextToFramePadding(); I::TextUnformatted("Text:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw((byte const*)&objective.TextID, dummy);
-                    I::AlignTextToFramePadding(); I::TextUnformatted("AgentName:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw((byte const*)&objective.AgentNameTextID, dummy);
+                    Data::Content::TypeInfo::Symbol dummySymbol;
+                    I::AlignTextToFramePadding(); I::TextUnformatted("Text:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw({ &objective.TextID, dummyContent, dummySymbol });
+                    I::AlignTextToFramePadding(); I::TextUnformatted("AgentName:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw({ &objective.AgentNameTextID, dummyContent, dummySymbol });
 
                     I::InputTextReadOnly("ExtraInt", std::format("{}", objective.ExtraInt));
                     I::InputTextReadOnly("ExtraInt2", std::format("{}", objective.ExtraInt2));
@@ -122,17 +123,18 @@ void EventViewer::Draw()
                     I::InputTextReadOnly("AudioEffect", std::format("{}", state.AudioEffect)); Controls::ContentButton(G::Game.Content.GetByGUID(state.AudioEffect), &state.AudioEffect);
                     I::InputTextReadOnly("A", std::format("{}", state.A));
 
-                    Data::Content::TypeInfo::Symbol dummy;
-                    I::AlignTextToFramePadding(); I::TextUnformatted("Title:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw((byte const*)&state.TitleTextID, dummy);
-                    I::AlignTextToFramePadding(); I::TextUnformatted("%str1%:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw((byte const*)&state.TitleParameterTextID[0], dummy);
-                    I::AlignTextToFramePadding(); I::TextUnformatted("%str2%:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw((byte const*)&state.TitleParameterTextID[1], dummy);
-                    I::AlignTextToFramePadding(); I::TextUnformatted("%str3%:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw((byte const*)&state.TitleParameterTextID[2], dummy);
-                    I::AlignTextToFramePadding(); I::TextUnformatted("%str4%:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw((byte const*)&state.TitleParameterTextID[3], dummy);
-                    I::AlignTextToFramePadding(); I::TextUnformatted("%str5%:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw((byte const*)&state.TitleParameterTextID[4], dummy);
-                    I::AlignTextToFramePadding(); I::TextUnformatted("%str6%:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw((byte const*)&state.TitleParameterTextID[5], dummy);
-                    I::AlignTextToFramePadding(); I::TextUnformatted("Description:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw((byte const*)&state.DescriptionTextID, dummy);
-                    I::AlignTextToFramePadding(); I::TextUnformatted("MetaText:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw((byte const*)&state.MetaTextTextID, dummy);
-                    I::AlignTextToFramePadding(); I::TextUnformatted("Icon:"); I::SameLine(); Data::Content::Symbols::GetByName("FileID")->Draw((byte const*)&state.FileIconID, dummy);
+                    Data::Content::ContentObject dummyContent { };
+                    Data::Content::TypeInfo::Symbol dummySymbol;
+                    I::AlignTextToFramePadding(); I::TextUnformatted("Title:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw({ &state.TitleTextID, dummyContent, dummySymbol });
+                    I::AlignTextToFramePadding(); I::TextUnformatted("%str1%:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw({ &state.TitleParameterTextID[0], dummyContent, dummySymbol });
+                    I::AlignTextToFramePadding(); I::TextUnformatted("%str2%:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw({ &state.TitleParameterTextID[1], dummyContent, dummySymbol });
+                    I::AlignTextToFramePadding(); I::TextUnformatted("%str3%:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw({ &state.TitleParameterTextID[2], dummyContent, dummySymbol });
+                    I::AlignTextToFramePadding(); I::TextUnformatted("%str4%:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw({ &state.TitleParameterTextID[3], dummyContent, dummySymbol });
+                    I::AlignTextToFramePadding(); I::TextUnformatted("%str5%:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw({ &state.TitleParameterTextID[4], dummyContent, dummySymbol });
+                    I::AlignTextToFramePadding(); I::TextUnformatted("%str6%:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw({ &state.TitleParameterTextID[5], dummyContent, dummySymbol });
+                    I::AlignTextToFramePadding(); I::TextUnformatted("Description:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw({ &state.DescriptionTextID, dummyContent, dummySymbol });
+                    I::AlignTextToFramePadding(); I::TextUnformatted("MetaText:"); I::SameLine(); Data::Content::Symbols::GetByName("StringID")->Draw({ &state.MetaTextTextID, dummyContent, dummySymbol });
+                    I::AlignTextToFramePadding(); I::TextUnformatted("Icon:"); I::SameLine(); Data::Content::Symbols::GetByName("FileID")->Draw({ &state.FileIconID, dummyContent, dummySymbol });
                     I::PopItemWidth();
                     Controls::Texture(state.FileIconID);
                 }

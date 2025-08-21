@@ -6,7 +6,7 @@ export namespace GW2Viewer::Data::Content
 {
 struct ContentObject;
 
-struct QuerySymbolDataResult
+struct QuerySymbolDataResult : TypeInfo::Context
 {
     //using Generator = std::experimental::generator<QuerySymbolDataResult>;
     struct Generator
@@ -27,20 +27,17 @@ struct QuerySymbolDataResult
         operator ContentObject const* () { return *begin(); }
         operator ContentObject const& () { return (ContentObject const&)*begin(); }
     };
-    TypeInfo::Symbol* Symbol = nullptr;
-    byte const* Data = nullptr;
 
-    [[nodiscard]] auto GetContent() const { return Symbol->GetType()->GetContent(Data); }
-    template<typename T> [[nodiscard]] decltype(auto) As() const { return *(T const*)Data; }
-    template<> [[nodiscard]] decltype(auto) As<ContentObject const*>() const { return As<ContentObject*>(); }
-    template<> [[nodiscard]] decltype(auto) As<ContentObject const>() const { return *As<ContentObject const*>(); }
-    template<typename T> operator T() const { return As<T>(); }
+    using Context::Context;
+
+    [[nodiscard]] auto GetContent() const { return Symbol.GetType()->GetContent(*this); }
+    template<typename T> operator T() const { return Data<T>(); }
     operator ContentObject() = delete;
     operator ContentObject() const = delete;
     operator ContentObject const() = delete;
     operator ContentObject const() const = delete;
-    operator ContentObject const* () const { return As<ContentObject const*>(); }
-    operator ContentObject const& () const { return As<ContentObject const>(); }
+    operator ContentObject const* () const { return Data<ContentObject const*>(); }
+    operator ContentObject const& () const { return Data<ContentObject const>(); }
 };
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, std::span<std::string_view> path);
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, std::string_view path);

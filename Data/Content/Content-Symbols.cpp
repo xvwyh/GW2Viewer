@@ -18,19 +18,17 @@ import std;
 namespace GW2Viewer::Data::Content::Symbols
 {
 
-static auto& context = TypeInfo::Symbol::CurrentContext;
-
 TypeInfo::SymbolType const* GetByName(std::string_view name)
 {
     return *std::ranges::find_if(GetTypes(), [name](auto* type) { return type->Name == name; });
 }
 
-template<typename T> void Integer<T>::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+template<typename T> void Integer<T>::Draw(Context const& context) const
 {
     auto text = GetDisplayText(data);
-    if (auto const e = symbol.GetEnum())
+    if (auto const e = context.Symbol.GetEnum())
     {
-        auto value = *(T const*)data;
+        auto value = context.Data<T>();
         if (e->Flags)
         {
             text.clear();
@@ -63,11 +61,11 @@ template<typename T> void Integer<T>::Draw(byte const* data, TypeInfo::Symbol& s
     I::InputTextReadOnly("##Input", text);
 }
 
-template<typename T> void Number<T>::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+template<typename T> void Number<T>::Draw(Context const& context) const
 {
     if (context.Draw == TypeInfo::Symbol::DrawType::TableRow)
         I::SetNextItemWidth(-FLT_MIN);
-    I::InputTextReadOnly("##Input", GetDisplayText(data));
+    I::InputTextReadOnly("##Input", GetDisplayText(context));
 }
 
 template<typename T> std::strong_ordering String<T>::CompareDataForSearch(byte const* dataA, byte const* dataB) const
@@ -76,11 +74,11 @@ template<typename T> std::strong_ordering String<T>::CompareDataForSearch(byte c
         return GetStringView(dataA) <=> GetStringView(dataB);
     return std::strong_ordering::equal;
 }
-template<typename T> std::string String<T>::GetDisplayText(byte const* data) const
+template<typename T> std::string String<T>::GetDisplayText(Context const& context) const
 {
     try
     {
-        auto text = GetString(data);
+        auto text = GetString(context);
         if constexpr (IsWide)
         {
             Utils::String::ReplaceAll(text, L"\r", LR"(\r)");
@@ -99,40 +97,40 @@ template<typename T> std::string String<T>::GetDisplayText(byte const* data) con
         return ex.what();
     }
 }
-template<typename T> void String<T>::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+template<typename T> void String<T>::Draw(Context const& context) const
 {
     if (context.Draw == TypeInfo::Symbol::DrawType::TableRow)
         I::SetNextItemWidth(-FLT_MIN);
-    I::InputTextReadOnly("##Input", GetDisplayText(data));
+    I::InputTextReadOnly("##Input", GetDisplayText(context));
 }
 
-template<typename T> std::string StringPointer<T>::GetDisplayText(byte const* data) const
+template<typename T> std::string StringPointer<T>::GetDisplayText(Context const& context) const
 {
-    if (auto const target = *(typename String<T>::Struct const* const*)data)
-        return GetTargetSymbolType()->GetDisplayText((byte const*)target);
+    if (auto const target = context.Data<typename String<T>::Struct const*>())
+        return GetTargetSymbolType()->GetDisplayText({ target, context });
     return "";
 }
-template<typename T> void StringPointer<T>::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+template<typename T> void StringPointer<T>::Draw(Context const& context) const
 {
-    if (auto const target = *(typename String<T>::Struct const* const*)data)
-        GetTargetSymbolType()->Draw((byte const*)target, symbol);
+    if (auto const target = context.Data<typename String<T>::Struct const*>())
+        GetTargetSymbolType()->Draw({ target, context });
 }
 
-std::string Color::GetDisplayText(byte const* data) const
+std::string Color::GetDisplayText(Context const& context) const
 {
     union
     {
         uint32 Color;
         byte Channels[4];
-    } const original { .Color = *(uint32 const*)data };
+    } const original { .Color = context.Data<uint32>() };
     auto color = original;
     for (auto const& [dest, source] : Swizzle | std::views::enumerate)
         color.Channels[dest] = original.Channels[source];
     return std::format("<c=#{0:08X}>#{0:08X}</c>", std::byteswap(color.Color));
 }
-void Color::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+void Color::Draw(Context const& context) const
 {
-    ImVec4 const original = I::ColorConvertU32ToFloat4(*(uint32 const*)data); // 0xAABBGGRR
+    ImVec4 const original = I::ColorConvertU32ToFloat4(context.Data<uint32>()); // 0xAABBGGRR
     ImVec4 color;
     for (auto const& [dest, source] : Swizzle | std::views::enumerate)
         ((float*)&color)[dest] = ((float const*)&original)[source];
@@ -141,13 +139,13 @@ void Color::Draw(byte const* data, TypeInfo::Symbol& symbol) const
 }
 
 static constexpr std::array pointColors { 0xFFCCCCFF, 0xFFCCFFCC, 0xFFFFCCCC, 0xFFFFCCFF };
-template<typename T, size_t N> std::string Point<T, N>::GetDisplayText(byte const* data) const
+template<typename T, size_t N> std::string Point<T, N>::GetDisplayText(Context const& context) const
 {
-    return std::format("({})", std::string { std::from_range, std::views::zip_transform([](T value, uint32 color) { return std::format("<c=#{:X}>{}</c>", std::byteswap(color), value); }, std::span { (T const*)data, N }, pointColors) | std::views::join_with(std::string(", ")) });
+    return std::format("({})", std::string { std::from_range, std::views::zip_transform([](T value, uint32 color) { return std::format("<c=#{:X}>{}</c>", std::byteswap(color), value); }, std::span { &context.Data<T>(), N }, pointColors) | std::views::join_with(std::string(", ")) });
 }
-template<typename T, size_t N> void Point<T, N>::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+template<typename T, size_t N> void Point<T, N>::Draw(Context const& context) const
 {
-    for (auto const& [index, value, color] : std::views::zip(std::views::iota(0), std::span { (T const*)data, N }, pointColors))
+    for (auto const& [index, value, color] : std::views::zip(std::views::iota(0), std::span { &context.Data<T>(), N }, pointColors))
     {
         if (index)
             I::SameLine(0, 0);
@@ -158,7 +156,7 @@ template<typename T, size_t N> void Point<T, N>::Draw(byte const* data, TypeInfo
     I::SameLine(0, 0);
     if (I::Button(ICON_FA_GLOBE))
         ; // TOOD: Open world map to world-space coods
-    if (auto const map = context.Content->GetMap(); map && map != context.Content)
+    if (auto const map = context.Content.GetMap(); map && map != &context.Content)
     {
         I::SameLine(0, 0);
         if (I::Button(std::format(ICON_FA_LOCATION_DOT " <c=#4>in</c> <c=#8>{}</c> {}", map->Type->GetDisplayName(), map->GetDisplayName()).c_str()))
@@ -166,38 +164,38 @@ template<typename T, size_t N> void Point<T, N>::Draw(byte const* data, TypeInfo
     }
 }
 
-std::string GUID::GetDisplayText(byte const* data) const
+std::string GUID::GetDisplayText(Context const& context) const
 {
-    if (auto const* object = *GetContent(data))
+    if (auto const* object = *GetContent(context))
         return Utils::Encoding::ToUTF8(object->GetDisplayName(false, true));
-    return std::format("{}", *(GW2Viewer::GUID const*)data);
+    return std::format("{}", context.Data<GW2Viewer::GUID>());
 }
-std::optional<uint32> GUID::GetIcon(byte const* data) const
+std::optional<uint32> GUID::GetIcon(Context const& context) const
 {
-    if (auto const* object = *GetContent(data))
+    if (auto const* object = *GetContent(context))
         return object->GetIcon();
     return { };
 }
-std::optional<ContentObject const*> GUID::GetMap(byte const* data) const
+std::optional<ContentObject const*> GUID::GetMap(Context const& context) const
 {
-    if (auto const* object = *GetContent(data))
+    if (auto const* object = *GetContent(context))
         return object->GetMap();
     return { };
 }
-std::optional<ContentObject const*> GUID::GetContent(byte const* data) const
+std::optional<ContentObject const*> GUID::GetContent(Context const& context) const
 {
-    if (auto const object = G::Game.Content.GetByGUID(*(GW2Viewer::GUID const*)data))
+    if (auto const object = G::Game.Content.GetByGUID(context.Data<GW2Viewer::GUID>()))
     {
         object->Finalize();
         return object;
     }
     return nullptr;
 }
-void GUID::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+void GUID::Draw(Context const& context) const
 {
-    I::InputTextReadOnly("##Input", std::format("{}", *(GW2Viewer::GUID const*)data));
+    I::InputTextReadOnly("##Input", std::format("{}", context.Data<GW2Viewer::GUID>()));
 
-    if (auto* object = *GetContent(data); object && object != context.Content)
+    if (auto* object = *GetContent(context); object && object != &context.Content)
     {
         I::SameLine(0, 0);
         UI::Controls::ContentButton(object, object);
@@ -210,11 +208,11 @@ std::strong_ordering Token32::CompareDataForSearch(byte const* dataA, byte const
     auto const b = GetDecoded(dataB);
     return std::string_view(a.data(), a.size() - 1) <=> std::string_view(b.data(), b.size() - 1);
 }
-void Token32::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+void Token32::Draw(Context const& context) const
 {
     if (context.Draw == TypeInfo::Symbol::DrawType::TableRow)
         I::SetNextItemWidth(-FLT_MIN);
-    I::InputTextReadOnly("##Input", GetDecoded(data).data());
+    I::InputTextReadOnly("##Input", GetDecoded(context).data());
 }
 
 std::strong_ordering Token64::CompareDataForSearch(byte const* dataA, byte const* dataB) const
@@ -223,29 +221,29 @@ std::strong_ordering Token64::CompareDataForSearch(byte const* dataA, byte const
     auto const b = GetDecoded(dataB);
     return std::string_view(a.data(), a.size() - 1) <=> std::string_view(b.data(), b.size() - 1);
 }
-void Token64::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+void Token64::Draw(Context const& context) const
 {
     if (context.Draw == TypeInfo::Symbol::DrawType::TableRow)
         I::SetNextItemWidth(-FLT_MIN);
-    I::InputTextReadOnly("##Input", GetDecoded(data).data());
+    I::InputTextReadOnly("##Input", GetDecoded(context).data());
 }
 
-std::string StringID::GetDisplayText(byte const* data) const
+std::string StringID::GetDisplayText(Context const& context) const
 {
-    auto const stringID = GetStringID(data);
+    auto const stringID = GetStringID(context);
     auto [string, status] = G::Game.Text.Get(stringID);
     return std::format("{}{}", Encryption::GetStatusText(status), string ? *string : L"");
 }
-void StringID::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+void StringID::Draw(Context const& context) const
 {
-    uint32 stringID = GetStringID(data);
+    uint32 stringID = GetStringID(context);
     I::SetNextItemWidth(60);
     I::InputTextReadOnly("##InputID", std::format("{}", stringID));
 
     I::SameLine(0, 0);
     UI::Controls::TextVoiceButton(stringID);
 
-    auto text = GetDisplayText(data);
+    auto text = GetDisplayText(context);
     I::SameLine(0, 0);
     if (scoped::WithCursorOffset({ })) // Reserve space in tables
         I::ItemSize({ 100, 0 });
@@ -254,9 +252,9 @@ void StringID::Draw(byte const* data, TypeInfo::Symbol& symbol) const
     I::InputTextReadOnly("##Input", text, text.contains('\n') ? ImGuiInputTextFlags_Multiline : 0);
 }
 
-void FileID::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+void FileID::Draw(Context const& context) const
 {
-    auto const fileID = GetFileID(data);
+    auto const fileID = GetFileID(context);
     I::SetNextItemWidth(70);
     I::InputTextReadOnly("##Input", std::format("{}", fileID));
 
@@ -264,18 +262,18 @@ void FileID::Draw(byte const* data, TypeInfo::Symbol& symbol) const
     UI::Controls::FileButton(fileID);
 }
 
-void RawPointerT::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+void RawPointerT::Draw(Context const& context) const
 {
-    auto* ptr = *GetPointer(data);
+    auto* ptr = *GetPointer(context);
     if (!ptr)
         I::PushStyleColor(ImGuiCol_Text, 0x40FFFFFF);
 
     if (!ptr || G::Config.ShowValidRawPointers)
         I::TextColored({ 0.75f, 0.75f, 1.0f, ptr ? 1.0f : 0.25f }, "0x%llX", ptr), I::SameLine();
-    I::Text(ICON_FA_ARROW_RIGHT " %s", !symbol.ElementTypeName.empty() ? symbol.ElementTypeName.c_str() : "T");
+    I::Text(ICON_FA_ARROW_RIGHT " %s", !context.Symbol.ElementTypeName.empty() ? context.Symbol.ElementTypeName.c_str() : "T");
     I::SameLine();
     I::SetNextItemWidth(120);
-    I::DragCoerceInt("##ElementSize", (int*)&symbol.ElementSize, 0.1f, 1, 10000, "Size: %u bytes", ImGuiSliderFlags_AlwaysClamp, [](auto v) { return std::max(1, (v / 4) * 4); });
+    I::DragCoerceInt("##ElementSize", (int*)&context.Symbol.ElementSize, 0.1f, 1, 10000, "Size: %u bytes", ImGuiSliderFlags_AlwaysClamp, [](auto v) { return std::max(1, (v / 4) * 4); });
     if (I::IsItemHovered())
         I::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
 
@@ -283,37 +281,37 @@ void RawPointerT::Draw(byte const* data, TypeInfo::Symbol& symbol) const
         I::PopStyleColor();
 }
 
-std::string ContentPointer::GetDisplayText(byte const* data) const
+std::string ContentPointer::GetDisplayText(Context const& context) const
 {
-    if (auto const* object = *GetContent(data))
+    if (auto const* object = *GetContent(context))
         return Utils::Encoding::ToUTF8(object->GetDisplayName(false, true));
     return { };
 }
-std::optional<uint32> ContentPointer::GetIcon(byte const* data) const
+std::optional<uint32> ContentPointer::GetIcon(Context const& context) const
 {
-    if (auto const* object = *GetContent(data))
+    if (auto const* object = *GetContent(context))
         return object->GetIcon();
     return { };
 }
-std::optional<ContentObject const*> ContentPointer::GetMap(byte const* data) const
+std::optional<ContentObject const*> ContentPointer::GetMap(Context const& context) const
 {
-    if (auto const* object = *GetContent(data))
+    if (auto const* object = *GetContent(context))
         return object->GetMap();
     return { };
 }
-std::optional<ContentObject const*> ContentPointer::GetContent(byte const* data) const
+std::optional<ContentObject const*> ContentPointer::GetContent(Context const& context) const
 {
-    if (auto const object = G::Game.Content.GetByDataPointer(*GetPointer(data)))
+    if (auto const object = G::Game.Content.GetByDataPointer(*GetPointer(context)))
     {
         object->Finalize();
         return object;
     }
     return nullptr;
 }
-void ContentPointer::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+void ContentPointer::Draw(Context const& context) const
 {
-    auto* ptr = *GetPointer(data);
-    auto* object = *GetContent(data);
+    auto* ptr = *GetPointer(context);
+    auto* object = *GetContent(context);
     if (!ptr)
         I::PushStyleColor(ImGuiCol_Text, 0x40FFFFFF);
     else if (!object)
@@ -333,40 +331,40 @@ void ContentPointer::Draw(byte const* data, TypeInfo::Symbol& symbol) const
         I::PopStyleColor();
 }
 
-void ArrayT::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+void ArrayT::Draw(Context const& context) const
 {
-    auto* ptr = *GetPointer(data);
+    auto* ptr = *GetPointer(context);
     if (!ptr)
         I::PushStyleColor(ImGuiCol_Text, 0x40FFFFFF);
 
     if (!ptr || G::Config.ShowValidRawPointers)
         I::TextColored({ 0.75f, 0.75f, 1.0f, ptr ? 1.0f : 0.25f }, "0x%llX", ptr), I::SameLine();
-    I::Text(ICON_FA_ARROW_RIGHT " %s[%u]", !symbol.ElementTypeName.empty() ? symbol.ElementTypeName.c_str() : "T", *GetArrayCount(data));
+    I::Text(ICON_FA_ARROW_RIGHT " %s[%u]", !context.Symbol.ElementTypeName.empty() ? context.Symbol.ElementTypeName.c_str() : "T", *GetArrayCount(context));
     I::SameLine();
     I::SetNextItemWidth(120);
-    I::DragCoerceInt("##ElementSize", (int*)&symbol.ElementSize, 0.1f, 1, 10000, "Element: %u bytes", ImGuiSliderFlags_AlwaysClamp, [](auto v) { return std::max(1, (v / 4) * 4); });
+    I::DragCoerceInt("##ElementSize", (int*)&context.Symbol.ElementSize, 0.1f, 1, 10000, "Element: %u bytes", ImGuiSliderFlags_AlwaysClamp, [](auto v) { return std::max(1, (v / 4) * 4); });
     if (I::IsItemHovered())
         I::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
     I::SameLine();
-    I::Text("Total: %u bytes", *GetArrayCount(data) * symbol.ElementSize);
+    I::Text("Total: %u bytes", *GetArrayCount(context) * context.Symbol.ElementSize);
 
     if (!ptr)
         I::PopStyleColor();
 }
 
-std::optional<ContentObject const*> ArrayContent::GetContent(byte const* data) const
+std::optional<ContentObject const*> ArrayContent::GetContent(Context const& context) const
 {
-    if (auto const object = G::Game.Content.GetByDataPointer(*GetPointer(data)))
+    if (auto const object = G::Game.Content.GetByDataPointer(*GetPointer(context)))
     {
         object->Finalize();
         return object;
     }
     return nullptr;
 }
-void ArrayContent::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+void ArrayContent::Draw(Context const& context) const
 {
-    auto* ptr = *GetPointer(data);
-    auto const* object = *GetContent(data);
+    auto* ptr = *GetPointer(context);
+    auto const* object = *GetContent(context);
     if (!ptr)
         I::PushStyleColor(ImGuiCol_Text, 0x40FFFFFF);
     else if (!object)
@@ -377,14 +375,14 @@ void ArrayContent::Draw(byte const* data, TypeInfo::Symbol& symbol) const
     else if (!ptr || G::Config.ShowValidRawPointers)
         I::TextColored({ 0.75f, 0.75f, 1.0f, ptr ? 1.0f : 0.25f }, "0x%llX", ptr), I::SameLine();
 
-    I::Text(ICON_FA_ARROW_RIGHT " %s[%u]", object ? Utils::Encoding::ToUTF8(object->Type->GetDisplayName()).c_str() : "Content", *GetArrayCount(data));
+    I::Text(ICON_FA_ARROW_RIGHT " %s[%u]", object ? Utils::Encoding::ToUTF8(object->Type->GetDisplayName()).c_str() : "Content", *GetArrayCount(context));
     I::SameLine();
     I::SetNextItemWidth(120);
-    I::DragCoerceInt("##ElementSize", (int*)&symbol.ElementSize, 0.1f, 1, 10000, "Element: %u bytes", ImGuiSliderFlags_AlwaysClamp, [](auto v) { return std::max(1, (v / 4) * 4); });
+    I::DragCoerceInt("##ElementSize", (int*)&context.Symbol.ElementSize, 0.1f, 1, 10000, "Element: %u bytes", ImGuiSliderFlags_AlwaysClamp, [](auto v) { return std::max(1, (v / 4) * 4); });
     if (I::IsItemHovered())
         I::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
     I::SameLine();
-    I::Text("Total: %u bytes", *GetArrayCount(data) * symbol.ElementSize);
+    I::Text("Total: %u bytes", *GetArrayCount(context) * context.Symbol.ElementSize);
 
     if (!ptr || !object)
         I::PopStyleColor();
@@ -438,44 +436,44 @@ std::strong_ordering ParamValue::CompareDataForSearch(byte const* dataA, byte co
     return std::strong_ordering::equal;
 }
 
-std::optional<TypeInfo::Condition::ValueType> ParamValue::GetValueForCondition(byte const* data) const
+std::optional<TypeInfo::Condition::ValueType> ParamValue::GetValueForCondition(Context const& context) const
 {
-    auto const& param = GetStruct(data);
+    auto const& param = GetStruct(context);
     if (auto [typeInfo, count] = GetSymbolTypeForContentType(param.ContentType); typeInfo)
-        return typeInfo->GetValueForCondition(param.Raw);
+        return typeInfo->GetValueForCondition({ param.Raw, context });
     return { };
 }
-std::string ParamValue::GetDisplayText(byte const* data) const
+std::string ParamValue::GetDisplayText(Context const& context) const
 {
-    auto const& param = GetStruct(data);
+    auto const& param = GetStruct(context);
     if (param.ContentType >= G::Game.Content.GetNumTypes())
         return std::format("<c=#F00>{}</c>", (uint32)param.ContentType);
 
     auto const typeName = std::format("<c=#8>{}</c> {}", ICON_FA_GEAR, G::Game.Content.GetType((uint32)param.ContentType)->GetDisplayName());
     switch (auto [typeInfo, count] = GetSymbolTypeForContentType(param.ContentType); count)
     {
-        default: return std::format("<c=#4>{}</c> {}", typeName, typeInfo ? typeInfo->GetDisplayText(param.Raw) : "<c=#F00>Unhandled basic type</c>");
-        case 2: return std::format("<c=#4>{}</c> ({}, {})", typeName, typeInfo->GetDisplayText(param.Raw), typeInfo->GetDisplayText(&param.Raw[typeInfo->Size()]));
-        case 3: return std::format("<c=#4>{}</c> ({}, {}, {})", typeName, typeInfo->GetDisplayText(param.Raw), typeInfo->GetDisplayText(&param.Raw[typeInfo->Size()]), typeInfo->GetDisplayText(&param.Raw[typeInfo->Size() * 2]));
+        default: return std::format("<c=#4>{}</c> {}",           typeName, typeInfo ? typeInfo->GetDisplayText({ param.Raw, context }) : "<c=#F00>Unhandled basic type</c>");
+        case 2:  return std::format("<c=#4>{}</c> ({}, {})",     typeName, typeInfo->GetDisplayText({ param.Raw, context }), typeInfo->GetDisplayText({ &param.Raw[typeInfo->Size()], context }));
+        case 3:  return std::format("<c=#4>{}</c> ({}, {}, {})", typeName, typeInfo->GetDisplayText({ param.Raw, context }), typeInfo->GetDisplayText({ &param.Raw[typeInfo->Size()], context }), typeInfo->GetDisplayText({ &param.Raw[typeInfo->Size() * 2], context }));
     }
 }
-std::optional<uint32> ParamValue::GetIcon(byte const* data) const
+std::optional<uint32> ParamValue::GetIcon(Context const& context) const
 {
-    auto const& param = GetStruct(data);
+    auto const& param = GetStruct(context);
     if (auto [typeInfo, count] = GetSymbolTypeForContentType(param.ContentType); typeInfo)
-        return typeInfo->GetIcon(param.Raw);
+        return typeInfo->GetIcon({ param.Raw, context });
     return { };
 }
-std::optional<ContentObject const*> ParamValue::GetMap(byte const* data) const
+std::optional<ContentObject const*> ParamValue::GetMap(Context const& context) const
 {
-    auto const& param = GetStruct(data);
+    auto const& param = GetStruct(context);
     if (auto [typeInfo, count] = GetSymbolTypeForContentType(param.ContentType); typeInfo)
-        return typeInfo->GetMap(param.Raw);
+        return typeInfo->GetMap({ param.Raw, context });
     return { };
 }
-void ParamValue::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+void ParamValue::Draw(Context const& context) const
 {
-    auto const& param = GetStruct(data);
+    auto const& param = GetStruct(context);
     if (param.ContentType >= G::Game.Content.GetNumTypes())
     {
         I::Text("<c=#F00>%u</c>", (uint32)param.ContentType);
@@ -489,7 +487,7 @@ void ParamValue::Draw(byte const* data, TypeInfo::Symbol& symbol) const
         for (uint32 i = 0; i < count; ++i)
         {
             I::SameLine();
-            typeInfo->Draw(p, symbol);
+            typeInfo->Draw({ p, context });
             p += typeInfo->Size();
         }
     }
@@ -499,7 +497,7 @@ void ParamValue::Draw(byte const* data, TypeInfo::Symbol& symbol) const
         I::Text("<c=#F00>Unhandled basic type</c>");
     }
     if (param.GUID != GW2Viewer::GUID::Empty)
-        GetByName("GUID")->Draw((byte const*)&param.GUID, symbol);
+        GetByName("GUID")->Draw({ &param.GUID, context });
 }
 
 std::strong_ordering ParamDeclare::CompareDataForSearch(byte const* dataA, byte const* dataB) const
@@ -512,29 +510,29 @@ std::strong_ordering ParamDeclare::CompareDataForSearch(byte const* dataA, byte 
     return GetByName("ParamValue")->CompareDataForSearch((byte const*)&paramA.Value, (byte const*)&paramB.Value);
 }
 
-std::optional<TypeInfo::Condition::ValueType> ParamDeclare::GetValueForCondition(byte const* data) const
+std::optional<TypeInfo::Condition::ValueType> ParamDeclare::GetValueForCondition(Context const& context) const
 {
-    auto const& param = GetStruct(data);
-    return GetByName("ParamValue")->GetValueForCondition((byte const*)&param.Value);
+    auto const& param = GetStruct(context);
+    return GetByName("ParamValue")->GetValueForCondition({ &param.Value, context });
 }
-std::optional<uint32> ParamDeclare::GetIcon(byte const* data) const
+std::optional<uint32> ParamDeclare::GetIcon(Context const& context) const
 {
-    auto const& param = GetStruct(data);
-    return GetByName("ParamValue")->GetIcon((byte const*)&param.Value);
+    auto const& param = GetStruct(context);
+    return GetByName("ParamValue")->GetIcon({ &param.Value, context });
 }
-std::optional<ContentObject const*> ParamDeclare::GetMap(byte const* data) const
+std::optional<ContentObject const*> ParamDeclare::GetMap(Context const& context) const
 {
-    auto const& param = GetStruct(data);
-    return GetByName("ParamValue")->GetMap((byte const*)&param.Value);
+    auto const& param = GetStruct(context);
+    return GetByName("ParamValue")->GetMap({ &param.Value, context });
 }
-void ParamDeclare::Draw(byte const* data, TypeInfo::Symbol& symbol) const
+void ParamDeclare::Draw(Context const& context) const
 {
-    auto const& param = GetStruct(data);
+    auto const& param = GetStruct(context);
     if (scoped::Group())
     {
-        I::InputTextReadOnly("##NameInput", GetByName("wchar_t*")->GetDisplayText((byte const*)&param.Name));
+        I::InputTextReadOnly("##NameInput", GetByName("wchar_t*")->GetDisplayText({ &param.Name, context }));
         I::SameLine();
-        GetByName("ParamValue")->Draw((byte const*)&param.Value, symbol);
+        GetByName("ParamValue")->Draw({ &param.Value, context });
     }
 }
 

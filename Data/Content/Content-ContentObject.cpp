@@ -82,10 +82,10 @@ std::wstring ContentObject::GetDisplayName(bool skipCustom, bool skipColor) cons
                 for (auto& result : QuerySymbolData(*this, field))
                 {
                     std::string value;
-                    auto const symbolType = result.Symbol->GetType();
-                    if (auto text = symbolType->GetDisplayText(result.Data); !text.empty())
+                    auto const symbolType = result.Symbol.GetType();
+                    if (auto text = symbolType->GetDisplayText(result); !text.empty())
                         value = std::move(text);
-                    else if (auto const content = symbolType->GetContent(result.Data).value_or(nullptr))
+                    else if (auto const content = symbolType->GetContent(result).value_or(nullptr))
                         value = Utils::Encoding::ToUTF8(content->GetDisplayName(false, true));
 
                     if (value == encryptedText)
@@ -142,10 +142,10 @@ uint32 ContentObject::GetIcon() const
         for (auto& result : QuerySymbolData(*this, field))
         {
             uint32 value = 0;
-            auto const symbolType = result.Symbol->GetType();
-            if (auto const icon = symbolType->GetIcon(result.Data).value_or(0))
+            auto const symbolType = result.Symbol.GetType();
+            if (auto const icon = symbolType->GetIcon(result).value_or(0))
                 value = icon;
-            else if (auto const content = symbolType->GetContent(result.Data).value_or(nullptr))
+            else if (auto const content = symbolType->GetContent(result).value_or(nullptr))
                 value = content->GetIcon();
 
             if (value)
@@ -163,10 +163,10 @@ ContentObject const* ContentObject::GetMap() const
         for (auto& result : QuerySymbolData(*this, field))
         {
             ContentObject const* value = nullptr;
-            auto const symbolType = result.Symbol->GetType();
-            if (auto const map = symbolType->GetMap(result.Data).value_or(nullptr))
+            auto const symbolType = result.Symbol.GetType();
+            if (auto const map = symbolType->GetMap(result).value_or(nullptr))
                 value = map;
-            else if (auto const content = symbolType->GetContent(result.Data).value_or(nullptr))
+            else if (auto const content = symbolType->GetContent(result).value_or(nullptr))
                 value = content->GetMap();
 
             if (value)

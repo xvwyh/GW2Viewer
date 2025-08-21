@@ -8,7 +8,7 @@ namespace GW2Viewer::Data::Content
 {
 
 template<typename T>
-concept SymbolDataSearcher = requires(T const a, TypeInfo::Symbol const& symbol, byte const* data)
+concept SymbolDataSearcher = requires(T const a, TypeInfo::Symbol& symbol, byte const* data)
 {
     { a.CanCheck(symbol) } -> std::same_as<bool>;
     { a.CanReturn(symbol, data) } -> std::same_as<bool>;
@@ -31,9 +31,9 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(TypeInfo::LayoutStack& layo
 
         byte const* p = &content.Data[frame.DataStart + offset];
         if (searcher.CanReturn(symbol, p))
-            co_yield { &symbol, p };
+            co_yield { p, content, symbol };
 
-        if (auto const traversal = symbol.GetTraversalInfo(p, searcher.CanStepIntoNonInlineContent()))
+        if (auto const traversal = symbol.GetTraversalInfo({ p, content, symbol }, searcher.CanStepIntoNonInlineContent()))
         {
             // Shitty solution, shouldn't normally happen if layouts are perfectly defined, but that's an impossible dream
             if (traversal.Type->IsInline())
@@ -70,9 +70,9 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(ContentObject const& conten
     if (searcher.CanEarlyReturn())
     {
         // Cheap and fast version if no deep traversal is needed
-        if (auto const itr = std::ranges::find_if(typeInfo.Layout.Symbols, [&](auto const& pair) { return searcher.CanCheck(pair.second) && !(pair.second.Condition && !pair.second.Condition->Field.empty() && !pair.second.TestCondition(content, TypeInfo::LayoutStack { { { &content, &typeInfo.Layout } } })); }); itr != typeInfo.Layout.Symbols.end())
+        if (auto const itr = std::ranges::find_if(typeInfo.Layout.Symbols, [&](auto& pair) { return searcher.CanCheck(pair.second) && !(pair.second.Condition && !pair.second.Condition->Field.empty() && !pair.second.TestCondition(content, TypeInfo::LayoutStack { { { &content, &typeInfo.Layout } } })); }); itr != typeInfo.Layout.Symbols.end())
             if (auto data = &content.Data[itr->first]; searcher.CanReturn(itr->second, data))
-                co_yield { &itr->second, data };
+                co_yield { data, content, itr->second };
         co_return;
     }
 
@@ -86,8 +86,8 @@ QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, s
     struct PathSearcher
     {
         std::span<std::string_view> Path;
-        [[nodiscard]] bool CanCheck(TypeInfo::Symbol const& symbol) const { return symbol.Name == Path.front(); }
-        [[nodiscard]] bool CanReturn(TypeInfo::Symbol const& symbol, byte const* data) const { return Path.size() == 1; }
+        [[nodiscard]] bool CanCheck(TypeInfo::Symbol& symbol) const { return symbol.Name == Path.front(); }
+        [[nodiscard]] bool CanReturn(TypeInfo::Symbol& symbol, byte const* data) const { return Path.size() == 1; }
         [[nodiscard]] bool CanEarlyReturn() const { return Path.size() == 1; }
         [[nodiscard]] bool CanStepIntoNonInlineContent() const { return true; }
         [[nodiscard]] PathSearcher Deeper() const { return { Path.subspan(1) }; }
@@ -108,15 +108,16 @@ QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, T
 {
     struct TypeSearcher
     {
+        ContentObject const& Content;
         TypeInfo::SymbolType const& Type;
         TypeInfo::Condition::ValueType Value;
-        [[nodiscard]] bool CanCheck(TypeInfo::Symbol const& symbol) const { return true; }
-        [[nodiscard]] bool CanReturn(TypeInfo::Symbol const& symbol, byte const* data) const { return symbol.Type == Type.Name && Type.GetValueForCondition(data) == Value; }
+        [[nodiscard]] bool CanCheck(TypeInfo::Symbol& symbol) const { return true; }
+        [[nodiscard]] bool CanReturn(TypeInfo::Symbol& symbol, byte const* data) const { return symbol.Type == Type.Name && Type.GetValueForCondition({ data, Content, symbol }) == Value; }
         [[nodiscard]] bool CanEarlyReturn() const { return false; }
         [[nodiscard]] bool CanStepIntoNonInlineContent() const { return false; }
         [[nodiscard]] TypeSearcher const& Deeper() const { return *this; }
     };
-    for (auto& result : QuerySymbolDataImpl(content, TypeSearcher { type, value }))
+    for (auto& result : QuerySymbolDataImpl(content, TypeSearcher { content, type, value }))
         co_yield result;
 }
 
