@@ -13,6 +13,7 @@ concept SymbolDataSearcher = requires(T const a, TypeInfo::Symbol const& symbol,
     { a.CanCheck(symbol) } -> std::same_as<bool>;
     { a.CanReturn(symbol, data) } -> std::same_as<bool>;
     { a.CanEarlyReturn() } -> std::same_as<bool>;
+    { a.CanStepIntoNonInlineContent() } -> std::same_as<bool>;
     { a.Deeper() } -> std::convertible_to<T>;
 };
 template<SymbolDataSearcher Searcher>
@@ -32,13 +33,14 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(TypeInfo::LayoutStack& layo
         if (searcher.CanReturn(symbol, p))
             co_yield { &symbol, p };
 
-        if (auto const traversal = symbol.GetTraversalInfo(p))
+        if (auto const traversal = symbol.GetTraversalInfo(p, searcher.CanStepIntoNonInlineContent()))
         {
             // Shitty solution, shouldn't normally happen if layouts are perfectly defined, but that's an impossible dream
-            if (*traversal.Start < fullData.data() || *traversal.Start >= fullData.data() + fullData.size())
-                continue;
+            if (traversal.Type->IsInline())
+                if (*traversal.Start < fullData.data() || *traversal.Start >= fullData.data() + fullData.size())
+                    continue;
 
-            auto const elements = std::span(*traversal.Start, fullData.data() + fullData.size()) | std::views::stride(traversal.Size) | std::views::take(traversal.ArrayCount.value_or(1)) | std::views::enumerate;
+            auto const elements = std::span(*traversal.Start, traversal.Type->IsInline() ? (size_t)fullData.data() + fullData.size() : std::dynamic_extent) | std::views::stride(traversal.Size) | std::views::take(traversal.ArrayCount.value_or(1)) | std::views::enumerate;
             for (auto [index, element] : elements)
             {
                 auto const target = &element;
@@ -53,7 +55,7 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(TypeInfo::LayoutStack& layo
                 {
                     content->Finalize();
                     layoutStack.emplace(content, &content->Type->GetTypeInfo().Layout, std::nullopt /* not used here, omitted for performance reasons */, 0);
-                    for (auto& result : QuerySymbolDataImpl(layoutStack, fullData, searcher.Deeper()))
+                    for (auto& result : QuerySymbolDataImpl(layoutStack, traversal.Type->IsInline() ? fullData : content->Data, searcher.Deeper()))
                         co_yield result;
                     layoutStack.pop();
                 }
@@ -87,6 +89,7 @@ QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, s
         [[nodiscard]] bool CanCheck(TypeInfo::Symbol const& symbol) const { return symbol.Name == Path.front(); }
         [[nodiscard]] bool CanReturn(TypeInfo::Symbol const& symbol, byte const* data) const { return Path.size() == 1; }
         [[nodiscard]] bool CanEarlyReturn() const { return Path.size() == 1; }
+        [[nodiscard]] bool CanStepIntoNonInlineContent() const { return true; }
         [[nodiscard]] PathSearcher Deeper() const { return { Path.subspan(1) }; }
     };
     for (auto& result : QuerySymbolDataImpl(content, PathSearcher { path }))
@@ -110,6 +113,7 @@ QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, T
         [[nodiscard]] bool CanCheck(TypeInfo::Symbol const& symbol) const { return true; }
         [[nodiscard]] bool CanReturn(TypeInfo::Symbol const& symbol, byte const* data) const { return symbol.Type == Type.Name && Type.GetValueForCondition(data) == Value; }
         [[nodiscard]] bool CanEarlyReturn() const { return false; }
+        [[nodiscard]] bool CanStepIntoNonInlineContent() const { return false; }
         [[nodiscard]] TypeSearcher const& Deeper() const { return *this; }
     };
     for (auto& result : QuerySymbolDataImpl(content, TypeSearcher { type, value }))

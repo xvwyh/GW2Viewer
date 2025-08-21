@@ -183,10 +183,15 @@ struct TypeInfo
             uint32 Size;
             std::optional<byte const*> Start;
             std::optional<uint32> ArrayCount;
+            bool ForceInline = false;
 
-            [[nodiscard]] operator bool() const { return Start && *Start && (!ArrayCount || *ArrayCount && *ArrayCount <= 20000) && Type->IsInline(); }
+            [[nodiscard]] operator bool() const { return Start && *Start && (!ArrayCount || *ArrayCount && *ArrayCount <= 20000) && (ForceInline || Type->IsInline()); }
         };
-        [[nodiscard]] TraversalInfo GetTraversalInfo(byte const* data) const { auto const type = GetType(); return { type, ElementSize, type->GetPointer(data), type->GetArrayCount(data) }; }
+        [[nodiscard]] TraversalInfo GetTraversalInfo(byte const* data, bool forceInline = false) const
+        {
+            auto const type = GetType();
+            return { type, ElementSize, type->GetPointer(data), type->GetArrayCount(data), forceInline };
+        }
         void DrawOptions(TypeInfo& typeInfo, LayoutStack const& layoutStack, std::string_view parentPath, bool create, std::string const& placeholderName);
         void Draw(byte const* data, DrawType draw, ContentObject const& content);
         [[nodiscard]] uint32 Size() const;
