@@ -8,10 +8,16 @@ namespace GW2Viewer::Data::Content
 
 std::wstring ContentTypeInfo::GetDisplayName() const
 {
-    auto const itr = G::Config.TypeInfo.find(Index);
-    return itr != G::Config.TypeInfo.end() && !itr->second.Name.empty()
-        ? Utils::Encoding::ToWString(itr->second.Name)
+    auto const& typeInfo = GetTypeInfo();
+    return !typeInfo.Name.empty()
+        ? Utils::Encoding::ToWString(typeInfo.Name)
         : std::format(L"#{}", Index);
+}
+TypeInfo& ContentTypeInfo::GetTypeInfo() const
+{
+    auto& typeInfo = G::Config.TypeInfo.try_emplace(Index).first->second;
+    typeInfo.Initialize(*this);
+    return typeInfo;
 }
 
 }

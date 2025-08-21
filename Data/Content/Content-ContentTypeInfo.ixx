@@ -5,6 +5,7 @@ import std;
 export namespace GW2Viewer::Data::Content
 {
 struct ContentObject;
+struct TypeInfo;
 
 struct ContentTypeInfo
 {
@@ -17,6 +18,7 @@ struct ContentTypeInfo
     std::list<ContentObject const*> Objects;
 
     [[nodiscard]] std::wstring GetDisplayName() const;
+    [[nodiscard]] TypeInfo& GetTypeInfo() const;
 };
 
 }

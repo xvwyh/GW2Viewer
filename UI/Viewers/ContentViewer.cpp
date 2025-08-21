@@ -26,8 +26,7 @@ void ContentViewer::Draw()
 {
     auto _ = Utils::Exception::SEHandler::Create();
 
-    auto& typeInfo = G::Config.TypeInfo.try_emplace(Content.Type->Index).first->second;
-    typeInfo.Initialize(*Content.Type);
+    auto& typeInfo = Content.Type->GetTypeInfo();
 
     auto tabScopeID = I::GetCurrentWindow()->IDStack.back();
     if (scoped::Child(I::GetSharedScopeID("ContentViewer"), { }, ImGuiChildFlags_Borders | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_AutoResizeY))
@@ -246,11 +245,7 @@ void ContentViewer::Draw()
                         if (isContentPointer)
                         {
                             if (auto const content = G::Game.Content.GetByDataPointer(data.data() + (pointer.Size ? i : layoutStack.top().ObjectStart)))
-                            {
-                                auto& elementTypeInfo = G::Config.TypeInfo.try_emplace(content->Type->Index).first->second;
-                                elementTypeInfo.Initialize(*content->Type);
-                                return &elementTypeInfo.Layout;
-                            }
+                                return &content->Type->GetTypeInfo().Layout;
 
                             return nullptr;
                         }
@@ -495,12 +490,10 @@ void ContentViewer::Draw()
                                                 if (auto const content = G::Game.Content.GetByDataPointer(&element))
                                                 {
                                                     content->Finalize();
-                                                    auto& elementTypeInfo = G::Config.TypeInfo.try_emplace(content->Type->Index).first->second;
-                                                    elementTypeInfo.Initialize(*content->Type);
 
                                                     options.ScopedData = /*options.FullData = - deliberately not modified*/ { content->Data.data(), traversal.Size };
                                                     options.ScopeOffset = 0;
-                                                    options.Layout = &elementTypeInfo.Layout;
+                                                    options.Layout = &content->Type->GetTypeInfo().Layout;
                                                     options.Content = content;
                                                 }
                                                 else

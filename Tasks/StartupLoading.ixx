@@ -164,15 +164,8 @@ struct StartupLoading
                     if (G::Config.LastNumContentTypes == G::Game.Content.GetNumTypes())
                     {
                         for (auto const type : G::Game.Content.GetTypes())
-                        {
-                            auto const itr = G::Config.TypeInfo.find(type->Index);
-                            if (itr == G::Config.TypeInfo.end())
-                                continue;
-
-                            auto& typeInfo = itr->second;
-                            if (typeInfo.Examples.empty() && !type->Objects.empty() && type->GUIDOffset >= 0)
+                            if (auto& typeInfo = type->GetTypeInfo(); typeInfo.Examples.empty() && !type->Objects.empty() && type->GUIDOffset >= 0)
                                 typeInfo.Examples.insert_range(type->Objects | std::views::take(5) | std::views::transform([](Data::Content::ContentObject const* content) { return *content->GetGUID(); }));
-                        }
                     }
                     else
                         G::Windows::MigrateContentTypes.Show();

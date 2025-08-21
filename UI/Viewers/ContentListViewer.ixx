@@ -303,29 +303,27 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             {
                 values.append_range(Utils::Sort::ComplexSorted(G::Game.Content.GetTypes(), false, [](Data::Content::ContentTypeInfo const* type)
                 {
-                    auto const itr = G::Config.TypeInfo.find(type->Index);
-                    return std::make_tuple(!(itr != G::Config.TypeInfo.end() ? itr->second.Favorite : false), type->Index);
+                    return std::make_tuple(!type->GetTypeInfo().Favorite, type->Index);
                 }));
             }
             if (Controls::FilteredComboBox("##Type", FilterType, values,
             {
                 .MaxHeight = 500,
-                .Formatter = [](auto const& type) -> std::string
+                .Formatter = [](Data::Content::ContentTypeInfo const* const& type) -> std::string
                 {
                     if (!type)
                         return std::format("<c=#8>{0} {2}</c>", ICON_FA_FILTER, -1, "Any Type");
 
-                    auto const itr = G::Config.TypeInfo.find(type->Index);
-                    return std::format("<c=#8>{0}</c> {2}  <c=#4>#{1}</c>", ICON_FA_FILTER, type->Index, itr != G::Config.TypeInfo.end() && !itr->second.Name.empty() ? itr->second.Name : "");
+                    return std::format("<c=#8>{0}</c> {2}  <c=#4>#{1}</c>", ICON_FA_FILTER, type->Index, type->GetTypeInfo().Name);
                 },
-                .Filter = [](auto const& type, auto const& filter, auto const& options)
+                .Filter = [](Data::Content::ContentTypeInfo const* const& type, auto const& filter, auto const& options)
                 {
                     if (!type)
                         return filter.Filters.empty();
 
                     return filter.PassFilter(std::format("{}", type->Index).c_str()) || filter.PassFilter(Utils::Encoding::ToUTF8(type->GetDisplayName()).c_str());
                 },
-                .Draw = [](auto const& type, bool selected, auto const& options)
+                .Draw = [](Data::Content::ContentTypeInfo const* const& type, bool selected, auto const& options)
                 {
                     I::SetNextItemAllowOverlap();
                     auto const result = I::Selectable(options.Formatter(type).c_str(), selected, 0, { type ? I::GetCurrentWindow()->WorkRect.GetWidth() - I::GetFrameHeight() - I::GetStyle().ItemSpacing.x : 0, 0 });
@@ -333,13 +331,11 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                         I::ScrollToItem();
                     if (type)
                     {
-                        if (auto const itr = G::Config.TypeInfo.find(type->Index); itr != G::Config.TypeInfo.end())
-                        {
-                            I::SameLine(0, I::GetStyle().ItemSpacing.x);
-                            if (scoped::WithStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 0)))
-                            if (I::Selectable(std::format("<c=#{}>" ICON_FA_STAR "</c>##{}", itr->second.Favorite ? "F" : "4", type->Index).c_str(), false, 0, { I::GetFrameHeight(), 0 }))
-                                itr->second.Favorite ^= true;
-                        }
+                        auto& typeInfo = type->GetTypeInfo();
+                        I::SameLine(0, I::GetStyle().ItemSpacing.x);
+                        if (scoped::WithStyleVar(ImGuiStyleVar_SelectableTextAlign, ImVec2(0.5f, 0)))
+                        if (I::Selectable(std::format("<c=#{}>" ICON_FA_STAR "</c>##{}", typeInfo.Favorite ? "F" : "4", type->Index).c_str(), false, 0, { I::GetFrameHeight(), 0 }))
+                            typeInfo.Favorite ^= true;
                     }
                     return result;
                 },

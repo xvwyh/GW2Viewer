@@ -337,7 +337,7 @@ private:
                     for (auto const& typeInfo : typeInfos)
                 #endif
                     {
-                        m_typeInfos.emplace_back(new ContentTypeInfo
+                        (void)m_typeInfos.emplace_back(new ContentTypeInfo
                         {
                             #ifdef NATIVE
                             .Index = (uint32)index,
@@ -354,7 +354,7 @@ private:
                             .NameOffset = typeInfo["nameOffset"],
                             .TrackReferences = (bool)typeInfo["trackReferences"],
                             #endif
-                        });
+                        })->GetTypeInfo(); // Ensure that it's initialized in config
                     }
                     m_typeInfoPointers.assign_range(m_typeInfos | std::views::transform([](auto const& ptr) { return ptr.get(); }));
 

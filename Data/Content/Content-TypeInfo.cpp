@@ -4,6 +4,7 @@ import :Symbols;
 import GW2Viewer.Common;
 import GW2Viewer.Common.JSON;
 import GW2Viewer.Data.Game;
+import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.ImGui;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Encoding;
@@ -100,10 +101,7 @@ void TypeInfo::Symbol::DrawOptions(TypeInfo& typeInfo, LayoutStack const& layout
 
     // Type
     {
-        static auto const& types = Symbols::GetTypes();
-        int type = std::distance(types.begin(), std::ranges::find(types, GetType()));
-        I::Combo("Type", &type, [](void*, int index) { return types[index]->Name; }, nullptr, std::size(types));
-        Type = types[type]->Name;
+        UI::Controls::FilteredComboBox("Type", Type, Symbols::GetTypes() | std::views::transform(&SymbolType::Name));
     }
 
     // ElementTypeName

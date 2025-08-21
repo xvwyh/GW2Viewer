@@ -2,7 +2,6 @@
 import :ContentObject;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Game;
-import GW2Viewer.User.Config;
 import std;
 
 namespace GW2Viewer::Data::Content
@@ -50,13 +49,10 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(TypeInfo::LayoutStack& layo
                         co_yield result;
                     layoutStack.pop();
                 }
-                else if (auto const content = G::Game.Content.GetByDataPointer(&element))
+                else if (auto const content = G::Game.Content.GetByDataPointer(target))
                 {
                     content->Finalize();
-                    auto& elementTypeInfo = G::Config.TypeInfo.try_emplace(content->Type->Index).first->second;
-                    elementTypeInfo.Initialize(*content->Type);
-
-                    layoutStack.emplace(content, &elementTypeInfo.Layout, std::nullopt /* not used here, omitted for performance reasons */, 0);
+                    layoutStack.emplace(content, &content->Type->GetTypeInfo().Layout, std::nullopt /* not used here, omitted for performance reasons */, 0);
                     for (auto& result : QuerySymbolDataImpl(layoutStack, fullData, searcher.Deeper()))
                         co_yield result;
                     layoutStack.pop();
@@ -68,8 +64,7 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(TypeInfo::LayoutStack& layo
 template<SymbolDataSearcher Searcher>
 QuerySymbolDataResult::Generator QuerySymbolDataImpl(ContentObject const& content, Searcher searcher)
 {
-    auto& typeInfo = G::Config.TypeInfo.try_emplace(content.Type->Index).first->second;
-    typeInfo.Initialize(*content.Type);
+    auto& typeInfo = content.Type->GetTypeInfo();
     if (searcher.CanEarlyReturn())
     {
         // Cheap and fast version if no deep traversal is needed

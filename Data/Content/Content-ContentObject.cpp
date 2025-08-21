@@ -73,11 +73,11 @@ std::wstring ContentObject::GetDisplayName(bool skipCustom, bool skipColor) cons
         }
 
         // Use name from a designated symbol if enabled and available
-        if (auto const itr = G::Config.TypeInfo.find(Type->Index); itr != G::Config.TypeInfo.end())
+        if (auto const& typeInfo = Type->GetTypeInfo(); !typeInfo.NameFields.empty())
         {
             bool wasEncrypted = false;
-            auto const encryptedText = GetStatusText(Encryption::Status::Encrypted);
-            for (auto const& typeInfo = itr->second; auto const& field : typeInfo.NameFields)
+            static auto const encryptedText = GetStatusText(Encryption::Status::Encrypted);
+            for (auto const& field : typeInfo.NameFields)
             {
                 for (auto& result : QuerySymbolData(*this, field))
                 {
@@ -137,22 +137,19 @@ std::wstring ContentObject::GetFullName() const
 
 uint32 ContentObject::GetIcon() const
 {
-    if (auto const itr = G::Config.TypeInfo.find(Type->Index); itr != G::Config.TypeInfo.end())
+    for (auto const& field : Type->GetTypeInfo().IconFields)
     {
-        for (auto const& typeInfo = itr->second; auto const& field : typeInfo.IconFields)
+        for (auto& result : QuerySymbolData(*this, field))
         {
-            for (auto& result : QuerySymbolData(*this, field))
-            {
-                uint32 value = 0;
-                auto const symbolType = result.Symbol->GetType();
-                if (auto const icon = symbolType->GetIcon(result.Data).value_or(0))
-                    value = icon;
-                else if (auto const content = symbolType->GetContent(result.Data).value_or(nullptr))
-                    value = content->GetIcon();
+            uint32 value = 0;
+            auto const symbolType = result.Symbol->GetType();
+            if (auto const icon = symbolType->GetIcon(result.Data).value_or(0))
+                value = icon;
+            else if (auto const content = symbolType->GetContent(result.Data).value_or(nullptr))
+                value = content->GetIcon();
 
-                if (value)
-                    return value;
-            }
+            if (value)
+                return value;
         }
     }
 
@@ -161,22 +158,19 @@ uint32 ContentObject::GetIcon() const
 
 ContentObject const* ContentObject::GetMap() const
 {
-    if (auto const itr = G::Config.TypeInfo.find(Type->Index); itr != G::Config.TypeInfo.end())
+    for (auto const& field : Type->GetTypeInfo().MapFields)
     {
-        for (auto const& typeInfo = itr->second; auto const& field : typeInfo.MapFields)
+        for (auto& result : QuerySymbolData(*this, field))
         {
-            for (auto& result : QuerySymbolData(*this, field))
-            {
-                ContentObject const* value = nullptr;
-                auto const symbolType = result.Symbol->GetType();
-                if (auto const map = symbolType->GetMap(result.Data).value_or(nullptr))
-                    value = map;
-                else if (auto const content = symbolType->GetContent(result.Data).value_or(nullptr))
-                    value = content->GetMap();
+            ContentObject const* value = nullptr;
+            auto const symbolType = result.Symbol->GetType();
+            if (auto const map = symbolType->GetMap(result.Data).value_or(nullptr))
+                value = map;
+            else if (auto const content = symbolType->GetContent(result.Data).value_or(nullptr))
+                value = content->GetMap();
 
-                if (value)
-                    return value;
-            }
+            if (value)
+                return value;
         }
     }
 
