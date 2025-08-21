@@ -6,9 +6,13 @@
 #include <cassert>
 
 module GW2Viewer.UI.ImGui;
+import GW2Viewer.Data.Game;
+import GW2Viewer.Data.Texture;
 import std;
+import <boost/container/small_vector.hpp>;
 
 using GW2Viewer::byte;
+using GW2Viewer::uint32;
 
 static constexpr auto cihash = [](std::string_view const& key)
 {
@@ -37,19 +41,28 @@ enum class ColorChangeType : byte
     PushColor,
     Pop,
 };
+struct Image
+{
+    ImTextureRef TextureRef;
+    ImRect Rect;
+    ImRect UV { { 0, 0 }, { 1, 1 } };
+    ImU32 Color;
+};
 struct MarkupState
 {
     ImU32 Color;
     ColorChangeType ColorChangeType = ColorChangeType::Unchanged;
+    std::optional<Image> Image;
     byte BoldDepth = 0;
     byte NoSelectDepth = 0;
     bool IsInNoSelect() const { return NoSelectDepth; }
 };
-bool ParseMarkup(const char*& s, size_t avail, MarkupState& state)
+bool ParseMarkup(const char*& s, size_t avail, float size, MarkupState& state)
 {
     if (s[0] != '<')
         return false;
     state.ColorChangeType = ColorChangeType::Unchanged;
+    state.Image.reset();
     if (avail >= 3 && !strncmp(s, "<b>", 3))
     {
         assert(state.BoldDepth < std::numeric_limits<decltype(state.BoldDepth)>::max());
@@ -77,6 +90,30 @@ bool ParseMarkup(const char*& s, size_t avail, MarkupState& state)
         --state.NoSelectDepth;
         s += 8;
         return true;
+    }
+    if (avail >= 8 && !strncmp(s, "<img=", 5))
+    {
+        auto idStart = s + 5, idEnd = idStart;
+        while (idEnd < s + avail && isdigit(*idEnd)) ++idEnd;
+        uint32 textureFileID = 0;
+        std::from_chars(idStart, idEnd, textureFileID);
+        for (; idEnd < s + avail - 1; ++idEnd)
+        {
+            if (idEnd[0] == '/' && idEnd[1] == '>')
+            {
+                if (auto const texture = GW2Viewer::G::Game.Texture.Get(textureFileID); !texture || texture->TextureLoadingState == GW2Viewer::Data::Texture::TextureEntry::TextureLoadingStates::NotLoaded)
+                    GW2Viewer::G::Game.Texture.Load(textureFileID);
+                else if (texture && texture->Texture && texture->Texture->Handle.GetTexID())
+                {
+                    auto const aspect = (float)texture->Texture->Width / texture->Texture->Height;
+                    auto const height = size + ImGui::GetStyle().FramePadding.y * 2;
+                    ImVec2 const pos { 0, -ImGui::GetStyle().FramePadding.y };
+                    state.Image.emplace(texture->Texture->Handle, ImRect(pos, pos + ImVec2(height * aspect, height)));
+                }
+                s = &idEnd[2];
+                return true;
+            }
+        }
     }
     if (avail >= 4 && s[1] == '/' && s[2] == 'c' && s[3] == '>')
     {
@@ -232,9 +269,6 @@ const char* ImFont::CalcWordWrapPosition(float size, const char* text, const cha
     IM_ASSERT(text_end != NULL);
     while (s < text_end)
     {
-        if (ParseMarkup(s, text_end - s, stateCalcWordWrapPositionA))
-            continue;
-
         unsigned int c = (unsigned int)*s;
         const char* next_s;
         if (c < 0x80)
@@ -262,6 +296,18 @@ const char* ImFont::CalcWordWrapPosition(float size, const char* text, const cha
         float char_width = (c < (unsigned int)baked->IndexAdvanceX.Size) ? baked->IndexAdvanceX.Data[c] : -1.0f;
         if (char_width < 0.0f)
             char_width = BuildLoadGlyphGetAdvanceOrFallback(baked, c);
+
+        if (ParseMarkup(s, text_end - s, size, stateCalcWordWrapPositionA))
+        {
+            if (stateCalcWordWrapPositionA.Image)
+            {
+                char_width = stateCalcWordWrapPositionA.Image->Rect.GetWidth();
+                inside_word = false;
+                goto visible;
+            }
+            continue;
+        }
+        visible:
 
         if (ImCharIsBlankW(c))
         {
@@ -330,9 +376,6 @@ ImVec2 ImFont::CalcTextSizeA(float size, float max_width, float wrap_width, cons
     const char* s = text_begin;
     while (s < text_end)
     {
-        if (ParseMarkup(s, text_end - s, state))
-            continue;
-
         if (word_wrap_enabled)
         {
             // Calculate how far we can render. Requires two passes on the string data but keeps the code simple and not intrusive for what's essentially an uncommon feature.
@@ -357,10 +400,23 @@ ImVec2 ImFont::CalcTextSizeA(float size, float max_width, float wrap_width, cons
         // Decode and advance source
         const char* prev_s = s;
         unsigned int c = (unsigned int)*s;
+        const char* next_s;
         if (c < 0x80)
-            s += 1;
+            next_s = s + 1;
         else
-            s += ImTextCharFromUtf8(&c, s, text_end);
+            next_s = s + ImTextCharFromUtf8(&c, s, text_end);
+
+        float char_width;
+        if (ParseMarkup(s, text_end - s, size, state))
+        {
+            if (state.Image)
+            {
+                char_width = state.Image->Rect.GetWidth();
+                goto visible;
+            }
+            continue;
+        }
+        s = next_s;
 
         if (c < 32)
         {
@@ -376,9 +432,10 @@ ImVec2 ImFont::CalcTextSizeA(float size, float max_width, float wrap_width, cons
         }
 
         // Optimized inline version of 'float char_width = GetCharAdvance((ImWchar)c);'
-        float char_width = (c < (unsigned int)baked->IndexAdvanceX.Size) ? baked->IndexAdvanceX.Data[c] : -1.0f;
+        char_width = (c < (unsigned int)baked->IndexAdvanceX.Size) ? baked->IndexAdvanceX.Data[c] : -1.0f;
         if (char_width < 0.0f)
             char_width = BuildLoadGlyphGetAdvanceOrFallback(baked, c);
+        visible:
         char_width *= scale;
 
         if (line_width + char_width >= max_width)
@@ -476,12 +533,13 @@ begin:
     ImU32 col_untinted = col | ~IM_COL32_A_MASK;
     const char* word_wrap_eol = NULL;
 
-    std::stack<ImU32> colorStack;
+    std::stack<ImU32, boost::container::small_vector<ImU32, 10>> colorStack;
+    boost::container::small_vector<Image, 10> images;
 
     MarkupState state;
     while (s < text_end)
     {
-        if (ParseMarkup(s, text_end - s, state))
+        if (ParseMarkup(s, text_end - s, size, state))
         {
             switch (state.ColorChangeType)
             {
@@ -512,6 +570,38 @@ begin:
                     break;
                 default:
                     std::terminate();
+            }
+            if (state.Image)
+            {
+                auto& image = images.emplace_back(*state.Image);
+                image.Color = col;
+                image.Rect.Translate({ x, y });
+                auto &x1 = image.Rect.Min.x, &y1 = image.Rect.Min.y, &x2 = image.Rect.Max.x, &y2 = image.Rect.Max.y;
+                auto &u1 = image.UV.Min.x, &v1 = image.UV.Min.y, &u2 = image.UV.Max.x, &v2 = image.UV.Max.y;
+                if (cpu_fine_clip)
+                {
+                    if (x1 < clip_rect.x)
+                    {
+                        u1 = u1 + (1.0f - (x2 - clip_rect.x) / (x2 - x1)) * (u2 - u1);
+                        x1 = clip_rect.x;
+                    }
+                    if (y1 < clip_rect.y)
+                    {
+                        v1 = v1 + (1.0f - (y2 - clip_rect.y) / (y2 - y1)) * (v2 - v1);
+                        y1 = clip_rect.y;
+                    }
+                    if (x2 > clip_rect.z)
+                    {
+                        u2 = u1 + ((clip_rect.z - x1) / (x2 - x1)) * (u2 - u1);
+                        x2 = clip_rect.z;
+                    }
+                    if (y2 > clip_rect.w)
+                    {
+                        v2 = v1 + ((clip_rect.w - y1) / (y2 - y1)) * (v2 - v1);
+                        y2 = clip_rect.w;
+                    }
+                }
+                x += image.Rect.GetWidth();
             }
             continue;
         }
@@ -664,6 +754,10 @@ begin:
     draw_list->_VtxWritePtr = vtx_write;
     draw_list->_IdxWritePtr = idx_write;
     draw_list->_VtxCurrentIdx = vtx_index;
+
+    for (auto const& image : images)
+        if (image.Rect.Min.x < image.Rect.Max.x && image.Rect.Min.y < image.Rect.Max.y)
+            draw_list->AddImage(image.TextureRef, image.Rect.Min, image.Rect.Max, image.UV.Min, image.UV.Max, image.Color);
 }
 
 bool ImGui::CloseButton(ImGuiID id, const ImVec2& pos)
@@ -747,7 +841,7 @@ std::string ImGui::StripMarkup(std::string const& str)
     const char* s = text_begin;
     while (s < text_end)
     {
-        if (ParseMarkup(s, text_end - s, state))
+        if (ParseMarkup(s, text_end - s, GetFontSize(), state))
             continue;
 
         if (char const c = *s++; !state.IsInNoSelect())
