@@ -23,15 +23,44 @@ TypeInfo::SymbolType const* GetByName(std::string_view name)
     return *std::ranges::find_if(GetTypes(), [name](auto* type) { return type->Name == name; });
 }
 
+template<typename T> std::string Integer<T>::GetDisplayText(Context const& context) const
+{
+    auto value = context.Data<T>();
+    if (auto const e = context.Symbol.GetEnum())
+    {
+        if (e->Flags)
+        {
+            std::string text;
+            TypeInfo::Enum::FlagsUnderlyingType remaining = value;
+            for (auto const& [flag, name] : e->Values | std::views::reverse)
+            {
+                if (TypeInfo::Enum::FlagsUnderlyingType const flagTyped = flag; (remaining & flagTyped) == flagTyped)
+                {
+                    text = std::format("{} | {}", name, text);
+                    remaining &= ~flagTyped;
+                }
+            }
+            if (remaining)
+                text = std::format("{}0x{:X}", text, remaining);
+            else if (auto const trimmed = text.find_last_not_of(" |"); trimmed != std::string::npos)
+                text = text.substr(0, trimmed + 1);
+
+            return text;
+        }
+
+        if (auto itr = e->Values.find(value); itr != e->Values.end())
+            return itr->second;
+    }
+    return std::format("{}", value);
+}
 template<typename T> void Integer<T>::Draw(Context const& context) const
 {
-    auto text = GetDisplayText(data);
+    std::string text;
     if (auto const e = context.Symbol.GetEnum())
     {
         auto value = context.Data<T>();
         if (e->Flags)
         {
-            text.clear();
             TypeInfo::Enum::FlagsUnderlyingType remaining = value;
             for (auto const& [flag, name] : e->Values | std::views::reverse)
             {
@@ -54,8 +83,12 @@ template<typename T> void Integer<T>::Draw(Context const& context) const
                 text = !e->Name.empty() ? std::format("<c=#4>{}::</c>{}   <c=#4>({})</c>", e->Name, itr->second, value) : std::format("{}   <c=#4>({})</c>", itr->second, value);
             else if (!e->Name.empty())
                 text = std::format("<c=#4>({})</c>{}   <c=#4>({})</c>", e->Name, value, value);
+            else
+                text = GetDisplayText(context);
         }
     }
+    else
+        text = GetDisplayText(context);
     if (context.Draw == TypeInfo::Symbol::DrawType::TableRow)
         I::SetNextItemWidth(-FLT_MIN);
     I::InputTextReadOnly("##Input", text);

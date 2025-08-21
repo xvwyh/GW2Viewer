@@ -20,7 +20,7 @@ struct Integer : TypeInfo::SymbolType
 
     [[nodiscard]] std::strong_ordering CompareDataForSearch(byte const* dataA, byte const* dataB) const override { return *(T const*)dataA <=> *(T const*)dataB; }
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(Context const& context) const override { return context.Data<T>(); }
-    [[nodiscard]] std::string GetDisplayText(Context const& context) const override { return std::format("{}", context.Data<T>()); }
+    [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
     [[nodiscard]] uint32 Size() const override { return sizeof(T); }
     void Draw(Context const& context) const override;
 };
