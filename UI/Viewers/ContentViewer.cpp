@@ -18,7 +18,8 @@ namespace GW2Viewer::UI::Viewers
 
 std::string ContentViewer::Title()
 {
-    return Utils::Encoding::ToUTF8(std::format(L"<c=#4>{}</c> {}", Content.Type->GetDisplayName(), Content.GetDisplayName()));
+    auto const icon = Content.GetIcon();
+    return Utils::Encoding::ToUTF8(std::format(L"<c=#4>{}</c> {}{}", Content.Type->GetDisplayName(), icon ? std::format(L"<img={}/>", icon) : L""sv, Content.GetDisplayName()));
 }
 
 void ContentViewer::Draw()
