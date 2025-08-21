@@ -133,6 +133,7 @@ void Manager::Load()
     colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.00f, 0.00f, 0.00f, 0.75f);
 
     colors[ImGuiCol_PlotHistogram] = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
+    colors[ImGuiCol_TreeLines] = ImVec4(0.25f, 0.25f, 0.25f, 1.00f);
 
     ImGuiStyle& style = I::GetStyle();
     style.WindowPadding = ImVec2(8.00f, 8.00f);

@@ -468,7 +468,7 @@ void ContentViewer::Draw()
                                                 I::GetWindowDrawList()->AddLine(
                                                     { (float)(int)((rect.Min.x + rect.Max.x) / 2) + 1, (float)(int)((text.Min.y + text.Max.y) / 2) },
                                                     { (float)(int)rect.Max.x, (float)(int)((text.Min.y + text.Max.y) / 2) },
-                                                    0x40FFFFFF);
+                                                    I::GetColorU32(ImGuiCol_TreeLines));
                                             I::SameLine();
                                             I::Indent(INDENT);
                                         }
@@ -549,7 +549,7 @@ void ContentViewer::Draw()
                                 I::GetWindowDrawList()->AddLine(
                                     { (float)(int)((rect.Min.x + rect.Max.x) / 2), (float)(int)rect.Max.y },
                                     { (float)(int)((rect.Min.x + rect.Max.x) / 2), (float)(int)I::GetCursorScreenPos().y },
-                                    0x40FFFFFF);
+                                    I::GetColorU32(ImGuiCol_TreeLines));
                             }
                         }
                     }
