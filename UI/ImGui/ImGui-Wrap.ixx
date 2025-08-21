@@ -76,5 +76,10 @@ struct TableBackgroundChannel : ScopeWrapper<TableBackgroundChannel>
     TableBackgroundChannel() noexcept : ScopeWrapper(true) { ImGui::TablePushBackgroundChannel(); }
     static void dtor() noexcept { ImGui::TablePopBackgroundChannel(); }
 };
+struct DisableMarkup : ScopeWrapper<DisableMarkup>
+{
+    DisableMarkup() noexcept;
+    static void dtor() noexcept;
+};
 
 }

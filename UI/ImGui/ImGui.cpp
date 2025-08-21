@@ -48,6 +48,7 @@ struct Image
     ImRect UV { { 0, 0 }, { 1, 1 } };
     ImU32 Color;
 };
+uint32 DisableMarkupDepth = 0;
 struct MarkupState
 {
     ImU32 Color;
@@ -59,6 +60,8 @@ struct MarkupState
 };
 bool ParseMarkup(const char*& s, size_t avail, float size, MarkupState& state)
 {
+    if (DisableMarkupDepth)
+        return false;
     if (s[0] != '<')
         return false;
     state.ColorChangeType = ColorChangeType::Unchanged;
@@ -869,4 +872,15 @@ std::string ImGui::StripMarkup(std::string const& str)
 void ImGui::OpenURL(wchar_t const* url)
 {
     ShellExecute(nullptr, L"open", url, nullptr, nullptr, SW_SHOW);
+}
+
+dear::DisableMarkup::DisableMarkup() noexcept : ScopeWrapper<DisableMarkup>(true)
+{
+    assert(DisableMarkupDepth < std::numeric_limits<decltype(DisableMarkupDepth)>::max());
+    ++DisableMarkupDepth;
+}
+void dear::DisableMarkup::dtor() noexcept
+{
+    assert(DisableMarkupDepth);
+    --DisableMarkupDepth;
 }
