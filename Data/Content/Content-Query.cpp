@@ -70,7 +70,7 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(ContentObject const& conten
     if (searcher.CanEarlyReturn())
     {
         // Cheap and fast version if no deep traversal is needed
-        if (auto const itr = std::ranges::find_if(typeInfo.Layout.Symbols, [&](auto const& pair) { return searcher.CanCheck(pair.second); }); itr != typeInfo.Layout.Symbols.end())
+        if (auto const itr = std::ranges::find_if(typeInfo.Layout.Symbols, [&](auto const& pair) { return searcher.CanCheck(pair.second) && !(pair.second.Condition && !pair.second.Condition->Field.empty() && !pair.second.TestCondition(content, TypeInfo::LayoutStack { { { &content, &typeInfo.Layout } } })); }); itr != typeInfo.Layout.Symbols.end())
             if (auto data = &content.Data[itr->first]; searcher.CanReturn(itr->second, data))
                 co_yield { &itr->second, data };
         co_return;
