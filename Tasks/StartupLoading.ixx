@@ -163,7 +163,7 @@ struct StartupLoading
                         G::Config.LastNumContentTypes = G::Game.Content.GetNumTypes();
                     if (G::Config.LastNumContentTypes == G::Game.Content.GetNumTypes())
                     {
-                        for (auto const& type : G::Game.Content.GetTypes())
+                        for (auto const type : G::Game.Content.GetTypes())
                         {
                             auto const itr = G::Config.TypeInfo.find(type->Index);
                             if (itr == G::Config.TypeInfo.end())

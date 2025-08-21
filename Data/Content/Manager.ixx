@@ -114,9 +114,9 @@ public:
         progress.Start("Processing all references", m_references.size());
         for (auto const& [source, targets] : m_references)
         {
-            auto* sourceObject = GetByDataPointer(source);
+            auto* sourceObject = GetByDataPointerMutable(source);
             for (auto const& target : targets)
-                sourceObject->AddReference(*GetByDataPointer(target), ContentObject::Reference::Types::All);
+                sourceObject->AddReference(*GetByDataPointerMutable(target), ContentObject::Reference::Types::All);
             ++progress;
         }
 
@@ -127,9 +127,9 @@ public:
 
     [[nodiscard]] bool AreTypesLoaded() const { return m_loadedTypes; }
     [[nodiscard]] uint32 GetNumTypes() const { return m_typeInfos.size(); }
-    [[nodiscard]] auto& GetTypes() const { return m_typeInfos; }
-    [[nodiscard]] ContentTypeInfo* GetType(uint32 index) const { return m_typeInfos.at(index).get(); }
-    [[nodiscard]] ContentTypeInfo* GetType(GW2Viewer::Content::EContentTypes type) const
+    [[nodiscard]] std::span<ContentTypeInfo const* const> GetTypes() const { return m_typeInfoPointers; }
+    [[nodiscard]] ContentTypeInfo const* GetType(uint32 index) const { return m_typeInfos.at(index).get(); }
+    [[nodiscard]] ContentTypeInfo const* GetType(GW2Viewer::Content::EContentTypes type) const
     {
         if (auto const itr = std::ranges::find(G::Config.TypeInfo, type, [](auto const& pair) { return pair.second.ContentType; }); itr != G::Config.TypeInfo.end())
             if (itr->first < m_typeInfos.size())
@@ -139,18 +139,18 @@ public:
     }
 
     [[nodiscard]] bool AreNamespacesLoaded() const { return m_loadedNamespaces; }
-    [[nodiscard]] auto& GetNamespaces() const { return m_namespaces; }
-    [[nodiscard]] ContentNamespace* GetNamespaceRoot() const { return m_root; }
-    [[nodiscard]] ContentNamespace* GetNamespace(uint32 index) const { return m_namespaces.at(index); }
+    [[nodiscard]] std::span<ContentNamespace const* const> GetNamespaces() const { return m_namespaces; }
+    [[nodiscard]] ContentNamespace const* GetNamespaceRoot() const { return m_root.get(); }
+    [[nodiscard]] ContentNamespace const* GetNamespace(uint32 index) const { return GetNamespaceMutable(index); }
 
     [[nodiscard]] bool AreObjectsLoaded() const { return m_loadedObjects; }
-    [[nodiscard]] auto& GetObjects() const { return m_objects; }
-    [[nodiscard]] auto& GetRootedObjects() const { return m_rootedObjects; }
-    [[nodiscard]] auto& GetUnrootedObjects() const { return m_unrootedObjects; }
-    [[nodiscard]] ContentObject* GetByIndex(uint32 index) const { return m_objects.at(index); }
-    [[nodiscard]] ContentObject* GetByGUID(GUID const& guid) const { if (auto const object = Utils::Container::Find(m_objectsByGUID, guid)) return *object; return nullptr; }
-    [[nodiscard]] ContentObject* GetByDataPointer(byte const* ptr) const { if (auto const object = Utils::Container::Find(m_objectsByDataPointer, ptr)) return *object; return nullptr; }
-    [[nodiscard]] ContentObject* GetByDataID(GW2Viewer::Content::EContentTypes type, uint32 dataID) const
+    [[nodiscard]] std::span<ContentObject const* const> GetObjects() const { return m_objects; }
+    [[nodiscard]] std::span<ContentObject const* const> GetRootedObjects() const { return m_rootedObjects; }
+    [[nodiscard]] std::span<ContentObject const* const> GetUnrootedObjects() const { return m_unrootedObjects; }
+    [[nodiscard]] ContentObject const* GetByIndex(uint32 index) const { return m_objects.at(index); }
+    [[nodiscard]] ContentObject const* GetByGUID(GUID const& guid) const { if (auto const object = Utils::Container::Find(m_objectsByGUID, guid)) return *object; return nullptr; }
+    [[nodiscard]] ContentObject const* GetByDataPointer(byte const* ptr) const { return GetByDataPointerMutable(ptr); }
+    [[nodiscard]] ContentObject const* GetByDataID(GW2Viewer::Content::EContentTypes type, uint32 dataID) const
     {
         if (auto const typeInfo = GetType(type))
         {
@@ -175,9 +175,10 @@ private:
 
     bool m_loadedTypes = false;
     std::vector<std::unique_ptr<ContentTypeInfo>> m_typeInfos;
+    std::vector<ContentTypeInfo const*> m_typeInfoPointers;
 
     bool m_loadedNamespaces = false;
-    ContentNamespace* m_root = nullptr;
+    std::unique_ptr<ContentNamespace> m_root;
     std::vector<ContentNamespace*> m_namespaces;
 
     bool m_loadedObjects = false;
@@ -189,6 +190,9 @@ private:
 
     std::unordered_map<std::wstring_view, std::vector<ContentObject*>> m_objectsByName;
     std::unordered_map<std::wstring_view, std::vector<ContentNamespace*>> m_namespacesByName;
+
+    [[nodiscard]] ContentNamespace* GetNamespaceMutable(uint32 index) const { return m_namespaces.at(index); }
+    [[nodiscard]] ContentObject* GetByDataPointerMutable(byte const* ptr) const { if (auto const object = Utils::Container::Find(m_objectsByDataPointer, ptr)) return *object; return nullptr; }
 
 #ifdef NATIVE
     PackContent const* m_rootContentFile = nullptr;
@@ -225,7 +229,7 @@ private:
         if (!m_rootContentFile)
             m_rootContentFile.emplace(content);
 
-        assert(!((uint32)content["flags"] & ::Content::CONTENT_FLAG_ENCRYPTED)); // TODO: RC4 encrypted
+        assert(!((uint32)content["flags"] & GW2Viewer::Content::CONTENT_FLAG_ENCRYPTED)); // TODO: RC4 encrypted
 
         auto const data = content["content[]"];
         #endif
@@ -352,6 +356,7 @@ private:
                             #endif
                         });
                     }
+                    m_typeInfoPointers.assign_range(m_typeInfos | std::views::transform([](auto const& ptr) { return ptr.get(); }));
 
                     m_loadedTypes = true;
                 }
@@ -389,22 +394,22 @@ private:
                     #endif
                     {
                         #ifdef NATIVE
-                        auto* current = GetNamespace(index);
+                        auto* current = GetNamespaceMutable(index);
                         auto const parentIndex = ns.parentIndex;
                         #else
-                        auto* current = GetNamespace(ns.GetArrayIndex());
+                        auto* current = GetNamespaceMutable(ns.GetArrayIndex());
                         int32 const parentIndex = ns["parentIndex"];
                         #endif
                         if (parentIndex >= 0)
                         {
-                            auto* parent = GetNamespace(parentIndex);
+                            auto* parent = GetNamespaceMutable(parentIndex);
                             current->Parent = parent;
                             parent->Namespaces.emplace_back(current);
                         }
                         else
                         {
                             assert(!m_root);
-                            m_root = current;
+                            m_root.reset(current);
                         }
                     }
 
@@ -448,14 +453,14 @@ private:
                         #ifdef NATIVE
                         auto const offset = entry.offset;
                         auto* type = m_typeInfos.at(entry.type).get();
-                        auto* ns = GetNamespace(entry.namespaceIndex);
-                        auto* root = entry.rootIndex >= 0 ? GetByDataPointer(&content.content[content.indexEntries[entry.rootIndex].offset]) : nullptr;
+                        auto* ns = GetNamespaceMutable(entry.namespaceIndex);
+                        auto* root = entry.rootIndex >= 0 ? GetByDataPointerMutable(&content.content[content.indexEntries[entry.rootIndex].offset]) : nullptr;
                         #else
                         uint32 const offset = entry["offset"];
                         auto* type = m_typeInfos.at(entry["type"]).get();
-                        auto* ns = GetNamespace(entry["namespaceIndex"]);
+                        auto* ns = GetNamespaceMutable(entry["namespaceIndex"]);
                         int32 const rootIndex = entry["rootIndex"];
-                        auto* root = rootIndex >= 0 ? GetByDataPointer(data[indexEntries[rootIndex]["offset"]]) : nullptr;
+                        auto* root = rootIndex >= 0 ? GetByDataPointerMutable(data[indexEntries[rootIndex]["offset"]]) : nullptr;
                         #endif
 
                         ContentObject* object = new ContentObject
@@ -511,16 +516,14 @@ private:
                 {
                     auto const* source = &content.content[sourceOffset];
                     auto const* target = &(*(PackContent*)&m_loadedContentFiles[targetFileIndex].File->GetFirstChunk().Data).content[targetOffset];
-                    GetByDataPointer(source)->AddReference(*GetByDataPointer(target), ContentObject::Reference::Types::Tracked);
-                }
                 #else
                 for (auto const& trackedReference : content["trackedReferences"])
                 {
                     byte const* source = data[trackedReference["sourceOffset"]];
                     byte const* target = m_loadedContentFiles[trackedReference["targetFileIndex"]].File->QueryChunk(fcc::Main)["content"][trackedReference["targetOffset"]];
-                    GetByDataPointer(source)->AddReference(*GetByDataPointer(target), ContentObject::Reference::Types::Tracked);
-                }
                 #endif
+                    GetByDataPointerMutable(source)->AddReference(*GetByDataPointerMutable(target), ContentObject::Reference::Types::Tracked);
+                }
                 break;
             }
         }

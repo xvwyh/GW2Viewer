@@ -22,17 +22,17 @@ struct Demangle : Window
 {
     Utils::Async::Scheduler Async;
     std::mutex Lock;
-    std::unordered_multimap<Data::Content::ContentNamespace*, std::wstring> NamespaceResults;
-    std::unordered_multimap<Data::Content::ContentObject*, std::wstring> ContentResults;
+    std::unordered_multimap<Data::Content::ContentNamespace const*, std::wstring> NamespaceResults;
+    std::unordered_multimap<Data::Content::ContentObject const*, std::wstring> ContentResults;
     std::wstring ResultsPrefix;
     bool BruteforceObjects = false;
     bool BruteforceNamespaces = true;
     bool BruteforceRecursively = false;
-    std::deque<Data::Content::ContentNamespace*> BruteforceRecursiveQueue;
+    std::deque<Data::Content::ContentNamespace const*> BruteforceRecursiveQueue;
 
     std::mutex UILock;
     std::wstring BruteforceUIPrefix;
-    Data::Content::ContentNamespace* BruteforceUIRecursiveBase = nullptr;
+    Data::Content::ContentNamespace const* BruteforceUIRecursiveBase = nullptr;
     bool BruteforceUIStart = false;
 
     void MatchNamespace(std::wstring_view fullName, std::wstring_view mangledName, Hasher& hasher)
@@ -89,7 +89,7 @@ struct Demangle : Window
             name = name.substr(0, pos);
         }
     }
-    void Bruteforce(std::wstring_view prefix, Data::Content::ContentNamespace* recursiveBase, uint32 words)
+    void Bruteforce(std::wstring_view prefix, Data::Content::ContentNamespace const* recursiveBase, uint32 words)
     {
         Async.Run([this, nonRecursivePrefix = std::wstring(prefix), recursiveBase, words, objects = BruteforceObjects, namespaces = BruteforceNamespaces, recursively = BruteforceRecursively](Utils::Async::Context context)
         {
@@ -177,7 +177,7 @@ struct Demangle : Window
 
                 while (!skipRecursiveQueue)
                 {
-                    Data::Content::ContentNamespace* current = nullptr;
+                    Data::Content::ContentNamespace const* current = nullptr;
                     {
                         std::scoped_lock _(Lock);
                         if (!BruteforceRecursiveQueue.empty())
@@ -251,7 +251,7 @@ struct Demangle : Window
             context->Finish();
         });
     }
-    void OpenBruteforceUI(std::wstring_view prefix, Data::Content::ContentNamespace* recursiveBase, bool start = false, std::optional<bool> objects = { }, std::optional<bool> namespaces = { })
+    void OpenBruteforceUI(std::wstring_view prefix, Data::Content::ContentNamespace const* recursiveBase, bool start = false, std::optional<bool> objects = { }, std::optional<bool> namespaces = { })
     {
         BruteforceUIPrefix = prefix;
         BruteforceUIRecursiveBase = recursiveBase;

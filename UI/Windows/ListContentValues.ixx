@@ -29,8 +29,8 @@ struct ListContentValues : Window
     {
         Data::Content::TypeInfo::Symbol Symbol;
         byte const* Data;
-        std::unordered_set<Data::Content::ContentObject*> Objects;
-        std::vector<Data::Content::ContentObject*> ObjectsSorted;
+        std::unordered_set<Data::Content::ContentObject const*> Objects;
+        std::vector<Data::Content::ContentObject const*> ObjectsSorted;
         bool IsFolded = true;
     };
 
@@ -60,7 +60,7 @@ struct ListContentValues : Window
 
         Results.clear();
         ExternalKeyStorage.clear();
-        for (auto* object : Type->Objects)
+        for (auto const object : Type->Objects)
         {
             for (auto& result : Data::Content::QuerySymbolData(*object, path))
             {

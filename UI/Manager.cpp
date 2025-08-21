@@ -379,7 +379,7 @@ std::string Manager::MakeDataLink(byte type, uint32 id)
             };
 
             uint32 payloadSize = 0;
-            if (Data::Content::ContentObject* item = G::Game.Content.GetByDataID(Content::ItemDef, id))
+            if (Data::Content::ContentObject const* item = G::Game.Content.GetByDataID(Content::ItemDef, id))
             {
                 if (auto const key = G::Game.Encryption.GetTextKey((*item)["TextName"]); key && *key)
                 {

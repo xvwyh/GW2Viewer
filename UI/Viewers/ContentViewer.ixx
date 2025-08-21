@@ -11,11 +11,11 @@ import std;
 export namespace GW2Viewer::UI::Viewers
 {
 
-struct ContentViewer : ViewerWithHistory<ContentViewer, Data::Content::ContentObject&, { ICON_FA_CUBE " ContentObject", "ContentObject", Category::ObjectViewer }>
+struct ContentViewer : ViewerWithHistory<ContentViewer, Data::Content::ContentObject const&, { ICON_FA_CUBE " ContentObject", "ContentObject", Category::ObjectViewer }>
 {
     TargetType Content;
 
-    ContentViewer(uint32 id, bool newTab, Data::Content::ContentObject& content) : Base(id, newTab), Content(content)
+    ContentViewer(uint32 id, bool newTab, Data::Content::ContentObject const& content) : Base(id, newTab), Content(content)
     {
         content.Finalize();
     }

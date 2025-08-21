@@ -19,9 +19,9 @@ struct ContentObject
     uint32 Index;
     ContentTypeInfo const* Type { };
     ContentNamespace const* Namespace { };
-    ContentObject* Root { };
+    ContentObject const* Root { };
     std::list<std::unique_ptr<ContentObject>> Entries;
-    std::span<byte const> Data;
+    mutable std::span<byte const> Data;
 
     struct Reference
     {
@@ -31,7 +31,7 @@ struct ContentObject
             Tracked,
             All,
         };
-        ContentObject* Object;
+        ContentObject const* Object;
         Types Type;
 
         bool operator==(Reference const&) const = default;
@@ -44,7 +44,7 @@ struct ContentObject
     std::set<size_t> const* const ContentFileEntryBoundaries;
     byte const* ByteMap;
 
-    void Finalize();
+    void Finalize() const;
 
     template<typename T>
     [[nodiscard]] T const* GetAtOffset(int32 offset) const
@@ -58,13 +58,13 @@ struct ContentObject
     [[nodiscard]] std::wstring GetFullDisplayName(bool skipCustom = false, bool skipColor = false) const;
     [[nodiscard]] std::wstring GetFullName() const;
     [[nodiscard]] uint32 GetIcon() const;
-    [[nodiscard]] ContentObject* GetMap() const;
+    [[nodiscard]] ContentObject const* GetMap() const;
     [[nodiscard]] GUID const* GetGUID() const { return GetAtOffset<GUID>(Type->GUIDOffset); }
     [[nodiscard]] uint32 const* GetUID() const { return GetAtOffset<uint32>(Type->UIDOffset); }
     [[nodiscard]] uint32 const* GetDataID() const { return GetAtOffset<uint32>(Type->DataIDOffset); }
     [[nodiscard]] ContentName const* GetName() const { return GetAtOffset<ContentName>(Type->NameOffset); }
 
-    QuerySymbolDataResult::Generator operator[](std::string_view path) { return QuerySymbolData(*this, path); }
+    QuerySymbolDataResult::Generator operator[](std::string_view path) const { return QuerySymbolData(*this, path); }
 
     [[nodiscard]] bool Contains(ContentObject const& object) const { return object.Root == this; }
     [[nodiscard]] bool ContainedIn(ContentObject const& object) const { return object.Contains(*this); }

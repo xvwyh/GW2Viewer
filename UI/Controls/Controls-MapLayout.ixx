@@ -104,15 +104,15 @@ struct MapLayout
         *this = { };
     }
     void AddBackdrop(float scale, uint32 unexploredFileID, uint32 exploredFileID, bool water = false, bool interior = false);
-    Icon& AddIcon(uint32 textureFileID, ContentObject& mapDef, ImVec2 mapPosition, float size) { return AddIcon(textureFileID, mapDef, mapPosition, { size, size }); }
-    Icon& AddIcon(uint32 textureFileID, ContentObject& mapDef, ImVec2 mapPosition, ImVec2 size);
+    Icon& AddIcon(uint32 textureFileID, ContentObject const& mapDef, ImVec2 mapPosition, float size) { return AddIcon(textureFileID, mapDef, mapPosition, { size, size }); }
+    Icon& AddIcon(uint32 textureFileID, ContentObject const& mapDef, ImVec2 mapPosition, ImVec2 size);
     Icon& AddIcon(uint32 textureFileID, ImVec2 position, float size) { return AddIcon(textureFileID, position, { size, size }); }
     Icon& AddIcon(uint32 textureFileID, ImVec2 position, ImVec2 size) { return Icons.emplace_back(textureFileID, position, size); }
     Sector& AddSector(std::vector<ImVec2>&& points) { return Sectors.emplace_back(std::move(points)); }
     void Initialize();
 
-    ContentObject* MapLayoutContinent = nullptr;
-    ContentObject* MapLayoutContinentFloor = nullptr;
+    ContentObject const* MapLayoutContinent = nullptr;
+    ContentObject const* MapLayoutContinentFloor = nullptr;
     std::vector<Backdrop> UnexploredBackdrops;
     std::vector<Backdrop> ExploredBackdrops;
     std::vector<Icon> Icons;
@@ -153,14 +153,14 @@ void MapLayout::AddBackdrop(float scale, uint32 unexploredFileID, uint32 explore
         ExploredBackdrops.emplace_back(G::Game.Archive.GetPackFile(exploredFileID), scale, water, interior);
 }
 
-MapLayout::Icon& MapLayout::AddIcon(uint32 textureFileID, ContentObject& mapDef, ImVec2 mapPosition, ImVec2 size)
+MapLayout::Icon& MapLayout::AddIcon(uint32 textureFileID, ContentObject const& mapDef, ImVec2 mapPosition, ImVec2 size)
 {
-    for (ContentObject& mapLayoutRegion : (*MapLayoutContinentFloor)["Region->Name"])
+    for (ContentObject const& mapLayoutRegion : (*MapLayoutContinentFloor)["Region->Name"])
     {
-        for (ContentObject& mapLayoutMap : mapLayoutRegion["Map->Name"])
+        for (ContentObject const& mapLayoutMap : mapLayoutRegion["Map->Name"])
         {
-            ContentObject& mapDetailsMap = mapLayoutMap["Details"];
-            ContentObject& map = mapDetailsMap["Name"];
+            ContentObject const& mapDetailsMap = mapLayoutMap["Details"];
+            ContentObject const& map = mapDetailsMap["Name"];
             if (&map == &mapDef)
             {
                 ImVec2 const mapRectMin = mapLayoutMap["MapRectMin"];
@@ -178,16 +178,16 @@ MapLayout::Icon& MapLayout::AddIcon(uint32 textureFileID, ContentObject& mapDef,
 
 void MapLayout::Initialize()
 {
-    ContentObject& mapDetailsContinentFloor = (*MapLayoutContinentFloor)["Details"];
+    ContentObject const& mapDetailsContinentFloor = (*MapLayoutContinentFloor)["Details"];
     AddBackdrop(32.0f, mapDetailsContinentFloor["FileBackdropParchment"],  mapDetailsContinentFloor["FileBackdropSatellite"],  true);
     AddBackdrop( 8.0f, mapDetailsContinentFloor["FileContinentParchment"], mapDetailsContinentFloor["FileContinentSatellite"], true);
     AddBackdrop( 4.0f, mapDetailsContinentFloor["FileRegionParchment"],    mapDetailsContinentFloor["FileRegionSatellite"],    true);
     AddBackdrop( 2.0f, mapDetailsContinentFloor["FileMapParchment"],       mapDetailsContinentFloor["FileMapSatellite"],       true);
     AddBackdrop( 1.0f, 0,                                                  mapDetailsContinentFloor["FileSectorSatellite"],    true);
 
-    for (ContentObject& mapLayoutRegion : (*MapLayoutContinentFloor)["Region->Name"])
+    for (ContentObject const& mapLayoutRegion : (*MapLayoutContinentFloor)["Region->Name"])
     {
-        for (ContentObject& mapLayoutMap : mapLayoutRegion["Map->Name"])
+        for (ContentObject const& mapLayoutMap : mapLayoutRegion["Map->Name"])
         {
             ImVec2 const mapRectMin = mapLayoutMap["MapRectMin"];
             ImVec2 const mapRectMax = mapLayoutMap["MapRectMax"];
@@ -200,13 +200,13 @@ void MapLayout::Initialize()
 
             auto fillSources = [&](ObjectBase& object) -> ObjectBase& { return object.AddSource(*MapLayoutContinentFloor).AddSource(mapLayoutRegion).AddSource(mapLayoutMap); };
 
-            for (ContentObject& mapLayoutOutpost : mapLayoutMap["Outpost->Name"])
+            for (ContentObject const& mapLayoutOutpost : mapLayoutMap["Outpost->Name"])
                 fillSources(AddIcon(961377, convertPosition(mapLayoutOutpost["WorldPosition"]), 32)).AddSource(mapLayoutOutpost);
 
-            for (ContentObject& mapLayoutOrrTemple : mapLayoutMap["OrrTemple->Name"])
+            for (ContentObject const& mapLayoutOrrTemple : mapLayoutMap["OrrTemple->Name"])
                 fillSources(AddIcon(347219, convertPosition(mapLayoutOrrTemple["WorldPosition"]), 32)).AddSource(mapLayoutOrrTemple);
 
-            for (ContentObject& mapLayoutInteriorColor : mapLayoutMap["InteriorColor->Name"])
+            for (ContentObject const& mapLayoutInteriorColor : mapLayoutMap["InteriorColor->Name"])
             {
                 auto const worldRectMin = convertPosition(mapLayoutInteriorColor["WorldRectMin"]);
                 auto const worldRectMax = convertPosition(mapLayoutInteriorColor["WorldRectMax"]);
@@ -214,12 +214,12 @@ void MapLayout::Initialize()
                 AddBackdrop(1.0f, 0, mapLayoutInteriorColor["FileColor"], false, true);
             }
 
-            for (ContentObject& mapLayoutPacingTask : mapLayoutMap["PacingTask->Name"])
+            for (ContentObject const& mapLayoutPacingTask : mapLayoutMap["PacingTask->Name"])
                 fillSources(AddIcon(102439, convertPosition(mapLayoutPacingTask["WorldPosition"]), 32)).AddSource(mapLayoutPacingTask);
 
-            for (ContentObject& mapLayoutPointOfInterest : mapLayoutMap["PointOfInterest->Name"])
+            for (ContentObject const& mapLayoutPointOfInterest : mapLayoutMap["PointOfInterest->Name"])
             {
-                ContentObject& pointOfInterestDef = mapLayoutPointOfInterest["Name"];
+                ContentObject const& pointOfInterestDef = mapLayoutPointOfInterest["Name"];
                 uint32 textureFileID = 0;
                 ImVec2 const size { 32, 32 };
                 switch ((uint32)pointOfInterestDef["Type"])
@@ -228,7 +228,7 @@ void MapLayout::Initialize()
                     case 1: textureFileID = 102348; break; // Res Shrine
                     case 2:
                     {
-                        for (ContentObject* markerDef : pointOfInterestDef["Marker->Name"])
+                        for (ContentObject const* markerDef : pointOfInterestDef["Marker->Name"])
                             if (markerDef)
                                 textureFileID = (*markerDef)["FileIcon"];
                         break;
@@ -244,19 +244,19 @@ void MapLayout::Initialize()
                 }
             }
 
-            for (ContentObject& mapLayoutSector : mapLayoutMap["Sector->Name"])
+            for (ContentObject const& mapLayoutSector : mapLayoutMap["Sector->Name"])
                 fillSources(AddSector({ std::from_range, mapLayoutSector["Vertices->Point"] | std::views::transform(convertPosition) })).AddSource(mapLayoutSector);
 
-            for (ContentObject& mapLayoutSkillChallenge : mapLayoutMap["SkillChallenge->Name"])
+            for (ContentObject const& mapLayoutSkillChallenge : mapLayoutMap["SkillChallenge->Name"])
                 fillSources(AddIcon(102601, convertPosition(mapLayoutSkillChallenge["WorldPosition"]), 32)).AddSource(mapLayoutSkillChallenge);
 
-            for (ContentObject& mapLayoutQuestTarget : mapLayoutMap["QuestTarget->Name"])
+            for (ContentObject const& mapLayoutQuestTarget : mapLayoutMap["QuestTarget->Name"])
                 fillSources(AddIcon(102369, convertPosition(mapLayoutQuestTarget["WorldPosition"]), 32)).AddSource(mapLayoutQuestTarget);
 
-            for (ContentObject& mapLayoutTrainingPoint : mapLayoutMap["TrainingPoint->Name"])
+            for (ContentObject const& mapLayoutTrainingPoint : mapLayoutMap["TrainingPoint->Name"])
             {
-                ContentObject& trainingPoint = mapLayoutTrainingPoint["Name"];
-                ContentObject& trainingCategory = trainingPoint["Category"];
+                ContentObject const& trainingPoint = mapLayoutTrainingPoint["Name"];
+                ContentObject const& trainingCategory = trainingPoint["Category"];
                 fillSources(AddIcon(trainingCategory["MapIcon"], convertPosition(mapLayoutTrainingPoint["WorldPosition"]), 32)).AddSource(mapLayoutTrainingPoint);
             }
         }
@@ -609,7 +609,7 @@ float4 main(PS_INPUT input) : SV_Target
                     if (source)
                     {
                         ContentButtonOptions::CondenseContext condense { .FullName = true, .TypeName = true };
-                        ContentButton((ContentObject*)source, id, { .SharedCondenseContext = &condense }); // TODO: Fix constness
+                        ContentButton(source, id, { .SharedCondenseContext = &condense });
                     }
                     else
                         I::Text("%s (%zu)", Utils::Encoding::ToUTF8(node.Name).c_str(), node.Visible);

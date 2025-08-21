@@ -148,7 +148,7 @@ void ContentViewer::Draw()
         std::span<byte const> ScopedData;
         uint32 ScopeOffset;
         Data::Content::TypeInfo::StructLayout* Layout;
-        Data::Content::ContentObject* Content;
+        Data::Content::ContentObject const* Content;
         Data::Content::TypeInfo::LayoutStack TreeLayoutStack;
         std::vector<Pointers*> PointersStack;
         std::vector<std::tuple<std::string, uint32>> OutTableColumns;

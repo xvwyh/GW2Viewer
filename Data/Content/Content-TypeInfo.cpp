@@ -368,7 +368,7 @@ void TypeInfo::Symbol::DrawOptions(TypeInfo& typeInfo, LayoutStack const& layout
                     settings();
     }
 }
-void TypeInfo::Symbol::Draw(byte const* data, DrawType draw, ContentObject& content)
+void TypeInfo::Symbol::Draw(byte const* data, DrawType draw, ContentObject const& content)
 {
     if (draw == DrawType::TableCountColumns)
         return;

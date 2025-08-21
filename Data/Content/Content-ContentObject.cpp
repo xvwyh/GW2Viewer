@@ -21,7 +21,7 @@ void ContentObject::AddReference(ContentObject& target, Reference::Types type)
         target.IncomingReferences.emplace_back(reference);
 }
 
-void ContentObject::Finalize()
+void ContentObject::Finalize() const
 {
     if (Data.size() != UNINITIALIZED_SIZE)
         return;
@@ -79,7 +79,7 @@ std::wstring ContentObject::GetDisplayName(bool skipCustom, bool skipColor) cons
             auto const encryptedText = GetStatusText(Encryption::Status::Encrypted);
             for (auto const& typeInfo = itr->second; auto const& field : typeInfo.NameFields)
             {
-                for (auto& result : QuerySymbolData(*(ContentObject*)this, field)) // TODO: Fix constness
+                for (auto& result : QuerySymbolData(*this, field))
                 {
                     std::string value;
                     auto const symbolType = result.Symbol->GetType();
@@ -141,7 +141,7 @@ uint32 ContentObject::GetIcon() const
     {
         for (auto const& typeInfo = itr->second; auto const& field : typeInfo.IconFields)
         {
-            for (auto& result : QuerySymbolData(*(ContentObject*)this, field)) // TODO: Fix constness
+            for (auto& result : QuerySymbolData(*this, field))
             {
                 uint32 value = 0;
                 auto const symbolType = result.Symbol->GetType();
@@ -159,15 +159,15 @@ uint32 ContentObject::GetIcon() const
     return { };
 }
 
-ContentObject* ContentObject::GetMap() const
+ContentObject const* ContentObject::GetMap() const
 {
     if (auto const itr = G::Config.TypeInfo.find(Type->Index); itr != G::Config.TypeInfo.end())
     {
         for (auto const& typeInfo = itr->second; auto const& field : typeInfo.MapFields)
         {
-            for (auto& result : QuerySymbolData(*(ContentObject*)this, field)) // TODO: Fix constness
+            for (auto& result : QuerySymbolData(*this, field))
             {
-                ContentObject* value = nullptr;
+                ContentObject const* value = nullptr;
                 auto const symbolType = result.Symbol->GetType();
                 if (auto const map = symbolType->GetMap(result.Data).value_or(nullptr))
                     value = map;
@@ -180,7 +180,7 @@ ContentObject* ContentObject::GetMap() const
         }
     }
 
-    return (ContentObject*)this; // TODO: Fix constness
+    return this;
 }
 
 bool ContentObject::MatchesFilter(ContentFilter& filter) const

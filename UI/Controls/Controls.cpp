@@ -6,7 +6,7 @@ import GW2Viewer.UI.Viewers.FileViewer;
 namespace GW2Viewer::UI::Controls
 {
 
-void OpenContent(Data::Content::ContentObject& content, Viewers::OpenViewerOptions const& options)
+void OpenContent(Data::Content::ContentObject const& content, Viewers::OpenViewerOptions const& options)
 {
     Viewers::ContentViewer::Open(content, options);
 }

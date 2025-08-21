@@ -178,13 +178,13 @@ std::optional<uint32> GUID::GetIcon(byte const* data) const
         return object->GetIcon();
     return { };
 }
-std::optional<ContentObject*> GUID::GetMap(byte const* data) const
+std::optional<ContentObject const*> GUID::GetMap(byte const* data) const
 {
     if (auto const* object = *GetContent(data))
         return object->GetMap();
     return { };
 }
-std::optional<ContentObject*> GUID::GetContent(byte const* data) const
+std::optional<ContentObject const*> GUID::GetContent(byte const* data) const
 {
     if (auto const object = G::Game.Content.GetByGUID(*(GW2Viewer::GUID const*)data))
     {
@@ -295,13 +295,13 @@ std::optional<uint32> ContentPointer::GetIcon(byte const* data) const
         return object->GetIcon();
     return { };
 }
-std::optional<ContentObject*> ContentPointer::GetMap(byte const* data) const
+std::optional<ContentObject const*> ContentPointer::GetMap(byte const* data) const
 {
     if (auto const* object = *GetContent(data))
         return object->GetMap();
     return { };
 }
-std::optional<ContentObject*> ContentPointer::GetContent(byte const* data) const
+std::optional<ContentObject const*> ContentPointer::GetContent(byte const* data) const
 {
     if (auto const object = G::Game.Content.GetByDataPointer(*GetPointer(data)))
     {
@@ -354,7 +354,7 @@ void ArrayT::Draw(byte const* data, TypeInfo::Symbol& symbol) const
         I::PopStyleColor();
 }
 
-std::optional<ContentObject*> ArrayContent::GetContent(byte const* data) const
+std::optional<ContentObject const*> ArrayContent::GetContent(byte const* data) const
 {
     if (auto const object = G::Game.Content.GetByDataPointer(*GetPointer(data)))
     {
@@ -466,7 +466,7 @@ std::optional<uint32> ParamValue::GetIcon(byte const* data) const
         return typeInfo->GetIcon(param.Raw);
     return { };
 }
-std::optional<ContentObject*> ParamValue::GetMap(byte const* data) const
+std::optional<ContentObject const*> ParamValue::GetMap(byte const* data) const
 {
     auto const& param = GetStruct(data);
     if (auto [typeInfo, count] = GetSymbolTypeForContentType(param.ContentType); typeInfo)
@@ -522,7 +522,7 @@ std::optional<uint32> ParamDeclare::GetIcon(byte const* data) const
     auto const& param = GetStruct(data);
     return GetByName("ParamValue")->GetIcon((byte const*)&param.Value);
 }
-std::optional<ContentObject*> ParamDeclare::GetMap(byte const* data) const
+std::optional<ContentObject const*> ParamDeclare::GetMap(byte const* data) const
 {
     auto const& param = GetStruct(data);
     return GetByName("ParamValue")->GetMap((byte const*)&param.Value);

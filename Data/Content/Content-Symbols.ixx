@@ -104,9 +104,9 @@ struct GUID : TypeInfo::SymbolType
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(byte const* data) const override { return { }; }
     [[nodiscard]] std::string GetDisplayText(byte const* data) const override;
     [[nodiscard]] std::optional<uint32> GetIcon(byte const* data) const override;
-    [[nodiscard]] std::optional<ContentObject*> GetMap(byte const* data) const override;
+    [[nodiscard]] std::optional<ContentObject const*> GetMap(byte const* data) const override;
     [[nodiscard]] bool IsContent() const override { return true; }
-    [[nodiscard]] std::optional<ContentObject*> GetContent(byte const* data) const override;
+    [[nodiscard]] std::optional<ContentObject const*> GetContent(byte const* data) const override;
     [[nodiscard]] bool IsInline() const override { return false; }
     [[nodiscard]] uint32 Size() const override { return sizeof(GW2Viewer::GUID); }
     void Draw(byte const* data, TypeInfo::Symbol& symbol) const override;
@@ -175,11 +175,11 @@ struct ContentPointer : RawPointerT
 
     [[nodiscard]] std::string GetDisplayText(byte const* data) const override;
     [[nodiscard]] std::optional<uint32> GetIcon(byte const* data) const override;
-    [[nodiscard]] std::optional<ContentObject*> GetMap(byte const* data) const override;
+    [[nodiscard]] std::optional<ContentObject const*> GetMap(byte const* data) const override;
     [[nodiscard]] bool IsContent() const override { return true; }
-    [[nodiscard]] std::optional<ContentObject*> GetContent(byte const* data) const override;
+    [[nodiscard]] std::optional<ContentObject const*> GetContent(byte const* data) const override;
     [[nodiscard]] bool IsInline() const override { return false; }
-    [[nodiscard]] uint32 Size() const override { return sizeof(ContentObject*); }
+    [[nodiscard]] uint32 Size() const override { return sizeof(ContentObject const*); }
     void Draw(byte const* data, TypeInfo::Symbol& symbol) const override;
 };
 struct ArrayT : TypeInfo::SymbolType
@@ -200,8 +200,8 @@ struct ArrayContent : ArrayT
     ArrayContent() : ArrayT("Array<Content>") { }
 
     [[nodiscard]] bool IsContent() const override { return true; }
-    [[nodiscard]] std::optional<ContentObject*> GetContent(byte const* data) const override;
-    [[nodiscard]] uint32 Size() const override { return sizeof(ContentPointer*) + sizeof(uint32); }
+    [[nodiscard]] std::optional<ContentObject const*> GetContent(Context const& context) const override;
+    [[nodiscard]] uint32 Size() const override { return sizeof(ContentObject const*) + sizeof(uint32); }
     void Draw(byte const* data, TypeInfo::Symbol& symbol) const override;
 };
 struct ParamValue : TypeInfo::SymbolType
@@ -230,7 +230,7 @@ struct ParamValue : TypeInfo::SymbolType
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(byte const* data) const override;
     [[nodiscard]] std::string GetDisplayText(byte const* data) const override;
     [[nodiscard]] std::optional<uint32> GetIcon(byte const* data) const override;
-    [[nodiscard]] std::optional<ContentObject*> GetMap(byte const* data) const override;
+    [[nodiscard]] std::optional<ContentObject const*> GetMap(byte const* data) const override;
     [[nodiscard]] uint32 Size() const override { return sizeof(Struct); }
     void Draw(byte const* data, TypeInfo::Symbol& symbol) const override;
 };
@@ -250,7 +250,7 @@ struct ParamDeclare : TypeInfo::SymbolType
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(byte const* data) const override;
     [[nodiscard]] std::string GetDisplayText(byte const* data) const override { return { }; }
     [[nodiscard]] std::optional<uint32> GetIcon(byte const* data) const override;
-    [[nodiscard]] std::optional<ContentObject*> GetMap(byte const* data) const override;
+    [[nodiscard]] std::optional<ContentObject const*> GetMap(byte const* data) const override;
     [[nodiscard]] uint32 Alignment() const override { return sizeof(void*); }
     [[nodiscard]] uint32 Size() const override { return sizeof(Struct); }
     void Draw(byte const* data, TypeInfo::Symbol& symbol) const override;

@@ -93,12 +93,12 @@ struct TypeInfo
         [[nodiscard]] virtual std::optional<Condition::ValueType> GetValueForCondition(byte const* data) const = 0;
         [[nodiscard]] virtual std::string GetDisplayText(byte const* data) const = 0;
         [[nodiscard]] virtual std::optional<uint32> GetIcon(byte const* data) const { return { }; };
-        [[nodiscard]] virtual std::optional<ContentObject*> GetMap(byte const* data) const { return { }; };
+        [[nodiscard]] virtual std::optional<ContentObject const*> GetMap(byte const* data) const { return { }; };
         [[nodiscard]] virtual bool IsArray() const { return false; }
         [[nodiscard]] virtual std::optional<uint32> GetArrayCount(byte const* data) const { return { }; }
         [[nodiscard]] virtual std::optional<byte const*> GetPointer(byte const* data) const { return nullptr; }
         [[nodiscard]] virtual bool IsContent() const { return false; }
-        [[nodiscard]] virtual std::optional<ContentObject*> GetContent(byte const* data) const { return nullptr; }
+        [[nodiscard]] virtual std::optional<ContentObject const*> GetContent(byte const* data) const { return nullptr; }
         [[nodiscard]] virtual bool IsInline() const { return true; }
         [[nodiscard]] virtual uint32 Alignment() const { return 1; }
         [[nodiscard]] virtual uint32 Size() const = 0;
@@ -119,7 +119,7 @@ struct TypeInfo
     };
     struct LayoutFrame
     {
-        ContentObject* Content;
+        ContentObject const* Content;
         StructLayout* Layout;
         std::optional<std::string> Path;
         uint32 DataStart = 0;
@@ -188,7 +188,7 @@ struct TypeInfo
         };
         [[nodiscard]] TraversalInfo GetTraversalInfo(byte const* data) const { auto const type = GetType(); return { type, ElementSize, type->GetPointer(data), type->GetArrayCount(data) }; }
         void DrawOptions(TypeInfo& typeInfo, LayoutStack const& layoutStack, std::string_view parentPath, bool create, std::string const& placeholderName);
-        void Draw(byte const* data, DrawType draw, ContentObject& content);
+        void Draw(byte const* data, DrawType draw, ContentObject const& content);
         [[nodiscard]] uint32 Size() const;
         [[nodiscard]] uint32 AlignedSize() const;
         [[nodiscard]] SymbolType const* GetType() const;

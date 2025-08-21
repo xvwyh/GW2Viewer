@@ -24,9 +24,7 @@ struct QuerySymbolDataResult
         operator ContentObject() const = delete;
         operator ContentObject const() = delete;
         operator ContentObject const() const = delete;
-        operator ContentObject* () { return *begin(); }
         operator ContentObject const* () { return *begin(); }
-        operator ContentObject& () { return *begin(); }
         operator ContentObject const& () { return (ContentObject const&)*begin(); }
     };
     TypeInfo::Symbol* Symbol = nullptr;
@@ -34,22 +32,18 @@ struct QuerySymbolDataResult
 
     [[nodiscard]] auto GetContent() const { return Symbol->GetType()->GetContent(Data); }
     template<typename T> [[nodiscard]] decltype(auto) As() const { return *(T const*)Data; }
-    template<> [[nodiscard]] decltype(auto) As<ContentObject*>() const { return GetContent().value_or(nullptr); }
     template<> [[nodiscard]] decltype(auto) As<ContentObject const*>() const { return As<ContentObject*>(); }
-    template<> [[nodiscard]] decltype(auto) As<ContentObject>() const { return *As<ContentObject*>(); }
     template<> [[nodiscard]] decltype(auto) As<ContentObject const>() const { return *As<ContentObject const*>(); }
     template<typename T> operator T() const { return As<T>(); }
     operator ContentObject() = delete;
     operator ContentObject() const = delete;
     operator ContentObject const() = delete;
     operator ContentObject const() const = delete;
-    operator ContentObject* () const { return As<ContentObject*>(); }
     operator ContentObject const* () const { return As<ContentObject const*>(); }
-    operator ContentObject& () const { return As<ContentObject>(); }
     operator ContentObject const& () const { return As<ContentObject const>(); }
 };
-QuerySymbolDataResult::Generator QuerySymbolData(ContentObject& content, std::span<std::string_view> path);
-QuerySymbolDataResult::Generator QuerySymbolData(ContentObject& content, std::string_view path);
-QuerySymbolDataResult::Generator QuerySymbolData(ContentObject& content, TypeInfo::SymbolType const& type, TypeInfo::Condition::ValueType value);
+QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, std::span<std::string_view> path);
+QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, std::string_view path);
+QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, TypeInfo::SymbolType const& type, TypeInfo::Condition::ValueType value);
 
 }

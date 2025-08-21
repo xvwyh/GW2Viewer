@@ -9,7 +9,7 @@ import std;
 
 namespace GW2Viewer::UI::Controls
 {
-void OpenContent(Data::Content::ContentObject& content, Viewers::OpenViewerOptions const& options);
+void OpenContent(Data::Content::ContentObject const& content, Viewers::OpenViewerOptions const& options);
 
 export
 {
@@ -28,7 +28,7 @@ struct ContentButtonOptions
     CondenseContext* SharedCondenseContext = nullptr;
 };
 
-void ContentButton(Data::Content::ContentObject* content, void const* id, ContentButtonOptions const& options = { })
+void ContentButton(Data::Content::ContentObject const* content, void const* id, ContentButtonOptions const& options = { })
 {
     scoped::WithID(id);
 

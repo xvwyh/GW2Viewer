@@ -20,15 +20,16 @@ template<SymbolDataSearcher Searcher>
 QuerySymbolDataResult::Generator QuerySymbolDataImpl(TypeInfo::LayoutStack& layoutStack, std::span<byte const> fullData, Searcher searcher)
 {
     auto const& frame = layoutStack.top();
+    auto const& content = *frame.Content;
     for (auto& [offset, symbol] : frame.Layout->Symbols)
     {
         if (!searcher.CanCheck(symbol))
             continue;
 
-        if (symbol.Condition && !symbol.Condition->Field.empty() && !symbol.TestCondition(*frame.Content, layoutStack))
+        if (symbol.Condition && !symbol.Condition->Field.empty() && !symbol.TestCondition(content, layoutStack))
             continue;
 
-        byte const* p = &frame.Content->Data[frame.DataStart + offset];
+        byte const* p = &content.Data[frame.DataStart + offset];
         if (searcher.CanReturn(symbol, p))
             co_yield { &symbol, p };
 
@@ -43,7 +44,12 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(TypeInfo::LayoutStack& layo
             {
                 auto const target = &element;
                 if (!traversal.Type->IsContent())
-                    layoutStack.emplace(frame.Content, &symbol.GetElementLayout(), std::nullopt /* not used here, omitted for performance reasons */, (uint32)std::distance(frame.Content->Data.data(), target));
+                {
+                    layoutStack.emplace(&content, &symbol.GetElementLayout(), std::nullopt /* not used here, omitted for performance reasons */, (uint32)std::distance(frame.Content->Data.data(), target));
+                    for (auto& result : QuerySymbolDataImpl(layoutStack, fullData, searcher.Deeper()))
+                        co_yield result;
+                    layoutStack.pop();
+                }
                 else if (auto const content = G::Game.Content.GetByDataPointer(&element))
                 {
                     content->Finalize();
@@ -51,19 +57,16 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(TypeInfo::LayoutStack& layo
                     elementTypeInfo.Initialize(*content->Type);
 
                     layoutStack.emplace(content, &elementTypeInfo.Layout, std::nullopt /* not used here, omitted for performance reasons */, 0);
+                    for (auto& result : QuerySymbolDataImpl(layoutStack, fullData, searcher.Deeper()))
+                        co_yield result;
+                    layoutStack.pop();
                 }
-                else
-                    continue;
-
-                for (auto& result : QuerySymbolDataImpl(layoutStack, fullData, searcher.Deeper()))
-                    co_yield result;
-                layoutStack.pop();
             }
         }
     }
 }
 template<SymbolDataSearcher Searcher>
-QuerySymbolDataResult::Generator QuerySymbolDataImpl(ContentObject& content, Searcher searcher)
+QuerySymbolDataResult::Generator QuerySymbolDataImpl(ContentObject const& content, Searcher searcher)
 {
     auto& typeInfo = G::Config.TypeInfo.try_emplace(content.Type->Index).first->second;
     typeInfo.Initialize(*content.Type);
@@ -81,7 +84,7 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(ContentObject& content, Sea
     for (auto& result : QuerySymbolDataImpl(layoutStack, content.Root ? content.Root->Data : content.Data, searcher))
         co_yield result;
 }
-QuerySymbolDataResult::Generator QuerySymbolData(ContentObject& content, std::span<std::string_view> path)
+QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, std::span<std::string_view> path)
 {
     struct PathSearcher
     {
@@ -94,7 +97,7 @@ QuerySymbolDataResult::Generator QuerySymbolData(ContentObject& content, std::sp
     for (auto& result : QuerySymbolDataImpl(content, PathSearcher { path }))
         co_yield result;
 }
-QuerySymbolDataResult::Generator QuerySymbolData(ContentObject& content, std::string_view path)
+QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, std::string_view path)
 {
     std::vector<std::string_view> parts;
     for (auto const& part : std::views::split(path, std::string_view("->")))
@@ -103,7 +106,7 @@ QuerySymbolDataResult::Generator QuerySymbolData(ContentObject& content, std::st
     for (auto& result : QuerySymbolData(content, parts))
         co_yield result;
 }
-QuerySymbolDataResult::Generator QuerySymbolData(ContentObject& content, TypeInfo::SymbolType const& type, TypeInfo::Condition::ValueType value)
+QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, TypeInfo::SymbolType const& type, TypeInfo::Condition::ValueType value)
 {
     struct TypeSearcher
     {

@@ -33,7 +33,7 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
     Data::Content::ContentFilter ContentFilter;
     Utils::Async::Scheduler AsyncFilter { true };
     std::optional<bool> SearchResultsReady;
-    std::optional<std::vector<Data::Content::ContentObject*>> Flatten;
+    std::optional<std::vector<Data::Content::ContentObject const*>> Flatten;
 
     Data::Content::ContentTypeInfo const* FilterType { };
     std::string FilterString;
@@ -199,9 +199,9 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             CHECK_ASYNC;
             context->SetTotal(filter.FilteredObjects.size() + filter.FilteredNamespaces.size());
             uint32 processed = 0;
-            for (auto* container : { &G::Game.Content.GetRootedObjects(), &G::Game.Content.GetUnrootedObjects() })
+            for (auto container : { G::Game.Content.GetRootedObjects(), G::Game.Content.GetUnrootedObjects() })
             {
-                std::for_each(std::execution::par_unseq, container->begin(), container->end(), [&filter, context, &processed](Data::Content::ContentObject* object)
+                std::for_each(std::execution::par_unseq, container.begin(), container.end(), [&filter, context, &processed](Data::Content::ContentObject const* object)
                 {
                     CHECK_SHARED_ASYNC;
                     object->MatchesFilter(filter); // caches result inside filter
@@ -210,7 +210,7 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                 });
             }
             CHECK_ASYNC;
-            auto recurseNamespaces = [&filter, context, &processed](Data::Content::ContentNamespace& ns, auto& recurseNamespaces) mutable -> void
+            auto recurseNamespaces = [&filter, context, &processed](Data::Content::ContentNamespace const& ns, auto& recurseNamespaces) mutable -> void
             {
                 CHECK_ASYNC;
                 for (auto&& child : ns.Namespaces)
@@ -301,7 +301,7 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             std::vector<Data::Content::ContentTypeInfo const*> values(1, nullptr);
             if (G::Game.Content.AreTypesLoaded())
             {
-                values.append_range(Utils::Sort::ComplexSorted(G::Game.Content.GetTypes() | std::views::transform([](auto const& ptr) { return ptr.get(); }), false, [](Data::Content::ContentTypeInfo const* type)
+                values.append_range(Utils::Sort::ComplexSorted(G::Game.Content.GetTypes(), false, [](Data::Content::ContentTypeInfo const* type)
                 {
                     auto const itr = G::Config.TypeInfo.find(type->Index);
                     return std::make_tuple(!(itr != G::Config.TypeInfo.end() ? itr->second.Favorite : false), type->Index);
@@ -570,7 +570,7 @@ private:
         }
     };
 
-    void ProcessNamespace(Data::Content::ContentNamespace& ns, ProcessContext& context, int parentIndex)
+    void ProcessNamespace(Data::Content::ContentNamespace const& ns, ProcessContext& context, int parentIndex)
     {
         if (!ns.MatchesFilter(ContentFilter))
             return;
@@ -697,7 +697,7 @@ private:
     {
         for (auto* child : entries)
         {
-            Data::Content::ContentObject& entry = *child;
+            Data::Content::ContentObject const& entry = *child;
             if (!entry.MatchesFilter(ContentFilter))
                 continue;
 

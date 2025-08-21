@@ -19,7 +19,7 @@ struct ContentSearch : Window
     std::mutex Lock;
     Data::Content::TypeInfo::SymbolType const* Symbol;
     Data::Content::TypeInfo::Condition::ValueType Value;
-    std::vector<Data::Content::ContentObject*> Results;
+    std::vector<Data::Content::ContentObject const*> Results;
 
     void SearchForSymbolValue(std::string_view symbolTypeName, Data::Content::TypeInfo::Condition::ValueType value)
     {
@@ -34,7 +34,7 @@ struct ContentSearch : Window
             }
             auto _ = Utils::Exception::SEHandler::Create();
             context->SetTotal(G::Game.Content.GetObjects().size());
-            std::for_each(std::execution::par_unseq, G::Game.Content.GetObjects().begin(), G::Game.Content.GetObjects().end(), [this, context, processed = 0](Data::Content::ContentObject* content) mutable
+            std::for_each(std::execution::par_unseq, G::Game.Content.GetObjects().begin(), G::Game.Content.GetObjects().end(), [this, context, processed = 0](Data::Content::ContentObject const* content) mutable
             {
                 CHECK_SHARED_ASYNC;
                 try
