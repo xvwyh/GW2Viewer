@@ -99,7 +99,7 @@ void TypeInfo::Symbol::DrawOptions(TypeInfo& typeInfo, LayoutStack const& layout
 
     // Type
     {
-        UI::Controls::FilteredComboBox("Type", Type, Symbols::GetTypes() | std::views::transform(&SymbolType::Name));
+        UI::Controls::FilteredComboBox("Type", Type, Symbols::GetTypes() | std::views::filter(&SymbolType::IsVisible) | std::views::transform(&SymbolType::Name));
     }
 
     // ElementTypeName

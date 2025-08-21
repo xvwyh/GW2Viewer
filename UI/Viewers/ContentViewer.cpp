@@ -2,6 +2,7 @@
 import GW2Viewer.Common.GUID;
 import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Game;
+import GW2Viewer.Tasks.ContentObjectDisplayFormat;
 import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Manager;
@@ -69,13 +70,17 @@ void ContentViewer::Draw()
                     if (I::Button(ICON_FA_COPY " DataLink"))
                         I::SetClipboardText(G::UI.MakeDataLink(typeInfo.DataLinkType, *dataID).c_str());
                 }
+                auto const start = I::GetCursorPosY();
                 if (scoped::Group())
                 {
                     if (I::InputTextUTF8("Content Name", G::Config.ContentObjectNames, *Content.GetGUID(), Content.GetName() && Content.GetName()->Name && *Content.GetName()->Name ? *Content.GetName()->Name : Content.GetDisplayName()))
                         G::Viewers::Notify(&ContentListViewer::ClearCache);
                     I::InputTextUTF8("Namespace Name", G::Config.ContentNamespaceNames, Content.Namespace->GetFullName(), Content.Namespace->Name);
                     I::InputTextWithHint("Type Name", Utils::Encoding::ToUTF8(Content.Type->GetDisplayName()).c_str(), &typeInfo.Name);
+                    I::AlignTextToFramePadding();
+                    I::TextUnformatted("<c=#8>Display Format:</c>");
                 }
+                auto const height = I::GetCursorPosY() - start;
                 I::SameLine();
                 I::AlignTextToFramePadding();
                 I::TextUnformatted(ICON_FA_PEN_TO_SQUARE);
@@ -83,7 +88,55 @@ void ContentViewer::Draw()
                     I::TextUnformatted("Type Notes");
                 I::SameLine();
                 if (scoped::Group())
-                    I::InputTextMultiline("##TypeNotes", &typeInfo.Notes, { -1, -1 }, ImGuiInputTextFlags_AllowTabInput);
+                    I::InputTextMultiline("##TypeNotes", &typeInfo.Notes, { -FLT_MIN, height }, ImGuiInputTextFlags_AllowTabInput);
+
+                // Some of the focus-related stuff in the following code is probably overkill,
+                // but I'm too tired of trying to get this to work to figure out what's needed and what isn't,
+                // so I'm leaving it as is.
+                static bool retainFocus = false;
+                bool focused = retainFocus || I::GetCurrentContext()->NavId == I::GetID("##Display Format");
+                if (scoped::DisableMarkup())
+                if (scoped::Font(G::UI.Fonts.Monospace))
+                    I::InputTextEx("##Display Format", G::Tasks::ContentObjectDisplayFormat.GetDefault(), &typeInfo.DisplayFormat, { -FLT_MIN, std::max(I::GetFrameHeight(), I::GetStyle().FramePadding.y * 2 + std::min(focused ? FLT_MAX : I::GetTextLineHeight() * 1.5f, I::CalcTextSize(typeInfo.DisplayFormat.c_str()).y + (typeInfo.DisplayFormat.back() == '\n' ? I::GetTextLineHeight() : 0))) }, ImGuiInputTextFlags_Multiline);
+                focused &= I::GetIO().WantCaptureKeyboard || I::IsItemActiveAsInputText();
+                auto const rect = I::GetCurrentContext()->LastItemData.Rect;
+                retainFocus = false;
+                if (focused)
+                {
+                    if (scoped::TabBar("Tabs"))
+                    {
+                        retainFocus |= I::IsItemActive() || I::IsItemFocused() || I::IsItemHovered();
+                        std::pair<char const*, char const*> tabs[]
+                        {
+                            { "Hide Help", nullptr },
+                            { "Syntax", G::Tasks::ContentObjectDisplayFormat.GetSyntaxHelp() },
+                            { "Markup", G::Tasks::ContentObjectDisplayFormat.GetMarkupHelp() },
+                        };
+                        for (auto const [tab, text] : tabs)
+                        {
+                            if (scoped::TabItem(tab))
+                            {
+                                retainFocus |= I::IsItemActive() || I::IsItemFocused() || I::IsItemHovered();
+                                if (!text)
+                                    continue;
+
+                                I::SetNextWindowSizeConstraints({ 0, 0 }, { FLT_MAX, 200 });
+                                if (scoped::Child("Scroll", { -FLT_MIN, 0 }, ImGuiChildFlags_AutoResizeY | ImGuiChildFlags_FrameStyle | ImGuiChildFlags_NavFlattened))
+                                if (scoped::Font(13))
+                                if (scoped::WithColorVar(ImGuiCol_Text, 0xFFAAAAAA))
+                                {
+                                    if (auto const length = strlen(text) + 1; I::GetCurrentContext()->TempBuffer.size() < length)
+                                        I::GetCurrentContext()->TempBuffer.resize(length);
+                                    I::TextWrapped("%s", text);
+                                    retainFocus |= I::IsItemActive() || I::IsItemFocused() || I::IsItemHovered();
+                                    retainFocus |= I::IsWindowFocused() || I::IsWindowHovered();
+                                }
+                            }
+                            else
+                                retainFocus |= I::IsItemActive() || I::IsItemFocused() || I::IsItemHovered();
+                        }
+                    }
+                }
             }
 
             auto const referenceSorter = [](Data::Content::ContentObject::Reference const& ref) { return std::make_tuple(ref.Type, ref.Object->GetFullDisplayName(), ref.Object->GetFullName(), ref.Object->Type->Index, ref.Object->Index); };

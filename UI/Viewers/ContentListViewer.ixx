@@ -777,9 +777,9 @@ private:
                         I::SameLine();
                     }
                 }
-                if (auto const icon = entry.GetIcon())
+                if (auto const icon = entry.GetIcon(); icon && !entry.Type->GetTypeInfo().DisplayFormat.contains("@icon"))
                     if (Controls::Texture(icon, { .Size = { 0, I::GetFrameHeight() } }))
-                        I::SameLine();
+                        I::SameLine(0, 0);
                 I::Text("%s", Utils::Encoding::ToUTF8(Flatten ? entry.GetFullDisplayName(G::Config.ShowOriginalNames) : entry.GetDisplayName(G::Config.ShowOriginalNames)).c_str());
 
                 I::TableNextColumn(); I::TextUnformatted(Utils::Encoding::ToUTF8(entry.Type->GetDisplayName()).c_str());

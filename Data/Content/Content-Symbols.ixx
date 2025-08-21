@@ -264,6 +264,73 @@ struct ParamDeclare : TypeInfo::SymbolType
     void Draw(Context const& context) const override;
 };
 
+struct MetaSymbolType : virtual TypeInfo::SymbolType
+{
+    MetaSymbolType() : SymbolType(nullptr) { }
+
+    [[nodiscard]] bool IsVisible() const override { return false; }
+    [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(Context const& context) const override { return { }; }
+    [[nodiscard]] std::string GetDisplayText(Context const& context) const override { return { }; }
+    [[nodiscard]] uint32 Size() const override { return 0; }
+    void Draw(Context const& context) const override { }
+};
+struct MetaContentName : MetaSymbolType
+{
+    MetaContentName() : SymbolType("@name") { }
+
+    [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
+};
+struct MetaContentPath : MetaSymbolType
+{
+    MetaContentPath() : SymbolType("@path") { }
+
+    [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
+};
+struct MetaContentType : MetaSymbolType
+{
+    MetaContentType() : SymbolType("@type") { }
+
+    [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
+};
+struct MetaContentIcon : MetaSymbolType
+{
+    MetaContentIcon() : SymbolType("@icon") { }
+
+    [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
+    [[nodiscard]] std::optional<uint32> GetIcon(Context const& context) const override;
+};
+struct MetaContentMap : MetaSymbolType
+{
+    MetaContentMap() : SymbolType("@map") { }
+
+    [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
+    [[nodiscard]] std::optional<ContentObject const*> GetMap(Context const& context) const override;
+};
+struct MetaContentDisplay : MetaSymbolType
+{
+    MetaContentDisplay() : SymbolType("@display") { }
+
+    [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
+};
+struct MetaContentIconName : MetaContentIcon, MetaContentName
+{
+    MetaContentIconName() : SymbolType("@iconname") { }
+
+    [[nodiscard]] std::string GetDisplayText(Context const& context) const override { return std::format("{}{}", MetaContentIcon::GetDisplayText(context), MetaContentName::GetDisplayText(context)); }
+};
+struct MetaContentIconDisplay : MetaContentIcon, MetaContentDisplay
+{
+    MetaContentIconDisplay() : SymbolType("@icondisplay") { }
+
+    [[nodiscard]] std::string GetDisplayText(Context const& context) const override { return std::format("{}{}", MetaContentIcon::GetDisplayText(context), MetaContentDisplay::GetDisplayText(context)); }
+};
+struct MetaContentSelf : MetaContentName, MetaContentIcon, MetaContentMap
+{
+    MetaContentSelf() : SymbolType("@self") { }
+
+    [[nodiscard]] std::string GetDisplayText(Context const& context) const override { return MetaContentName::GetDisplayText(context); }
+};
+
 std::vector<TypeInfo::SymbolType const*>& GetTypes();
 
 }

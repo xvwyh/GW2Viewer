@@ -5,10 +5,9 @@
 module GW2Viewer.Data.Content;
 import GW2Viewer.Data.Content.Mangling;
 import GW2Viewer.Data.Encryption;
+import GW2Viewer.Tasks.ContentObjectDisplayFormat;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Encoding;
-import GW2Viewer.Utils.Format;
-import std;
 
 namespace GW2Viewer::Data::Content
 {
@@ -59,7 +58,7 @@ std::wstring ContentObject::GetDebugDisplayName() const
     return std::format(L"[{}] {}", Type->GetDisplayName(), GetDisplayName());
 }
 
-std::wstring ContentObject::GetDisplayName(bool skipCustom, bool skipColor) const
+std::wstring ContentObject::GetDisplayName(bool skipCustom, bool skipColor, bool skipFormat) const
 {
     if (!skipCustom)
     {
@@ -73,8 +72,16 @@ std::wstring ContentObject::GetDisplayName(bool skipCustom, bool skipColor) cons
         }
 
         // Use name from a designated symbol if enabled and available
-        if (auto const& typeInfo = Type->GetTypeInfo(); !typeInfo.NameFields.empty())
+        if (auto const& typeInfo = Type->GetTypeInfo(); !typeInfo.DisplayFormat.empty() || !typeInfo.NameFields.empty())
         {
+            if (!skipFormat && !typeInfo.DisplayFormat.empty())
+                if (auto const text = G::Tasks::ContentObjectDisplayFormat.Process(*this, typeInfo.DisplayFormat); !text.empty())
+                    return Utils::Encoding::FromUTF8(text);
+
+            auto [recursion, guard] = G::Tasks::ContentObjectDisplayFormat.GetRecursionGuard(*this);
+            if (recursion)
+                return recursion;
+
             bool wasEncrypted = false;
             static auto const encryptedText = GetStatusText(Encryption::Status::Encrypted);
             for (auto const& field : typeInfo.NameFields)
@@ -111,13 +118,13 @@ std::wstring ContentObject::GetDisplayName(bool skipCustom, bool skipColor) cons
     return std::vformat(skipColor ? L"<@0x{:016X}>" : L"<c=#AAA><@0x{:016X}></c>", std::make_wformat_args((uintptr_t)Data.data()));
 }
 
-std::wstring ContentObject::GetFullDisplayName(bool skipCustom, bool skipColor) const
+std::wstring ContentObject::GetFullDisplayName(bool skipCustom, bool skipColor, bool skipFormat) const
 {
     if (auto* name = GetName(); name && name->FullName && *name->FullName && (!name->Name || !*name->Name || std::wstring_view(*name->Name) != *name->FullName))
         return *name->FullName;
     return Namespace
-        ? std::vformat(skipColor ? L"{}.{}" : L"<c=#8>{}.</c>{}", std::make_wformat_args(Namespace->GetFullDisplayName(skipCustom, skipColor), GetDisplayName(skipCustom, skipColor)))
-        : GetDisplayName(skipCustom, skipColor);
+        ? std::vformat(skipColor ? L"{}.{}" : L"<c=#8>{}.</c>{}", std::make_wformat_args(Namespace->GetFullDisplayName(skipCustom, skipColor), GetDisplayName(skipCustom, skipColor, skipFormat)))
+        : GetDisplayName(skipCustom, skipColor, skipFormat);
 }
 
 std::wstring ContentObject::GetFullName() const

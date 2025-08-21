@@ -90,6 +90,7 @@ struct TypeInfo
         SymbolType(char const* name) : Name(name) { }
         virtual ~SymbolType() = default;
 
+        [[nodiscard]] virtual bool IsVisible() const { return true; }
         [[nodiscard]] virtual std::strong_ordering CompareDataForSearch(byte const* dataA, byte const* dataB) const;
         [[nodiscard]] virtual std::optional<Condition::ValueType> GetValueForCondition(Context const& context) const = 0;
         [[nodiscard]] virtual std::string GetDisplayText(Context const& context) const = 0;
@@ -219,6 +220,7 @@ struct TypeInfo
     std::string Name;
     GW2Viewer::Content::EContentTypes ContentType { };
     StructLayout Layout;
+    std::string DisplayFormat;
     std::vector<std::string> NameFields;
     std::vector<std::string> IconFields;
     std::vector<std::string> MapFields;
@@ -231,6 +233,7 @@ struct TypeInfo
         , Name
         , ContentType
         , Layout
+        , DisplayFormat
         , NameFields
         , IconFields
         , MapFields

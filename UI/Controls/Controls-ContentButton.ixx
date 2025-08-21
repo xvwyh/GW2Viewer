@@ -61,7 +61,7 @@ void ContentButton(Data::Content::ContentObject const* content, void const* id, 
     ImRect bb(pos, pos + size);
     I::RenderTextClipped(bb.Min + padding, bb.Max - padding, textPreIcon.c_str(), textPreIcon.c_str() + textPreIcon.size(), &sizePreIcon, { }, &bb);
     bb.Min.x += sizePreIcon.x;
-    if (icon)
+    if (icon && !content->Type->GetTypeInfo().DisplayFormat.contains("@icon"))
         if (scoped::WithCursorScreenPos(bb.Min + ImVec2(padding.x, 0)))
             if (Texture(icon, { .Size = iconSize, .AdvanceCursor = false }))
                 bb.Min.x += iconSize.x;

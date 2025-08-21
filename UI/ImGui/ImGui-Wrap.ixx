@@ -63,7 +63,8 @@ struct WithColorVar : ScopeWrapper<WithColorVar>
 };
 struct Font : ScopeWrapper<Font>
 {
-    Font(ImFont* font, float size) noexcept : ScopeWrapper(true) { ImGui::PushFont(font, size); }
+    Font(ImFont* font, float size = 0.0f) noexcept : ScopeWrapper(true) { ImGui::PushFont(font, size); }
+    Font(float size) noexcept : ScopeWrapper(true) { ImGui::PushFont(nullptr, size); }
     static void dtor() noexcept { ImGui::PopFont(); }
 };
 struct PopupContextItem : ScopeWrapper<PopupContextItem>

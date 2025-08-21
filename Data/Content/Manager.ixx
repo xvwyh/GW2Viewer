@@ -137,6 +137,14 @@ public:
 
         return nullptr;
     }
+    [[nodiscard]] ContentTypeInfo const* GetType(std::string_view name) const
+    {
+        if (auto const itr = std::ranges::find(G::Config.TypeInfo, name, [](auto const& pair) -> auto& { return pair.second.Name; }); itr != G::Config.TypeInfo.end())
+            if (itr->first < m_typeInfos.size())
+                return m_typeInfos.at(itr->first).get();
+
+        return nullptr;
+    }
 
     [[nodiscard]] bool AreNamespacesLoaded() const { return m_loadedNamespaces; }
     [[nodiscard]] std::span<ContentNamespace const* const> GetNamespaces() const { return m_namespaces; }

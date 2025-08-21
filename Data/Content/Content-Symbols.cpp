@@ -569,6 +569,42 @@ void ParamDeclare::Draw(Context const& context) const
     }
 }
 
+std::string MetaContentName::GetDisplayText(Context const& context) const
+{
+    return Utils::Encoding::ToUTF8(context.Data<ContentObject>().GetDisplayName(false, false, true));
+}
+std::string MetaContentPath::GetDisplayText(Context const& context) const
+{
+    auto const& content = context.Data<ContentObject>();
+    return Utils::Encoding::ToUTF8(content.Root ? content.Root->GetFullDisplayName(false, false, true) : content.Namespace->GetFullDisplayName());
+}
+std::string MetaContentType::GetDisplayText(Context const& context) const
+{
+    return Utils::Encoding::ToUTF8(context.Data<ContentObject>().Type->GetDisplayName());
+}
+std::string MetaContentIcon::GetDisplayText(Context const& context) const
+{
+    auto const icon = GetIcon(context);
+    return icon ? std::format("<img={}/>", icon) : "";
+}
+std::optional<uint32> MetaContentIcon::GetIcon(Context const& context) const
+{
+    return context.Data<ContentObject>().GetIcon();
+}
+std::string MetaContentMap::GetDisplayText(Context const& context) const
+{
+    auto const map = context.Data<ContentObject>().GetMap();
+    return map ? Utils::Encoding::ToUTF8(map->GetDisplayName(false, false, true)) : "";
+}
+std::optional<ContentObject const*> MetaContentMap::GetMap(Context const& context) const
+{
+    return context.Data<ContentObject>().GetMap();
+}
+std::string MetaContentDisplay::GetDisplayText(Context const& context) const
+{
+    return Utils::Encoding::ToUTF8(context.Data<ContentObject>().GetDisplayName());
+}
+
 std::vector<TypeInfo::SymbolType const*>& GetTypes()
 {
     static std::vector<TypeInfo::SymbolType const*> instance
@@ -607,6 +643,16 @@ std::vector<TypeInfo::SymbolType const*>& GetTypes()
         new ArrayT(),
         new ParamValue(),
         new ParamDeclare(),
+
+        new MetaContentName(),
+        new MetaContentPath(),
+        new MetaContentType(),
+        new MetaContentIcon(),
+        new MetaContentMap(),
+        new MetaContentDisplay(),
+        new MetaContentIconName(),
+        new MetaContentIconDisplay(),
+        new MetaContentSelf(), // Must go last
     };
     return instance;
 }
