@@ -4,6 +4,7 @@ import :Symbols;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Game;
 import std;
+import <boost/container/small_vector.hpp>;
 
 namespace GW2Viewer::Data::Content
 {
@@ -187,7 +188,7 @@ QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, s
 }
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, std::string_view path)
 {
-    std::vector<std::string_view> parts;
+    boost::container::small_vector<std::string_view, 5> parts;
     for (auto const& part : std::views::split(path, std::string_view("->")))
         parts.emplace_back(part);
 

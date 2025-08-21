@@ -10,6 +10,7 @@ import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Scan;
 import std;
 import <cassert>;
+import <boost/container/small_vector.hpp>;
 #include "Macros.h"
 
 export namespace GW2Viewer::Data::Content
@@ -129,7 +130,7 @@ struct TypeInfo
         uint32 ObjectStackDepth = 0;
         bool IsFolded = false;
     };
-    using LayoutStack = std::stack<LayoutFrame>;
+    using LayoutStack = std::stack<LayoutFrame, boost::container::small_vector<LayoutFrame, 10>>;
     struct Symbol
     {
         std::optional<Condition> Condition;
