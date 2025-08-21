@@ -8,6 +8,7 @@
 module GW2Viewer.Data.Texture.Manager;
 import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Game;
+import <gsl/util>;
 
 void StripPNGMetadata(std::filesystem::path const& path)
 {

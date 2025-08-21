@@ -4,7 +4,6 @@ import GW2Viewer.Data.Texture;
 import GW2Viewer.System.Graphics;
 import std;
 import <concurrentqueue/blockingconcurrentqueue.h>;
-import <gsl/util>;
 
 export namespace GW2Viewer::Data::Texture
 {

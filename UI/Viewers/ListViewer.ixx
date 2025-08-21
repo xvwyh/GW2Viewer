@@ -2,7 +2,6 @@ export module GW2Viewer.UI.Viewers.ListViewer;
 import GW2Viewer.Common;
 import GW2Viewer.UI.Viewers.Viewer;
 import GW2Viewer.UI.Viewers.ViewerRegistry;
-import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Scan;
 import std;
 
