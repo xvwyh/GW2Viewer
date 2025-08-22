@@ -8,6 +8,7 @@
 module GW2Viewer.UI.ImGui;
 import GW2Viewer.Data.Game;
 import GW2Viewer.Data.Texture;
+import GW2Viewer.UI.Manager;
 import std;
 import <boost/container/small_vector.hpp>;
 
@@ -55,6 +56,7 @@ struct MarkupState
     ColorChangeType ColorChangeType = ColorChangeType::Unchanged;
     std::optional<Image> Image;
     byte BoldDepth = 0;
+    byte MonospaceDepth = 0;
     byte NoSelectDepth = 0;
     bool IsInNoSelect() const { return NoSelectDepth; }
 };
@@ -92,6 +94,20 @@ bool ParseMarkup(const char*& s, size_t avail, float size, MarkupState& state)
         assert(state.IsInNoSelect());
         --state.NoSelectDepth;
         s += 8;
+        return true;
+    }
+    if (avail >= 6 && !strncmp(s, "<code>", 6))
+    {
+        assert(state.MonospaceDepth < std::numeric_limits<decltype(state.MonospaceDepth)>::max());
+        ++state.MonospaceDepth;
+        s += 6;
+        return true;
+    }
+    if (avail >= 7 && !strncmp(s, "</code>", 7))
+    {
+        assert(state.MonospaceDepth);
+        --state.MonospaceDepth;
+        s += 7;
         return true;
     }
     if (avail >= 8 && !strncmp(s, "<img=", 5))
@@ -257,7 +273,7 @@ const char* ImFont::CalcWordWrapPosition(float size, const char* text, const cha
     // e.g.: "The tropical fish" with ~5 characters worth of width --> "The tr" "opical" "fish"
 
     ImFontBaked* baked = GetFontBaked(size);
-    const float scale = size / baked->Size;
+    float scale = size / baked->Size;
 
     float line_width = 0.0f;
     float word_width = 0.0f;
@@ -268,6 +284,7 @@ const char* ImFont::CalcWordWrapPosition(float size, const char* text, const cha
     const char* prev_word_end = NULL;
     bool inside_word = true;
 
+    auto& state = stateCalcWordWrapPositionA;
     const char* s = text;
     IM_ASSERT(text_end != NULL);
     while (s < text_end)
@@ -300,19 +317,32 @@ const char* ImFont::CalcWordWrapPosition(float size, const char* text, const cha
         if (char_width < 0.0f)
             char_width = BuildLoadGlyphGetAdvanceOrFallback(baked, c);
 
-        if (ParseMarkup(s, text_end - s, size, stateCalcWordWrapPositionA))
+        auto const oldMonospaceDepth = state.MonospaceDepth;
+        if (ParseMarkup(s, text_end - s, size, state))
         {
-            if (stateCalcWordWrapPositionA.Image)
+            if (oldMonospaceDepth != state.MonospaceDepth)
             {
-                char_width = stateCalcWordWrapPositionA.Image->Rect.GetWidth();
+                wrap_width *= scale;
+                baked = state.MonospaceDepth ? GW2Viewer::G::UI.Fonts.Monospace->GetFontBaked(size) : GetFontBaked(size);
+                scale = size / baked->Size;
+                wrap_width /= scale;
+                if (!oldMonospaceDepth)
+                    line_width += 2;
+                else if (!state.MonospaceDepth)
+                    blank_width += 2;
+            }
+            if (state.Image)
+            {
+                char_width = state.Image->Rect.GetWidth();
                 inside_word = false;
+                next_s = s;
                 goto visible;
             }
             continue;
         }
         visible:
 
-        if (ImCharIsBlankW(c))
+        if (ImCharIsBlankW(c) && !state.MonospaceDepth)
         {
             if (inside_word)
             {
@@ -338,7 +368,7 @@ const char* ImFont::CalcWordWrapPosition(float size, const char* text, const cha
             }
 
             // Allow wrapping after punctuation.
-            inside_word = (c != '.' && c != ',' && c != ';' && c != '!' && c != '?' && c != '\"' && c != 0x3001 && c != 0x3002);
+            inside_word = (c != '.' && c != ',' && c != ';' && c != '!' && c != '?' && c != '\"' && c != 0x3001 && c != 0x3002) || state.MonospaceDepth;
         }
 
         // We ignore blank width at the end of the line (they can be skipped)
@@ -367,7 +397,7 @@ ImVec2 ImFont::CalcTextSizeA(float size, float max_width, float wrap_width, cons
 
     const float line_height = size;
     ImFontBaked* baked = GetFontBaked(size);
-    const float scale = size / baked->Size;
+    float scale = size / baked->Size;
 
     ImVec2 text_size = ImVec2(0, 0);
     float line_width = 0.0f;
@@ -410,8 +440,18 @@ ImVec2 ImFont::CalcTextSizeA(float size, float max_width, float wrap_width, cons
             next_s = s + ImTextCharFromUtf8(&c, s, text_end);
 
         float char_width;
+        auto const oldMonospaceDepth = state.MonospaceDepth;
         if (ParseMarkup(s, text_end - s, size, state))
         {
+            if (oldMonospaceDepth != state.MonospaceDepth)
+            {
+                baked = state.MonospaceDepth ? GW2Viewer::G::UI.Fonts.Monospace->GetFontBaked(size) : GetFontBaked(size);
+                scale = size / baked->Size;
+                if (!oldMonospaceDepth)
+                    line_width += 2;
+                else if (!state.MonospaceDepth)
+                    line_width += 2;
+            }
             if (state.Image)
             {
                 char_width = state.Image->Rect.GetWidth();
@@ -478,7 +518,7 @@ begin:
     const float line_height = size;
     ImFontBaked* baked = GetFontBaked(size);
 
-    const float scale = size / baked->Size;
+    float scale = size / baked->Size;
     const float origin_x = x;
     const bool word_wrap_enabled = (wrap_width > 0.0f);
 
@@ -538,10 +578,12 @@ begin:
 
     std::stack<ImU32, boost::container::small_vector<ImU32, 10>> colorStack;
     boost::container::small_vector<Image, 10> images;
+    boost::container::small_vector<ImRect, 10> monospace;
 
     MarkupState state;
     while (s < text_end)
     {
+        auto const oldMonospaceDepth = state.MonospaceDepth;
         if (ParseMarkup(s, text_end - s, size, state))
         {
             switch (state.ColorChangeType)
@@ -573,6 +615,21 @@ begin:
                     break;
                 default:
                     std::terminate();
+            }
+            if (oldMonospaceDepth != state.MonospaceDepth)
+            {
+                baked = state.MonospaceDepth ? GW2Viewer::G::UI.Fonts.Monospace->GetFontBaked(size) : GetFontBaked(size);
+                scale = size / baked->Size;
+                if (!oldMonospaceDepth)
+                {
+                    monospace.emplace_back(x, y + 1, x, y + line_height + 2);
+                    x += 2;
+                }
+                else if (!state.MonospaceDepth)
+                {
+                    monospace.back().Max = { x + 2, y + line_height + 2 };
+                    x += 2;
+                }
             }
             if (state.Image)
             {
@@ -620,12 +677,19 @@ begin:
 
             if (s >= word_wrap_eol)
             {
+                if (state.MonospaceDepth)
+                    monospace.back().Max = { x + 2, y + line_height + 2 };
                 x = origin_x;
                 y += line_height;
                 if (y > clip_rect.w)
                     break; // break out of main loop
                 word_wrap_eol = NULL;
                 s = CalcWordWrapNextLineStartA(s, text_end); // Wrapping skips upcoming blanks
+                if (state.MonospaceDepth)
+                {
+                    monospace.emplace_back(x, y + 1, x, y + line_height + 2);
+                    x += 2;
+                }
                 continue;
             }
         }
@@ -757,6 +821,9 @@ begin:
     draw_list->_VtxWritePtr = vtx_write;
     draw_list->_IdxWritePtr = idx_write;
     draw_list->_VtxCurrentIdx = vtx_index;
+
+    for (auto const& rect : monospace)
+        draw_list->AddRect(rect.Min, rect.Max, ImGui::GetColorU32(ImGuiCol_Text, 0.25f), ImGui::GetStyle().FrameRounding, ImDrawFlags_RoundCornersAll);
 
     for (auto const& image : images)
         if (image.Rect.Min.x < image.Rect.Max.x && image.Rect.Min.y < image.Rect.Max.y)

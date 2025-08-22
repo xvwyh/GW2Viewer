@@ -67,6 +67,7 @@ void Manager::Load()
         }
     };
     Fonts.Default = loadFont("Roboto-Regular.ttf", 15.0f);
+    Fonts.Monospace = loadFont("RobotoMono-Regular.ttf", 15.0f);
     Fonts.GameText = loadFont("trebuc.ttf", 14.725f);
     Fonts.GameTextItalic = loadFont("trebucit.ttf", 14.725f);
     Fonts.GameHeading = loadFont("menomonia.ttf", 18.0f);

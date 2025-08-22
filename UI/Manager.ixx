@@ -13,6 +13,7 @@ public:
     struct
     {
         ImFont* Default { };
+        ImFont* Monospace { };
         ImFont* GameText { };
         ImFont* GameTextItalic { };
         ImFont* GameHeading { };
