@@ -27,6 +27,9 @@ struct BookmarkListViewer : ListViewer<BookmarkListViewer, { ICON_FA_BOOKMARK " 
             I::TableSetupScrollFreeze(0, 1);
             I::TableHeadersRow();
 
+            if (!G::Game.Content.AreObjectsLoaded())
+                return;
+
             for (auto const& bookmark : G::Config.BookmarkedContentObjects)
             {
                 I::TableNextRow();
