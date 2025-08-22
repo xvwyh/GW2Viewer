@@ -4568,6 +4568,7 @@ ImGuiWindow::ImGuiWindow(ImGuiContext* ctx, const char* name) : DrawListInst(NUL
     MoveId = GetID("#MOVE");
     TabId = GetID("#TAB");
     ScrollTarget = ImVec2(FLT_MAX, FLT_MAX);
+    ScrollExpected = { };
     ScrollTargetCenterRatio = ImVec2(0.5f, 0.5f);
     AutoFitFramesX = AutoFitFramesY = -1;
     AutoPosLastDirection = ImGuiDir_None;
@@ -10775,7 +10776,7 @@ void ImGui::UpdateMouseWheel()
                 LockWheelingWindow(window, wheel.x);
                 float max_step = window->InnerRect.GetWidth() * 0.67f;
                 float scroll_step = ImTrunc(ImMin(2 * window->FontRefSize, max_step));
-                SetScrollX(window, window->Scroll.x - wheel.x * scroll_step);
+                SetScrollX(window, window->ScrollExpected.x - wheel.x * scroll_step);
                 g.WheelingWindowScrolledFrame = g.FrameCount;
             }
             if (do_scroll[ImGuiAxis_Y])
@@ -10783,7 +10784,7 @@ void ImGui::UpdateMouseWheel()
                 LockWheelingWindow(window, wheel.y);
                 float max_step = window->InnerRect.GetHeight() * 0.67f;
                 float scroll_step = ImTrunc(ImMin(5 * window->FontRefSize, max_step));
-                SetScrollY(window, window->Scroll.y - wheel.y * scroll_step);
+                SetScrollY(window, window->ScrollExpected.y - wheel.y * scroll_step);
                 g.WheelingWindowScrolledFrame = g.FrameCount;
             }
         }
@@ -12207,7 +12208,7 @@ static float CalcScrollEdgeSnap(float target, float snap_min, float snap_max, fl
 
 static ImVec2 CalcNextScrollFromScrollTargetAndClamp(ImGuiWindow* window)
 {
-    ImVec2 scroll = window->Scroll;
+    ImVec2& scroll = window->ScrollExpected;
     ImVec2 decoration_size(window->DecoOuterSizeX1 + window->DecoInnerSizeX1 + window->DecoOuterSizeX2, window->DecoOuterSizeY1 + window->DecoInnerSizeY1 + window->DecoOuterSizeY2);
     for (int axis = 0; axis < 2; axis++)
     {
@@ -12227,7 +12228,8 @@ static ImVec2 CalcNextScrollFromScrollTargetAndClamp(ImGuiWindow* window)
         if (!window->Collapsed && !window->SkipItems)
             scroll[axis] = ImMin(scroll[axis], window->ScrollMax[axis]);
     }
-    return scroll;
+    auto const smooth = scroll + (window->Scroll - scroll) * expf(-20 * ImGui::GetIO().DeltaTime);
+    return { fabsf(smooth.x - scroll.x) > 0.5f ? smooth.x : scroll.x, fabsf(smooth.y - scroll.y) > 0.5f ? smooth.y : scroll.y };
 }
 
 void ImGui::ScrollToItem(ImGuiScrollFlags flags)
@@ -12318,13 +12320,13 @@ ImVec2 ImGui::ScrollToRectEx(ImGuiWindow* window, const ImRect& item_rect, ImGui
 float ImGui::GetScrollX()
 {
     ImGuiWindow* window = GImGui->CurrentWindow;
-    return window->Scroll.x;
+    return window->ScrollExpected.x;
 }
 
 float ImGui::GetScrollY()
 {
     ImGuiWindow* window = GImGui->CurrentWindow;
-    return window->Scroll.y;
+    return window->ScrollExpected.y;
 }
 
 float ImGui::GetScrollMaxX()
