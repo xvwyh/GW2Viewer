@@ -10775,7 +10775,7 @@ void ImGui::UpdateMouseWheel()
             {
                 LockWheelingWindow(window, wheel.x);
                 float max_step = window->InnerRect.GetWidth() * 0.67f;
-                float scroll_step = ImTrunc(ImMin(2 * window->FontRefSize, max_step));
+                float scroll_step = ImTrunc(ImMin(10 * window->FontRefSize, max_step));
                 SetScrollX(window, window->ScrollExpected.x - wheel.x * scroll_step);
                 g.WheelingWindowScrolledFrame = g.FrameCount;
             }
