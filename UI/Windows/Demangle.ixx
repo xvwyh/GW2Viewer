@@ -275,7 +275,7 @@ struct Demangle : Window
                 I::SetNextItemWidth(-FLT_MIN);
                 if (I::InputTextMultiline("##Names", &names, { -FLT_MIN, 100 }))
                     for (auto const& name : std::views::split(names, '\n'))
-                        MatchRecursively(Utils::Encoding::FromUTF8(std::string(std::from_range, name)));
+                        MatchRecursively(Utils::Encoding::FromUTF8(std::string(std::from_range, name) + "."));
             }
             if (scoped::TabItem("Bruteforce", nullptr, !BruteforceUIPrefix.empty() ? ImGuiTabItemFlags_SetSelected : 0))
             {
