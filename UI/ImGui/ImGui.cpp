@@ -49,12 +49,13 @@ struct Image
     ImRect UV { { 0, 0 }, { 1, 1 } };
     ImU32 Color;
 };
-uint32 DisableMarkupDepth = 0;
+byte DisableMarkupDepth = 0;
 struct MarkupState
 {
     ImU32 Color;
     ColorChangeType ColorChangeType = ColorChangeType::Unchanged;
     std::optional<Image> Image;
+    bool SkipMarkup = false;
     byte BoldDepth = 0;
     byte MonospaceDepth = 0;
     byte NoSelectDepth = 0;
@@ -65,7 +66,25 @@ bool ParseMarkup(const char*& s, size_t avail, float size, MarkupState& state)
     if (DisableMarkupDepth)
         return false;
     if (s[0] != '<')
+    {
+        if (avail >= 2 && s[0] == '\\' && (s[1] == '<' || s[1] == '\\'))
+        {
+            if (state.SkipMarkup)
+            {
+                state.SkipMarkup = false;
+                return false;
+            }
+            ++s;
+            state.SkipMarkup = true;
+            return true;
+        }
         return false;
+    }
+    if (state.SkipMarkup)
+    {
+        state.SkipMarkup = false;
+        return false;
+    }
     state.ColorChangeType = ColorChangeType::Unchanged;
     state.Image.reset();
     if (avail >= 3 && !strncmp(s, "<b>", 3))
