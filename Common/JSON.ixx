@@ -7,8 +7,10 @@ import GW2Viewer.Common.Time;
 //export import nlohmann.json;
 import GW2Viewer.Utils.ConstString;
 import GW2Viewer.Utils.Encoding;
+import GW2Viewer.Utils.Enum;
 import GW2Viewer.Utils.Format;
 import std;
+import magic_enum;
 import <nlohmann/json.hpp>;
 
 // build up namespace from macros
@@ -207,6 +209,35 @@ struct nlohmann::adl_serializer<std::chrono::duration<Rep, Period>>
             duration = Time::Days(ticks);
         else
             duration = Time::Ms(ticks);
+    }
+};
+
+template<GW2Viewer::Enumeration Enum>
+struct nlohmann::adl_serializer<Enum>
+{
+    static void to_json(auto& j, Enum const& e)
+    {
+        j = magic_enum::enum_name(e);
+    }
+    static void from_json(auto const& j, Enum& e)
+    {
+        if (j.is_string())
+        {
+            if (auto const value = magic_enum::enum_cast<Enum>(j.template get<std::string_view>()))
+            {
+                e = *value;
+                return;
+            }
+        }
+        else if (j.is_number_integer())
+        {
+            if (auto const value = magic_enum::enum_cast<Enum>(j.template get<std::underlying_type_t<Enum>>()))
+            {
+                e = *value;
+                return;
+            }
+        }
+        throw std::runtime_error(std::format("JSON {} value '{}' failed to be parsed as enum {}", j.type_name(), nlohmann::to_string(j), magic_enum::enum_type_name<Enum>()));
     }
 };
 
