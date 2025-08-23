@@ -421,27 +421,31 @@ void ArrayContent::Draw(Context const& context) const
         I::PopStyleColor();
 }
 
-std::tuple<TypeInfo::SymbolType const*, uint32> GetSymbolTypeForContentType(GW2Viewer::Content::EContentTypes type)
+std::tuple<TypeInfo::SymbolType const*, uint32> GetSymbolTypeForContentType(uint32 typeIndex)
 {
-    switch (type)
+    switch (G::Game.Content.GetType(typeIndex)->GetTypeInfo().ContentType)
     {
         using enum GW2Viewer::Content::EContentTypes;
-        case CONTENT_TYPE_BOOLEAN: return { GetByName("bool"), 1 };
-        case CONTENT_TYPE_ENUM: return { GetByName("int8"), 1 };
-        case CONTENT_TYPE_FLAGS: return { GetByName("int16"), 1 };
-        case CONTENT_TYPE_TIME:
-        case CONTENT_TYPE_INTEGER: return { GetByName("int32"), 1 };
-        case CONTENT_TYPE_INTEGER_PAIR:
-        case CONTENT_TYPE_INTEGER_RANGE: return { GetByName("int32"), 2 };
-        case CONTENT_TYPE_NUMBER: return { GetByName("float"), 1 };
-        case CONTENT_TYPE_NUMBER_PAIR:
-        case CONTENT_TYPE_NUMBER_RANGE: return { GetByName("float"), 2 };
-        case CONTENT_TYPE_POINT_3D: return { GetByName("float"), 3 };
-        case CONTENT_TYPE_VARIABLE:
-        case CONTENT_TYPE_STRING: return { GetByName("wchar_t*"), 1 };
-        case CONTENT_TYPE_TOKEN32: return { GetByName("Token32"), 1 };
-        case CONTENT_TYPE_TOKEN64: return { GetByName("Token64"), 1 };
-        default: return { type < CONTENT_TYPES_BASIC ? GetByName("Content*") : nullptr, 1 };
+        case Boolean:       return { GetByName("bool"),     1 };
+        case Enum:          return { GetByName("int8"),     1 };
+        case Flags:         return { GetByName("int16"),    1 };
+        case Time:
+        case TimeOfDay: // ???
+        case Integer:       return { GetByName("int32"),    1 };
+        case IntegerPair:
+        case IntegerRange:  return { GetByName("int32"),    2 };
+        case Number:        return { GetByName("float"),    1 };
+        case NumberPair:
+        case NumberRange:   return { GetByName("float"),    2 };
+        case Point3d:       return { GetByName("float"),    3 };
+        case Variable:
+        case String:        return { GetByName("wchar_t*"), 1 };
+        case Token32:       return { GetByName("Token32"),  1 };
+        case Token64:       return { GetByName("Token64"),  1 };
+        case TextCoded: // ???
+        case Text:          return { GetByName("StringID"), 1 };
+        case None:
+        default:            return { GetByName("Content*"), 1 };
     }
 }
 

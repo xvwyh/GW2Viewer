@@ -216,7 +216,7 @@ struct ParamValue : TypeInfo::SymbolType
 
     struct Struct
     {
-        GW2Viewer::Content::EContentTypes ContentType;
+        uint32 ContentType;
         union
         {
             byte* Content;

@@ -6,6 +6,7 @@ import GW2Viewer.UI.Controls;
 import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Windows.Window;
 import GW2Viewer.User.Config;
+import GW2Viewer.Utils.Sort;
 import std;
 import magic_enum;
 #include "Macros.h"
@@ -94,7 +95,7 @@ struct MigrateContentTypes : Window
 
                     I::TableNextColumn();
                     I::SetNextItemWidth(-FLT_MIN);
-                    Controls::FilteredComboBox("##ContentType", itr->second.ContentType, magic_enum::enum_values<Content::EContentTypes>());
+                    Controls::FilteredComboBox("##ContentType", itr->second.ContentType, Utils::Sort::ComplexSorted(magic_enum::enum_values<Content::EContentTypes>(), false, [](Content::EContentTypes type) { return magic_enum::enum_name(type); }));
                 }
             }
         }
