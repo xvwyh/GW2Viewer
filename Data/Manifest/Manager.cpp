@@ -15,7 +15,7 @@ void Manager::LoadRootManifest(uint32 fileID, Utils::Async::ProgressBarContext& 
     {
         if (auto const& root = rootPackFile->QueryChunk(fcc::ARMF))
         {
-            assert((uint32)root["buildId"] == G::Game.Build);
+            //assert((uint32)root["buildId"] == G::Game.Build);
             progress.Start(root["manifests[]"].GetArraySize());
             for (auto const& manifest : root["manifests"])
             {
@@ -39,7 +39,7 @@ void Manager::LoadAssetManifest(uint32 fileID, wchar_t const* manifestName)
     {
         if (auto const& manifest = manifestPackFile->QueryChunk(fcc::MFST))
         {
-            assert((uint32)manifest["buildId"] == G::Game.Build);
+            //assert((uint32)manifest["buildId"] == G::Game.Build);
             for (auto const& record : manifest["records"])
                 LinkAssetVersions(record["baseId"], record["fileId"], record["size"], record["flags"], manifestName);
             for (auto const& stream : manifest["streams"])
