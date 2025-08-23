@@ -108,7 +108,7 @@ struct ListContentValues : Window
             auto const tableContentsCursor = I::GetCursorScreenPos();
 
             ImGuiListClipper clipper;
-            clipper.Begin(std::ranges::fold_left(Results, 0u, [](uint32 count, auto const& pair) { return count + (pair.second.IsFolded ? 1 : pair.second.Objects.size()); })/*, I::GetFrameHeight()*/);
+            clipper.Begin(std::ranges::fold_left(Results, 0u, [](uint32 count, auto const& pair) { return count + (pair.second.IsFolded ? 1 : pair.second.Objects.size()); }), I::GetFrameHeight());
             std::set<decltype(Results)::key_type> keyDrawn;
             while (clipper.Step())
             {
@@ -118,13 +118,13 @@ struct ListContentValues : Window
                 {
                     int numToDisplay = value.IsFolded ? 1 : value.ObjectsSorted.size();
                     auto displayedObjects = value.ObjectsSorted | std::views::take(numToDisplay) | std::views::drop(std::max(0, clipper.DisplayStart - offset)) | std::views::take(clipper.DisplayEnd - clipper.DisplayStart - drawn);
-                    bool const canAdjustY = !value.IsFolded && displayedObjects.size() > 1;
+                    bool const canAdjustY = numToDisplay > 1;
                     bool first = !keyDrawn.contains(key);
                     for (auto* object : displayedObjects)
                     {
                         I::TableNextRow();
 
-                        float const yOffset = canAdjustY && I::GetCursorScreenPos().y < tableContentsCursor.y ? tableContentsCursor.y - I::GetCursorScreenPos().y : 0;
+                        float const yOffset = canAdjustY && I::GetCursorScreenPos().y < tableContentsCursor.y ? std::min(tableContentsCursor.y - I::GetCursorScreenPos().y, (numToDisplay - std::max(0, clipper.DisplayStart - offset) - 1) * I::GetFrameHeight()) : 0;
 
                         I::TableNextColumn();
                         if (first)
