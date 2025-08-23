@@ -1,10 +1,52 @@
 export module GW2Viewer.Data.Content:Query;
 import :TypeInfo;
+import <boost/container/small_vector.hpp>;
 import <experimental/generator>;
 
 export namespace GW2Viewer::Data::Content
 {
 struct ContentObject;
+
+struct SymbolPath
+{
+    enum class Type : byte
+    {
+        String = 0, // Reusing the last byte of std::string_view for this, which should always be 0 too
+        Meta,
+        Reference,
+        Backtrack,
+    };
+    union Value
+    {
+        std::string_view String;
+        TypeInfo::Symbol* MetaSymbol;
+        ContentTypeInfo const* ReferenceType;
+    };
+    struct Part
+    {
+        union
+        {
+            Value Value;
+            struct
+            {
+                byte Padding[sizeof(Value) - sizeof(std::underlying_type_t<Type>)];
+                Type Type;
+            };
+        };
+
+        Part() : Value({ .String = { } }) { Type = Type::String; }
+        Part(std::string_view string) : Value({ .String = string }) { Type = Type::String; }
+        Part(TypeInfo::Symbol& metaSymbol) : Value({ .MetaSymbol = &metaSymbol }) { Type = Type::Meta; }
+        Part(ContentTypeInfo const* referenceType) : Value({ .ReferenceType = referenceType }) { Type = Type::Reference; }
+    };
+    using Span = std::span<Part const>;
+
+    boost::container::small_vector<Part, 5> Parts;
+
+    SymbolPath(std::string_view path);
+
+    operator Span() const { return Parts; }
+};
 
 struct QuerySymbolDataResult : TypeInfo::Context
 {
@@ -39,7 +81,7 @@ struct QuerySymbolDataResult : TypeInfo::Context
     operator ContentObject const* () const { return Data<ContentObject const*>(); }
     operator ContentObject const& () const { return Data<ContentObject const>(); }
 };
-QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, std::span<std::string_view> path);
+QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, SymbolPath::Span path);
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, std::string_view path);
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, TypeInfo::SymbolType const& type, TypeInfo::Condition::ValueType value);
 

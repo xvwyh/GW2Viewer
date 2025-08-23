@@ -54,13 +54,9 @@ struct ListContentValues : Window
     }
     void Refresh()
     {
-        std::vector<std::string_view> path;
-        for (auto const part : std::views::split(SymbolPath, std::string_view("->")))
-            path.emplace_back(part);
-
         Results.clear();
         ExternalKeyStorage.clear();
-        for (auto const object : Type->Objects)
+        for (Data::Content::SymbolPath const path { SymbolPath }; auto const object : Type->Objects)
         {
             for (auto& result : Data::Content::QuerySymbolData(*object, path))
             {

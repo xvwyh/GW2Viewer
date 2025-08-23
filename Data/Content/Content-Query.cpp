@@ -4,7 +4,6 @@ import :Symbols;
 import GW2Viewer.Common;
 import GW2Viewer.Data.Game;
 import std;
-import <boost/container/small_vector.hpp>;
 
 namespace GW2Viewer::Data::Content
 {
@@ -17,10 +16,30 @@ static std::vector metaContentSymbols
     | std::views::transform([](TypeInfo::SymbolType const* type) -> TypeInfo::Symbol { return { .Type = type->Name }; })
 };
 
+static_assert(std::is_trivially_copyable_v<SymbolPath::Part>);
+SymbolPath::SymbolPath(std::string_view path)
+{
+    for (auto const& pathPart : std::views::split(path, std::string_view("->")))
+    {
+        auto& part = Parts.emplace_back(std::string_view(pathPart));
+
+        auto const& string = part.Value.String;
+        if (string.front() == '@')
+        {
+            if (string.starts_with("@ref"))
+                part = string.size() > 6 && string[4] == '<' && string[string.size() - 1] == '>' ? G::Game.Content.GetType(string.substr(5, string.size() - 6)) : nullptr;
+            else if (auto const itr = std::ranges::find(metaContentSymbols, string, &TypeInfo::Symbol::Type); itr != metaContentSymbols.end())
+                part = *itr;
+        }
+        else if (string == "..")
+            part.Type = Type::Backtrack;
+    }
+}
+
 template<typename T>
 concept SymbolDataSearcher = requires(T const a, TypeInfo::Symbol& symbol, byte const* data, ContentObject const& relative)
 {
-    { a.Root() } -> std::same_as<std::string_view>;
+    { a.Root() } -> std::same_as<SymbolPath::Part>;
     { a.CanSearch() } -> std::same_as<bool>;
     { a.CanCheck(symbol) } -> std::same_as<bool>;
     { a.CanReturn(symbol, data) } -> std::same_as<bool>;
@@ -39,17 +58,23 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(TypeInfo::LayoutStack& layo
 
     auto const& frame = layoutStack.top();
     auto const& content = *frame.Content;
-    if (std::string_view const root = searcher.Root(); root[0] == '@' && !frame.DataStart)
+    switch (SymbolPath::Part const root = searcher.Root(); root.Type)
     {
-        if (root.starts_with("@ref"))
+        case SymbolPath::Type::String:
+            break;
+        case SymbolPath::Type::Meta:
         {
-            std::optional<ContentTypeInfo const*> refType;
-            if (root.size() > 6 && root[4] == '<' && root[root.size() - 1] == '>')
-                refType = G::Game.Content.GetType(root.substr(5, root.size() - 6));
+            co_yield { &content, content, *root.Value.MetaSymbol };
+            co_return;
+        }
+        case SymbolPath::Type::Reference:
+        {
+            if (frame.DataStart)
+                co_return;
 
             for (auto const& [object, type] : content.IncomingReferences)
             {
-                if (!refType || object->Type == *refType)
+                if (!root.Value.ReferenceType || root.Value.ReferenceType == object->Type)
                 {
                     object->Finalize();
 
@@ -66,27 +91,18 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(TypeInfo::LayoutStack& layo
             }
             co_return;
         }
-        for (auto& symbol : metaContentSymbols)
+        case SymbolPath::Type::Backtrack:
         {
-            if (root == symbol.Type)
-            {
-                co_yield { &content, content, symbol };
-                break;
-            }
-        }
-        co_return;
-    }
-    else if (root == "..")
-    {
-        if (layoutStack.size() > 1)
-        {
+            if (layoutStack.size() <= 1)
+                co_return;
+
             auto backup = layoutStack.top();
             layoutStack.pop();
             for (auto& result : QuerySymbolDataImpl(layoutStack, fullData, searcher.Deeper()))
                 co_yield result;
             layoutStack.push(backup);
+            co_return;
         }
-        co_return;
     }
 
     bool const backtrack = searcher.CanBacktrack();
@@ -166,18 +182,19 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(ContentObject const& conten
     for (auto& result : QuerySymbolDataImpl(layoutStack, content.Root ? content.Root->Data : content.Data, searcher))
         co_yield result;
 }
-QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, std::span<std::string_view> path)
+
+QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, SymbolPath::Span path)
 {
     struct PathSearcher
     {
-        std::span<std::string_view> Path;
+        SymbolPath::Span Path;
         ContentObject const* Relative = nullptr;
-        [[nodiscard]] std::string_view Root() const { return Path.front(); }
+        [[nodiscard]] SymbolPath::Part Root() const { return Path.front(); }
         [[nodiscard]] bool CanSearch() const { return !Path.empty(); }
-        [[nodiscard]] bool CanCheck(TypeInfo::Symbol& symbol) const { return symbol.Name == Root(); }
+        [[nodiscard]] bool CanCheck(TypeInfo::Symbol& symbol) const { return symbol.Name == Path.front().Value.String; }
         [[nodiscard]] bool CanReturn(TypeInfo::Symbol& symbol, byte const* data) const { return Path.size() == 1; }
-        [[nodiscard]] bool CanEarlyReturn() const { return Path.size() == 1 && Root()[0] != '@'; }
-        [[nodiscard]] bool CanBacktrack() const { return Relative && Path.size() > 1 && Path[1] == ".."; }
+        [[nodiscard]] bool CanEarlyReturn() const { return Path.size() == 1 && Root().Type == SymbolPath::Type::String; }
+        [[nodiscard]] bool CanBacktrack() const { return Relative && Path.size() > 1 && Path[1].Type == SymbolPath::Type::Backtrack; }
         [[nodiscard]] bool CanBacktrackFrom(byte const* data) const { return CanBacktrack() && Relative->Data.data() == *(byte const* const*)data; }
         [[nodiscard]] bool CanStepIntoNonInlineContent() const { return true; }
         [[nodiscard]] PathSearcher Deeper() const { return { Path.subspan(1), Relative }; }
@@ -188,11 +205,7 @@ QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, s
 }
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, std::string_view path)
 {
-    boost::container::small_vector<std::string_view, 5> parts;
-    for (auto const& part : std::views::split(path, std::string_view("->")))
-        parts.emplace_back(part);
-
-    for (auto& result : QuerySymbolData(content, parts))
+    for (SymbolPath const symbolPath { path }; auto& result : QuerySymbolData(content, symbolPath))
         co_yield result;
 }
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, TypeInfo::SymbolType const& type, TypeInfo::Condition::ValueType value)
@@ -202,7 +215,7 @@ QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, T
         ContentObject const& Content;
         TypeInfo::SymbolType const& Type;
         TypeInfo::Condition::ValueType Value;
-        [[nodiscard]] std::string_view Root() const { return ""; }
+        [[nodiscard]] SymbolPath::Part Root() const { return { }; }
         [[nodiscard]] bool CanSearch() const { return true; }
         [[nodiscard]] bool CanCheck(TypeInfo::Symbol& symbol) const { return true; }
         [[nodiscard]] bool CanReturn(TypeInfo::Symbol& symbol, byte const* data) const { return symbol.Type == Type.Name && Type.GetValueForCondition({ data, Content, symbol }) == Value; }
