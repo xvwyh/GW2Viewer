@@ -106,6 +106,7 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(TypeInfo::LayoutStack& layo
     }
 
     bool const backtrack = searcher.CanBacktrack();
+    bool const deeper = searcher.Deeper().CanSearch();
     for (auto& [offset, symbol] : frame.Layout->Symbols)
     {
         if (!searcher.CanCheck(symbol))
@@ -133,6 +134,9 @@ QuerySymbolDataResult::Generator QuerySymbolDataImpl(TypeInfo::LayoutStack& layo
 
         if (searcher.CanReturn(symbol, p))
             co_yield { p, content, symbol };
+
+        if (!deeper)
+            continue;
 
         if (auto const traversal = symbol.GetTraversalInfo({ p, content, symbol }, searcher.CanStepIntoNonInlineContent()))
         {
