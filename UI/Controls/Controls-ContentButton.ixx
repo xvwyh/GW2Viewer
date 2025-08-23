@@ -10,6 +10,7 @@ import std;
 namespace GW2Viewer::UI::Controls
 {
 void OpenContent(Data::Content::ContentObject const& content, Viewers::OpenViewerOptions const& options);
+std::pair<Data::Content::ContentObject const*, ImGuiID> HoveredContentObject { };
 
 export
 {
@@ -53,7 +54,16 @@ void ContentButton(Data::Content::ContentObject const* content, void const* id, 
     while (size.x > I::GetContentRegionAvail().x && condense.Condense());
 
     auto const pos = I::GetCursorScreenPos();
+    if (content == HoveredContentObject.first)
+        I::PushStyleColor(ImGuiCol_Button, I::GetColorU32(ImGuiCol_ButtonHovered));
     I::Button("", size);
+    if (content == HoveredContentObject.first)
+        I::PopStyleColor();
+    if (I::IsItemHovered())
+        HoveredContentObject = { content, I::GetItemID() };
+    else if (HoveredContentObject.second == I::GetItemID())
+        HoveredContentObject = { };
+
     if (content)
         if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
             OpenContent(*content, { .MouseButton = button });
