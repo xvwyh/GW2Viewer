@@ -4624,7 +4624,7 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
     bool clear_active_id = false;
     bool select_all = false;
 
-    float scroll_y = is_multiline ? draw_window->Scroll.y : FLT_MAX;
+    float scroll_y = is_multiline ? draw_window->ScrollExpected.y : FLT_MAX;
 
     const bool init_reload_from_user_buf = (state != NULL && state->WantReloadUserBuf);
     const bool init_changed_specs = (state != NULL && state->Stb->single_line != !is_multiline); // state != NULL means its our state.
@@ -4735,7 +4735,7 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
 
         // Expose scroll in a manner that is agnostic to us using a child window
         if (is_multiline && state != NULL)
-            state->Scroll.y = draw_window->Scroll.y;
+            state->Scroll.y = draw_window->ScrollExpected.y;
 
         // Read-only mode always ever read from source buffer. Refresh TextLen when active.
         if (is_readonly && state != NULL)
@@ -4916,8 +4916,8 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
         // FIXME-OSX: Missing support for Alt(option)+Right/Left = go to end of line, or next line if already in end of line.
         if (IsKeyPressed(ImGuiKey_LeftArrow))                        { state->OnKeyPressed((is_startend_key_down ? STB_TEXTEDIT_K_LINESTART : is_wordmove_key_down ? STB_TEXTEDIT_K_WORDLEFT : STB_TEXTEDIT_K_LEFT) | k_mask); }
         else if (IsKeyPressed(ImGuiKey_RightArrow))                  { state->OnKeyPressed((is_startend_key_down ? STB_TEXTEDIT_K_LINEEND : is_wordmove_key_down ? STB_TEXTEDIT_K_WORDRIGHT : STB_TEXTEDIT_K_RIGHT) | k_mask); }
-        else if (IsKeyPressed(ImGuiKey_UpArrow) && is_multiline)     { if (io.KeyCtrl) SetScrollY(draw_window, ImMax(draw_window->Scroll.y - g.FontSize, 0.0f)); else state->OnKeyPressed((is_startend_key_down ? STB_TEXTEDIT_K_TEXTSTART : STB_TEXTEDIT_K_UP) | k_mask); }
-        else if (IsKeyPressed(ImGuiKey_DownArrow) && is_multiline)   { if (io.KeyCtrl) SetScrollY(draw_window, ImMin(draw_window->Scroll.y + g.FontSize, GetScrollMaxY())); else state->OnKeyPressed((is_startend_key_down ? STB_TEXTEDIT_K_TEXTEND : STB_TEXTEDIT_K_DOWN) | k_mask); }
+        else if (IsKeyPressed(ImGuiKey_UpArrow) && is_multiline)     { if (io.KeyCtrl) SetScrollY(draw_window, ImMax(draw_window->ScrollExpected.y - g.FontSize, 0.0f)); else state->OnKeyPressed((is_startend_key_down ? STB_TEXTEDIT_K_TEXTSTART : STB_TEXTEDIT_K_UP) | k_mask); }
+        else if (IsKeyPressed(ImGuiKey_DownArrow) && is_multiline)   { if (io.KeyCtrl) SetScrollY(draw_window, ImMin(draw_window->ScrollExpected.y + g.FontSize, GetScrollMaxY())); else state->OnKeyPressed((is_startend_key_down ? STB_TEXTEDIT_K_TEXTEND : STB_TEXTEDIT_K_DOWN) | k_mask); }
         else if (IsKeyPressed(ImGuiKey_PageUp) && is_multiline)      { state->OnKeyPressed(STB_TEXTEDIT_K_PGUP | k_mask); scroll_y -= row_count_per_page * g.FontSize; }
         else if (IsKeyPressed(ImGuiKey_PageDown) && is_multiline)    { state->OnKeyPressed(STB_TEXTEDIT_K_PGDOWN | k_mask); scroll_y += row_count_per_page * g.FontSize; }
         else if (IsKeyPressed(ImGuiKey_Home))                        { state->OnKeyPressed(io.KeyCtrl ? STB_TEXTEDIT_K_TEXTSTART | k_mask : STB_TEXTEDIT_K_LINESTART | k_mask); }
@@ -5344,8 +5344,8 @@ bool ImGui::InputTextEx(const char* label, const char* hint, char* buf, int buf_
                     scroll_y = cursor_offset.y - inner_size.y + style.FramePadding.y * 2.0f;
                 const float scroll_max_y = ImMax((text_size.y + style.FramePadding.y * 2.0f) - inner_size.y, 0.0f);
                 scroll_y = ImClamp(scroll_y, 0.0f, scroll_max_y);
-                draw_pos.y += (draw_window->Scroll.y - scroll_y);   // Manipulate cursor pos immediately avoid a frame of lag
-                draw_window->Scroll.y = scroll_y;
+                draw_pos.y += (draw_window->ScrollExpected.y - scroll_y);   // Manipulate cursor pos immediately avoid a frame of lag
+                draw_window->Scroll.y = draw_window->ScrollExpected.y = scroll_y;
             }
 
             state->CursorFollow = false;
