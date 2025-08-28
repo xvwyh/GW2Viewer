@@ -60,26 +60,25 @@ struct QuerySymbolDataResult : TypeInfo::Context
         decltype(auto) begin() { return Internal.begin(); }
         decltype(auto) end() { return Internal.end(); }
         QuerySymbolDataResult const& operator*() { return *begin(); }
-        QuerySymbolDataResult const* operator->() { return &*begin(); }
+        QuerySymbolDataResult const* operator->() { return &**this; }
         template<typename T> operator T() { return **this; }
         operator ContentObject() = delete;
         operator ContentObject() const = delete;
         operator ContentObject const() = delete;
         operator ContentObject const() const = delete;
-        operator ContentObject const* () { return *begin(); }
-        operator ContentObject const& () { return (ContentObject const&)*begin(); }
+        operator ContentObject const* () { return **this; }
+        operator ContentObject const& () { return **this; }
     };
 
     using Context::Context;
 
-    [[nodiscard]] auto GetContent() const { return Symbol.GetType()->GetContent(*this); }
     template<typename T> operator T() const { return Data<T>(); }
     operator ContentObject() = delete;
     operator ContentObject() const = delete;
     operator ContentObject const() = delete;
     operator ContentObject const() const = delete;
-    operator ContentObject const* () const { return Data<ContentObject const*>(); }
-    operator ContentObject const& () const { return Data<ContentObject const>(); }
+    operator ContentObject const* () const { return Symbol.GetType()->GetContent(*this).value_or(nullptr); }
+    operator ContentObject const& () const { return **this; }
 };
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, SymbolPath::Span path);
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, std::string_view path);
