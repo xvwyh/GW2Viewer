@@ -311,7 +311,7 @@ std::string ContentObjectDisplayFormat::Process(Data::Content::ContentObject con
                 switch (pFormat[1])
                 {
                     case '\0': // Unexpected EOL after the start of the escape sequence
-                        display.append(std::format("<c=#F00>{}</c>", *pFormat));
+                        display.append(std::format("<c=#F00>{0}{0}</c>", *pFormat));
                         ++pFormat;
                         break;
                     case 'n': // Append newline
