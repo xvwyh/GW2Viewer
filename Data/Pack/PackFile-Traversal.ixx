@@ -269,6 +269,7 @@ public:
     }
     [[nodiscard]] auto begin() const { return IsArrayIterator() ? FieldIterator(GetPointer(), *this, GetArraySize() - GetArrayIndex(), GetArrayIndex()) : GetArrayElements().first; }
     [[nodiscard]] auto end() const { return IsArrayIterator() ? FieldIterator(GetPointer(), *this, GetArraySize() - GetArrayIndex(), GetArrayIndex(), true) : GetArrayElements().second; }
+    [[nodiscard]] auto size() const { return GetArraySize(); }
 
 private:
 

@@ -13,8 +13,8 @@ struct ContentNamespace
     int32 Domain;
     std::wstring Name;
     ContentNamespace const* Parent { };
-    std::list<std::unique_ptr<ContentNamespace>> Namespaces;
-    std::list<std::unique_ptr<ContentObject>> Entries;
+    std::vector<ContentNamespace const*> Namespaces;
+    std::vector<ContentObject const*> Entries;
 
     [[nodiscard]] bool HasCustomName() const;
     [[nodiscard]] std::wstring GetDisplayName(bool skipCustom = false, bool skipColor = false) const;

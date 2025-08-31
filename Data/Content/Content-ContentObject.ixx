@@ -20,7 +20,7 @@ struct ContentObject
     ContentTypeInfo const* Type { };
     ContentNamespace const* Namespace { };
     ContentObject const* Root { };
-    std::list<std::unique_ptr<ContentObject>> Entries;
+    std::vector<ContentObject const*> Entries;
     mutable std::span<byte const> Data;
 
     struct Reference

@@ -127,13 +127,13 @@ public:
 
     [[nodiscard]] bool AreTypesLoaded() const { return m_loadedTypes; }
     [[nodiscard]] uint32 GetNumTypes() const { return m_typeInfos.size(); }
-    [[nodiscard]] std::span<ContentTypeInfo const* const> GetTypes() const { return m_typeInfoPointers; }
-    [[nodiscard]] ContentTypeInfo const* GetType(uint32 index) const { return m_typeInfos.at(index).get(); }
+    [[nodiscard]] std::span<ContentTypeInfo const* const> GetTypes() const { return m_typeInfos; }
+    [[nodiscard]] ContentTypeInfo const* GetType(uint32 index) const { return m_typeInfos.at(index); }
     [[nodiscard]] ContentTypeInfo const* GetType(GW2Viewer::Content::EContentTypes type) const
     {
         if (auto const itr = std::ranges::find(G::Config.TypeInfo, type, [](auto const& pair) { return pair.second.ContentType; }); itr != G::Config.TypeInfo.end())
             if (itr->first < m_typeInfos.size())
-                return m_typeInfos.at(itr->first).get();
+                return m_typeInfos.at(itr->first);
 
         return nullptr;
     }
@@ -141,14 +141,14 @@ public:
     {
         if (auto const itr = std::ranges::find(G::Config.TypeInfo, name, [](auto const& pair) -> auto& { return pair.second.Name; }); itr != G::Config.TypeInfo.end())
             if (itr->first < m_typeInfos.size())
-                return m_typeInfos.at(itr->first).get();
+                return m_typeInfos.at(itr->first);
 
         return nullptr;
     }
 
     [[nodiscard]] bool AreNamespacesLoaded() const { return m_loadedNamespaces; }
     [[nodiscard]] std::span<ContentNamespace const* const> GetNamespaces() const { return m_namespaces; }
-    [[nodiscard]] ContentNamespace const* GetNamespaceRoot() const { return m_root.get(); }
+    [[nodiscard]] ContentNamespace const* GetNamespaceRoot() const { return m_root; }
     [[nodiscard]] ContentNamespace const* GetNamespace(uint32 index) const { return GetNamespaceMutable(index); }
 
     [[nodiscard]] bool AreObjectsLoaded() const { return m_loadedObjects; }
@@ -182,11 +182,10 @@ private:
     uint32 m_numContentFiles = 32;
 
     bool m_loadedTypes = false;
-    std::vector<std::unique_ptr<ContentTypeInfo>> m_typeInfos;
-    std::vector<ContentTypeInfo const*> m_typeInfoPointers;
+    std::vector<ContentTypeInfo*> m_typeInfos;
 
     bool m_loadedNamespaces = false;
-    std::unique_ptr<ContentNamespace> m_root;
+    ContentNamespace const* m_root = nullptr;
     std::vector<ContentNamespace*> m_namespaces;
 
     bool m_loadedObjects = false;
@@ -212,6 +211,9 @@ private:
         std::unique_ptr<Pack::PackFile> File;
         std::set<size_t> EntryBoundaries;
         std::unique_ptr<byte[]> UsedContentByteMap;
+        std::vector<std::unique_ptr<ContentTypeInfo>> Types;
+        std::vector<std::unique_ptr<ContentNamespace>> Namespaces;
+        std::vector<std::unique_ptr<ContentObject>> Objects;
     };
     std::vector<LoadedContentFile> m_loadedContentFiles;
     enum class PostProcessStage
@@ -334,78 +336,76 @@ private:
 
                 // Read type infos (root content file only)
                 #ifdef NATIVE
-                if (!content.typeInfos.empty())
-                {
-                    m_typeInfos.reserve(content.typeInfos.size());
-                    for (auto const& [index, typeInfo] : content.typeInfos | std::views::enumerate)
+                if (auto const& typeInfos = content.typeInfos; !typeInfos.empty())
                 #else
                 if (auto const typeInfos = content["typeInfos[]"])
-                {
-                    m_typeInfos.reserve(typeInfos.GetArraySize());
-                    for (auto const& typeInfo : typeInfos)
                 #endif
+                {
+                    loaded.Types.reserve(typeInfos.size());
+                    m_typeInfos.reserve(m_typeInfos.size() + typeInfos.size());
+                    for (auto const& typeInfo : typeInfos)
                     {
-                        (void)m_typeInfos.emplace_back(new ContentTypeInfo
+                        auto object = new ContentTypeInfo
                         {
+                            .Index = (uint32)m_typeInfos.size(),
                             #ifdef NATIVE
-                            .Index = (uint32)index,
                             .GUIDOffset = typeInfo.guidOffset,
                             .UIDOffset = typeInfo.uidOffset,
                             .DataIDOffset = typeInfo.dataIdOffset,
                             .NameOffset = typeInfo.nameOffset,
                             .TrackReferences = (bool)typeInfo.trackReferences,
                             #else
-                            .Index = typeInfo.GetArrayIndex(),
                             .GUIDOffset = typeInfo["guidOffset"],
                             .UIDOffset = typeInfo["uidOffset"],
                             .DataIDOffset = typeInfo["dataIdOffset"],
                             .NameOffset = typeInfo["nameOffset"],
                             .TrackReferences = (bool)typeInfo["trackReferences"],
                             #endif
-                        })->GetTypeInfo(); // Ensure that it's initialized in config
+                        };
+                        (void)object->GetTypeInfo(); // Ensure that it's initialized in config
+                        loaded.Types.emplace_back(object);
+                        m_typeInfos.emplace_back(object);
                     }
-                    m_typeInfoPointers.assign_range(m_typeInfos | std::views::transform([](auto const& ptr) { return ptr.get(); }));
 
                     m_loadedTypes = true;
                 }
 
                 // Read namespaces (root content file only)
                 #ifdef NATIVE
-                if (!content.namespaces.empty())
+                if (auto const& namespaces = content.namespaces; !namespaces.empty())
                 #else
                 if (auto const namespaces = content["namespaces[]"])
                 #endif
                 {
                     // Create runtime objects for namespaces
-                    #ifdef NATIVE
-                    m_namespaces.reserve(content.namespaces.size());
-                    for (auto const& ns : content.namespaces)
-                    #else
-                    m_namespaces.reserve(namespaces.GetArraySize());
+                    loaded.Namespaces.reserve(namespaces.size());
+                    m_namespaces.reserve(m_namespaces.size() + namespaces.size());
+                    m_namespacesByName.reserve(m_namespacesByName.size() + namespaces.size());
                     for (auto const& ns : namespaces)
-                    #endif
                     {
-                        #ifdef NATIVE
-                        auto object = new ContentNamespace { .Index = (uint32)m_namespaces.size(), .Domain = ns.domain, .Name = ns.name.data() };
-                        #else
-                        auto object = new ContentNamespace { .Index = (uint32)m_namespaces.size(), .Domain = ns["domain"], .Name = ns["name"] };
-                        #endif
+                        auto object = new ContentNamespace
+                        {
+                            .Index = (uint32)m_namespaces.size(),
+                            #ifdef NATIVE
+                            .Domain = ns.domain,
+                            .Name = ns.name.data(),
+                            #else
+                            .Domain = ns["domain"],
+                            .Name = ns["name"],
+                            #endif
+                        };
+                        loaded.Namespaces.emplace_back(object);
                         m_namespaces.emplace_back(object);
                         m_namespacesByName[object->Name].emplace_back(object);
                     }
 
                     // Organize namespaces into a tree
-                    #ifdef NATIVE
-                    for (auto const& [index, ns] : content.namespaces | std::views::enumerate)
-                    #else
-                    for (auto const& ns : namespaces)
-                    #endif
+                    for (auto const& [index, ns] : namespaces | std::views::enumerate)
                     {
-                        #ifdef NATIVE
                         auto* current = GetNamespaceMutable(index);
+                        #ifdef NATIVE
                         auto const parentIndex = ns.parentIndex;
                         #else
-                        auto* current = GetNamespaceMutable(ns.GetArrayIndex());
                         int32 const parentIndex = ns["parentIndex"];
                         #endif
                         if (parentIndex >= 0)
@@ -417,7 +417,7 @@ private:
                         else
                         {
                             assert(!m_root);
-                            m_root.reset(current);
+                            m_root = current;
                         }
                     }
 
@@ -426,29 +426,33 @@ private:
 
                 // Read entries
                 #ifdef NATIVE
-                if (!content.indexEntries.empty())
+                if (auto const& indexEntries = content.indexEntries; !indexEntries.empty())
                 #else
                 if (auto const indexEntries = content["indexEntries"])
                 #endif
                 {
+                    loaded.Objects.reserve(indexEntries.size());
+                    m_objects.reserve(m_objects.size() + indexEntries.size());
+                    m_objectsByDataPointer.reserve(m_objectsByDataPointer.size() + indexEntries.size());
+                    m_objectsByGUID.reserve(m_objectsByGUID.size() + indexEntries.size());
+                    m_rootedObjects.reserve(m_rootedObjects.size() + indexEntries.size());
+                    m_unrootedObjects.reserve(m_unrootedObjects.size() + indexEntries.size());
+                    m_objectsByName.reserve(m_objectsByName.size() + indexEntries.size());
+
                     // Determine the boundaries of each entry
-                    #ifdef NATIVE
-                    loaded.EntryBoundaries.emplace(content.content.size());
-                    for (auto const& entry : content.indexEntries)
-                        //if (m_typeInfos.at(entry.type)->NameOffset >= 0)
-                        loaded.EntryBoundaries.emplace(entry.offset);
-                    #else
-                    loaded.EntryBoundaries.emplace(data.GetArraySize());
+                    loaded.EntryBoundaries.emplace(data.size());
                     for (auto const& entry : indexEntries)
+                    {
+                        #ifdef NATIVE
+                        //if (m_typeInfos.at(entry.type)->NameOffset >= 0)
+                            loaded.EntryBoundaries.emplace(entry.offset);
+                        #else
                         //if (m_typeInfos.at(entry["type"])->NameOffset >= 0)
                             loaded.EntryBoundaries.emplace(entry["offset"]);
-                    #endif
+                        #endif
+                    }
                     // Read entries and add them to namespace tree
-                    #ifdef NATIVE
-                    for (auto const& entry : content.indexEntries)
-                    #else
                     for (auto const& entry : indexEntries)
-                    #endif
                     {
                         // Calculation moved to runtime to speed up loading
                         #ifdef NATIVE
@@ -460,21 +464,21 @@ private:
 
                         #ifdef NATIVE
                         auto const offset = entry.offset;
-                        auto* type = m_typeInfos.at(entry.type).get();
+                        auto* typeInfo = m_typeInfos.at(entry.type);
                         auto* ns = GetNamespaceMutable(entry.namespaceIndex);
                         auto* root = entry.rootIndex >= 0 ? GetByDataPointerMutable(&content.content[content.indexEntries[entry.rootIndex].offset]) : nullptr;
                         #else
                         uint32 const offset = entry["offset"];
-                        auto* type = m_typeInfos.at(entry["type"]).get();
+                        auto* typeInfo = m_typeInfos.at(entry["type"]);
                         auto* ns = GetNamespaceMutable(entry["namespaceIndex"]);
                         int32 const rootIndex = entry["rootIndex"];
                         auto* root = rootIndex >= 0 ? GetByDataPointerMutable(data[indexEntries[rootIndex]["offset"]]) : nullptr;
                         #endif
 
-                        ContentObject* object = new ContentObject
+                        auto object = new ContentObject
                         {
                             .Index = (uint32)m_objects.size(),
-                            .Type = type,
+                            .Type = typeInfo,
                             .Namespace = ns,
                             .Root = root,
                             #ifdef NATIVE
@@ -486,6 +490,7 @@ private:
                             .ContentFileEntryBoundaries = &loaded.EntryBoundaries,
                             .ByteMap = &usedBytesMap[offset],
                         };
+                        loaded.Objects.emplace_back(object);
                         m_objects.emplace_back(object);
                         #ifdef NATIVE
                         assert(m_objectsByDataPointer.emplace(&content.content[entry.offset], object).second);
@@ -494,7 +499,7 @@ private:
                         #endif
                         if (auto const guid = object->GetGUID(); guid && !m_objectsByGUID.emplace(*guid, object).second)
                             std::terminate();
-                        type->Objects.emplace_back(object);
+                        typeInfo->Objects.emplace_back(object);
                         if (root)
                         {
                             root->Entries.emplace_back(object);

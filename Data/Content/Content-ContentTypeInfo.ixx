@@ -15,7 +15,7 @@ struct ContentTypeInfo
     int32 DataIDOffset;
     int32 NameOffset;
     bool TrackReferences;
-    std::list<ContentObject const*> Objects;
+    std::vector<ContentObject const*> Objects;
 
     [[nodiscard]] std::wstring GetDisplayName() const;
     [[nodiscard]] TypeInfo& GetTypeInfo() const;
