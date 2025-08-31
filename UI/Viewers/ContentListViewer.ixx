@@ -44,14 +44,14 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
     enum class ContentSort { GUID, UID, DataID, Type, Name } Sort { ContentSort::GUID };
     bool SortInvert { };
 
-    auto GetSortedContentObjects(bool isNamespace, uint32 index, auto const& entries)
+    std::span<Data::Content::ContentObject const* const> GetSortedContentObjects(bool isNamespace, uint32 index, std::vector<Data::Content::ContentObject const*> const& entries)
     {
         auto timeout = Time::FrameStart + 10ms;
         struct Cache
         {
             ContentSort Sort;
             bool Invert;
-            std::vector<uint32> Objects;
+            std::vector<Data::Content::ContentObject const*> Objects;
             bool Reset = true;
         };
         static std::unordered_map<uint32, Cache> namespaces, rootObjects;
@@ -62,9 +62,9 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             m_clearCache = false;
         }
         auto& cache = (isNamespace ? namespaces : rootObjects)[index];
-        if (cache.Objects.size() != std::ranges::size(entries))
+        if (cache.Objects.size() != entries.size())
         {
-            cache.Objects.assign_range(entries | std::views::transform([](auto const& ptr) { return ptr->Index; }));
+            cache.Objects = entries;
             cache.Reset = true;
         }
         if ((cache.Reset || cache.Sort != Sort || cache.Invert != SortInvert) && Time::PreciseNow() < timeout)
@@ -72,71 +72,39 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             SortList(cache.Objects, (cache.Sort = Sort), (cache.Invert = SortInvert), Flatten.has_value());
             cache.Reset = false;
         }
-        return cache.Objects | std::views::transform([](uint32 index) { return G::Game.Content.GetByIndex(index); });
+        return cache.Objects;
     }
     void ClearCache() { m_clearCache = true; }
 
-    void SortList(std::vector<uint32>& data, ContentSort sort, bool invert, bool flatten)
+    void SortList(std::vector<Data::Content::ContentObject const*>& data, ContentSort sort, bool invert, bool flatten)
     {
-        #define COMPARE(a, b) do { if (auto const result = (a) <=> (b); result != std::strong_ordering::equal) return result == std::strong_ordering::less; } while (false)
+        static auto valueOrDefault = []<typename T>(T const* ptr, T def = { }) { return ptr ? *ptr : def; };
         switch (sort)
         {
             using Utils::Sort::ComplexSort;
+            using Utils::Sort::Unsorted;
+            using Utils::Sort::Lazy;
             using enum ContentSort;
             case GUID:
                 if (flatten)
-                    ComplexSort(data, invert, [](uint32 id) { return *G::Game.Content.GetByIndex(id)->GetGUID(); });
+                    ComplexSort(data, invert, [](Data::Content::ContentObject const* object) { return *object->GetGUID(); });
                 else
-                    std::ranges::sort(data, [invert](auto a, auto b) { return a < b ^ invert; });
+                    std::ranges::sort(data, [invert](auto a, auto b) { return a->Index < b->Index ^ invert; });
                 break;
             case UID:
-                ComplexSort(data, invert, [](uint32 id) { return G::Game.Content.GetByIndex(id); }, [invert, flatten](uint32 a, uint32 b, auto const& aInfo, auto const& bInfo)
-                {
-                    COMPARE((invert ? bInfo : aInfo)->Type->Index, (invert ? aInfo : bInfo)->Type->Index);
-                    if (flatten)
-                        if (auto const* aUID = aInfo->GetUID())
-                            if (auto const* bUID = bInfo->GetUID())
-                                COMPARE(*aUID, *bUID);
-                    COMPARE(a, b);
-                    return false;
-                });
+                ComplexSort(data, invert, [invert, flatten](Data::Content::ContentObject const* object) { return std::make_tuple(Unsorted(object->Type->Index, invert), flatten ? valueOrDefault(object->GetUID()) : 0, object->Index); });
                 break;
             case DataID:
-                ComplexSort(data, invert, [](uint32 id) { return G::Game.Content.GetByIndex(id); }, [invert](uint32 a, uint32 b, auto const& aInfo, auto const& bInfo)
-                {
-                    COMPARE((invert ? bInfo : aInfo)->Type->Index, (invert ? aInfo : bInfo)->Type->Index);
-                    if (auto const* aID = aInfo->GetDataID())
-                        if (auto const* bID = bInfo->GetDataID())
-                            COMPARE(*aID, *bID);
-                    COMPARE(a, b);
-                    return false;
-                });
+                ComplexSort(data, invert, [invert](Data::Content::ContentObject const* object) { return std::make_tuple(Unsorted(object->Type->Index, invert), valueOrDefault(object->GetDataID()), object->Index); });
                 break;
             case Type:
-                ComplexSort(data, invert, [](uint32 id) { return G::Game.Content.GetByIndex(id); }, [invert](uint32 a, uint32 b, auto const& aInfo, auto const& bInfo)
-                {
-                    COMPARE(aInfo->Type->Index, bInfo->Type->Index);
-                    COMPARE((invert ? bInfo : aInfo)->GetDisplayName(G::Config.ShowOriginalNames, true), (invert ? aInfo : bInfo)->GetDisplayName(G::Config.ShowOriginalNames, true));
-                    //if (_wcsicmp(aInfo->GetDisplayName(G::Config.ShowOriginalNames, true).c_str(), bInfo->GetDisplayName(G::Config.ShowOriginalNames, true).c_str()) < 0) return true;
-                    COMPARE(a, b);
-                    return false;
-                });
+                ComplexSort(data, invert, [invert](Data::Content::ContentObject const* object) { return std::make_tuple(object->Type->Index, Unsorted(Lazy([object] { return object->GetDisplayName(G::Config.ShowOriginalNames, true); }), invert), Unsorted(object->Index, invert)); });
                 break;
             case Name:
-                ComplexSort(data, invert, [](uint32 id) { return G::Game.Content.GetByIndex(id); }, [flatten](uint32 a, uint32 b, auto const& aInfo, auto const& bInfo)
-                {
-                    if (flatten)
-                        COMPARE(aInfo->GetFullDisplayName(G::Config.ShowOriginalNames, true), bInfo->GetFullDisplayName(G::Config.ShowOriginalNames, true));
-                    else
-                        COMPARE(aInfo->GetDisplayName(G::Config.ShowOriginalNames, true), bInfo->GetDisplayName(G::Config.ShowOriginalNames, true));
-                    //if (_wcsicmp(aInfo->GetDisplayName(G::Config.ShowOriginalNames, true).c_str(), bInfo->GetDisplayName(G::Config.ShowOriginalNames, true).c_str()) < 0) return true;
-                    COMPARE(a, b);
-                    return false;
-                });
+                ComplexSort(data, invert, [flatten](Data::Content::ContentObject const* object) { return std::make_tuple(flatten ? object->GetFullDisplayName(G::Config.ShowOriginalNames, true) : object->GetDisplayName(G::Config.ShowOriginalNames, true), object->Index); });
                 break;
             default: std::terminate();
         }
-        #undef COMPARE
     }
     void UpdateSort() { }
     void UpdateFilter(bool delayed = false)
@@ -689,11 +657,11 @@ private:
         }
     }
 
-    void ProcessEntries(auto const& entries, ProcessContext& context, int parentIndex)
+    void ProcessEntries(std::span<Data::Content::ContentObject const* const> entries, ProcessContext& context, int parentIndex)
     {
         for (auto* child : entries)
         {
-            Data::Content::ContentObject const& entry = *child;
+            auto const& entry = *child;
             if (!entry.MatchesFilter(ContentFilter))
                 continue;
 
