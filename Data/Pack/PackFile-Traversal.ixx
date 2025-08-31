@@ -231,6 +231,15 @@ public:
             default: throw std::exception("FieldIterator::operator std::wstring_view() called for a field of non-wstring type");
         }
     }
+    [[nodiscard]] operator FileReference() const
+    {
+        switch (GetElementField().UnderlyingType)
+        {
+            case UnderlyingTypes::FileName:
+            case UnderlyingTypes::FileName2: return m_x64 ? Get<FileNameBase<int64>>().GetFileReference() : Get<FileNameBase<int32>>().GetFileReference();
+            default: throw std::exception("FieldIterator::operator FileReference() called for a field of non-filename type");
+        }
+    }
 
     template<typename T = FieldIterator>
     [[nodiscard]] Generator<T> Query(std::string_view path) const;
@@ -251,6 +260,7 @@ public:
 
     [[nodiscard]] bool operator==(FieldIterator const& itr) const = default;
     [[nodiscard]] FieldIterator operator*() const { return *this; }
+    [[nodiscard]] byte const* operator&() const { return GetPointer(); }
     [[nodiscard]] operator bool() const { return m_ptr && (IsArrayIterator() ? GetArrayIndex() < GetArraySize() : m_fieldItr != GetType().Fields.end()); }
     FieldIterator operator++(int) { auto const temp = *this; ++*this; return temp; }
     FieldIterator& operator++()
@@ -270,6 +280,7 @@ public:
     [[nodiscard]] auto begin() const { return IsArrayIterator() ? FieldIterator(GetPointer(), *this, GetArraySize() - GetArrayIndex(), GetArrayIndex()) : GetArrayElements().first; }
     [[nodiscard]] auto end() const { return IsArrayIterator() ? FieldIterator(GetPointer(), *this, GetArraySize() - GetArrayIndex(), GetArrayIndex(), true) : GetArrayElements().second; }
     [[nodiscard]] auto size() const { return GetArraySize(); }
+    [[nodiscard]] auto data() const { return GetPointer(); }
 
 private:
 

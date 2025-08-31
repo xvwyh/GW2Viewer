@@ -8,6 +8,7 @@ import GW2Viewer.Data.Pack;
 import GW2Viewer.Data.Pack.PackFile;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Async.ProgressBarContext;
+import GW2Viewer.Utils.ConstString;
 import GW2Viewer.Utils.Container;
 import std;
 import <cassert>;
@@ -15,11 +16,10 @@ import <cstring>;
 
 #define NATIVE
 
-#ifdef NATIVE
-#pragma pack(push, 1)
 namespace GW2Viewer::Data::Content
 {
-
+#ifdef NATIVE
+#pragma pack(push, 1)
 struct PackContentTypeInfo
 {
     int32 guidOffset;
@@ -79,11 +79,13 @@ struct PackContent
     Pack::Array<Pack::WString64> strings;
     Pack::Array<byte> content;
 };
-}
 #pragma pack(pop)
+#else
+template<ConstString... Fields>
+constexpr auto fields = std::views::transform([](auto const& fixup) { return std::make_tuple((uint32)fixup[Fields.template get<char>().data()]...); });
 #endif
 
-export namespace GW2Viewer::Data::Content
+export
 {
 
 class Manager
@@ -230,19 +232,23 @@ private:
         auto& chunk = file.GetFirstChunk();
         assert(chunk.Header.HeaderSize == sizeof(chunk.Header));
         auto& content = (PackContent&)chunk.Data;
-        assert(!(content.flags & GW2Viewer::Content::CONTENT_FLAG_ENCRYPTED)); // TODO: RC4 encrypted
 
         if (!m_rootContentFile)
             m_rootContentFile = &content;
+
+        auto const contentFlags = content.flags;
+        auto const& data = content.content;
         #else
         auto const content = loaded.File->QueryChunk(fcc::Main);
+
         if (!m_rootContentFile)
             m_rootContentFile.emplace(content);
 
-        assert(!((uint32)content["flags"] & GW2Viewer::Content::CONTENT_FLAG_ENCRYPTED)); // TODO: RC4 encrypted
-
+        uint32 const contentFlags = content["flags"];
         auto const data = content["content[]"];
         #endif
+
+        assert(!(contentFlags & GW2Viewer::Content::CONTENT_FLAG_ENCRYPTED)); // TODO: RC4 encrypted
 
         switch (stage)
         {
@@ -250,89 +256,64 @@ private:
             {
                 #ifdef NATIVE
                 for (auto const& entry : content.indexEntries)
-                    m_contentDataPointers.emplace(&content.content[entry.offset]);
+                    m_contentDataPointers.emplace(&data[entry.offset]);
                 #else
                 for (auto const& entry : content["indexEntries"])
-                    m_contentDataPointers.emplace(data[entry["offset"]]);
+                    m_contentDataPointers.emplace(&data[entry["offset"]]);
                 #endif
                 break;
             }
             case PostProcessStage::ProcessFixupsAndCreateObjects:
             {
-                #ifdef NATIVE
-                loaded.UsedContentByteMap = std::make_unique<byte[]>(content.content.size());
+                loaded.UsedContentByteMap = std::make_unique<byte[]>(data.size());
                 byte* usedBytesMap = loaded.UsedContentByteMap.get();
-                memset(usedBytesMap, 0, content.content.size());
-                #else
-                loaded.UsedContentByteMap = std::make_unique<byte[]>(data.GetArraySize());
-                byte* usedBytesMap = loaded.UsedContentByteMap.get();
-                memset(usedBytesMap, 0, data.GetArraySize());
-                #endif
+                memset(usedBytesMap, 0, data.size());
 
                 #ifdef NATIVE
                 for (auto const& [relocOffset] : content.localOffsets)
-                {
-                    (byte*&)content.content[relocOffset] += (size_t)content.content.data();
-                    memset(&usedBytesMap[relocOffset], 0xAA, sizeof(void*));
-                    AddReference((byte*&)content.content[relocOffset]);
-                }
                 #else
-                for (auto const& fixup : content["localOffsets"])
-                {
-                    uint32 const relocOffset = fixup["relocOffset"];
-                    *(byte**)data[relocOffset] += (uintptr_t)data.GetPointer();
-                    memset(&usedBytesMap[relocOffset], 0xAA, sizeof(void*));
-                    AddReference(*(byte**)data[relocOffset]);
-                }
+                for (auto const [relocOffset] : content["localOffsets"] | fields<"relocOffset">)
                 #endif
+                {
+                    *(byte**)&data[relocOffset] += (size_t)data.data();
+                    memset(&usedBytesMap[relocOffset], 0xAA, sizeof(void*));
+                    AddReference(*(byte**)&data[relocOffset]);
+                }
 
                 #ifdef NATIVE
                 for (auto const& [relocOffset, targetFileIndex] : content.externalOffsets)
-                {
-                    (byte*&)content.content[relocOffset] = &(*(PackContent*)&m_loadedContentFiles.at(targetFileIndex).File->GetFirstChunk().Data).content[(size_t&)content.content[relocOffset]];
-                    memset(&usedBytesMap[relocOffset], 0xEE, sizeof(void*));
-                    AddReference((byte*&)content.content[relocOffset]);
-                }
                 #else
-                for (auto const& fixup : content["externalOffsets"])
-                {
-                    uint32 const relocOffset = fixup["relocOffset"];
-                    uint32 const targetFileIndex = fixup["targetFileIndex"];
-                    *(byte**)data[relocOffset] = m_loadedContentFiles.at(targetFileIndex).File->QueryChunk(fcc::Main)["content"][*(uintptr_t*)data[relocOffset]];
-                    memset(&usedBytesMap[relocOffset], 0xEE, sizeof(void*));
-                    AddReference(*(byte**)data[relocOffset]);
-                }
+                for (auto const [relocOffset, targetFileIndex] : content["externalOffsets"] | fields<"relocOffset", "targetFileIndex">)
                 #endif
+                {
+                    #ifdef NATIVE
+                    *(byte**)&data[relocOffset] = &((PackContent*)&m_loadedContentFiles.at(targetFileIndex).File->GetFirstChunk().Data)->content[*(size_t*)&data[relocOffset]];
+                    #else
+                    *(byte**)&data[relocOffset] = m_loadedContentFiles.at(targetFileIndex).File->QueryChunk(fcc::Main)["content"][*(size_t*)&data[relocOffset]];
+                    #endif
+                    memset(&usedBytesMap[relocOffset], 0xEE, sizeof(void*));
+                    AddReference(*(byte**)&data[relocOffset]);
+                }
 
                 #ifdef NATIVE
-                for (auto const& [relocOffset] : content.fileIndices)
-                {
-                    (byte*&)content.content[relocOffset] = (byte*)m_rootContentFile->fileRefs[(size_t&)content.content[relocOffset]].GetFileID();
-                    memset(&usedBytesMap[relocOffset], 0xFF, sizeof(void*));
-                }
+                for (auto const& fileRefs = m_rootContentFile->fileRefs; auto const& [relocOffset] : content.fileIndices)
                 #else
-                for (auto const& fixup : content["fileIndices"])
+                for (auto const fileRefs = (*m_rootContentFile)["fileRefs"]; auto const [relocOffset] : content["fileIndices"] | fields<"relocOffset">)
+                #endif
                 {
-                    uint32 const relocOffset = fixup["relocOffset"];
-                    *(byte**)data[relocOffset] = (byte*)(uint32)(*m_rootContentFile)["fileRefs"][*(uintptr_t*)data[relocOffset]];
+                    *(byte**)&data[relocOffset] = (byte*)((Pack::FileReference)fileRefs[*(size_t*)&data[relocOffset]]).GetFileID();
                     memset(&usedBytesMap[relocOffset], 0xFF, sizeof(void*));
                 }
-                #endif
 
                 #ifdef NATIVE
-                for (auto const& [relocOffset] : content.stringIndices)
-                {
-                    (byte*&)content.content[relocOffset] = (byte*)content.strings[(size_t&)content.content[relocOffset]].data();
-                    memset(&usedBytesMap[relocOffset], 0xBB, sizeof(void*));
-                }
+                for (auto const& strings = content.strings; auto const& [relocOffset] : content.stringIndices)
                 #else
-                for (auto const strings = content["strings"]; auto const& fixup : content["stringIndices"])
+                for (auto const strings = content["strings"]; auto const [relocOffset] : content["stringIndices"] | fields<"relocOffset">)
+                #endif
                 {
-                    uint32 const relocOffset = fixup["relocOffset"];
-                    *(byte**)data[relocOffset] = (byte*)((std::wstring_view)strings[*(uintptr_t*)data[relocOffset]]).data();
+                    *(byte**)&data[relocOffset] = (byte*)((std::wstring_view)strings[*(size_t*)&data[relocOffset]]).data();
                     memset(&usedBytesMap[relocOffset], 0xBB, sizeof(void*));
                 }
-                #endif
 
                 // Read type infos (root content file only)
                 #ifdef NATIVE
@@ -441,38 +422,33 @@ private:
 
                     // Determine the boundaries of each entry
                     loaded.EntryBoundaries.emplace(data.size());
-                    for (auto const& entry : indexEntries)
+                    #ifdef NATIVE
+                    for (auto const& [type, offset, namespaceIndex, rootIndex] : indexEntries)
+                    #else
+                    for (auto const [type, offset] : indexEntries | fields<"type", "offset">)
+                    #endif
                     {
-                        #ifdef NATIVE
-                        //if (m_typeInfos.at(entry.type)->NameOffset >= 0)
-                            loaded.EntryBoundaries.emplace(entry.offset);
-                        #else
-                        //if (m_typeInfos.at(entry["type"])->NameOffset >= 0)
-                            loaded.EntryBoundaries.emplace(entry["offset"]);
-                        #endif
+                        //if (m_typeInfos.at(type)->NameOffset >= 0)
+                            loaded.EntryBoundaries.emplace(offset);
                     }
+
                     // Read entries and add them to namespace tree
-                    for (auto const& entry : indexEntries)
+                    #ifdef NATIVE
+                    for (auto const& [type, offset, namespaceIndex, rootIndex] : indexEntries)
+                    #else
+                    for (auto const [type, offset, namespaceIndex, rootIndex] : indexEntries | fields<"type", "offset", "namespaceIndex", "rootIndex">)
+                    #endif
                     {
                         // Calculation moved to runtime to speed up loading
-                        #ifdef NATIVE
-                        //auto itr = std::ranges::upper_bound(loaded.EntryBoundaries, entry.offset);
-                        #else
-                        //auto itr = std::ranges::upper_bound(loaded.EntryBoundaries, (size_t)entry["offset"]);
-                        #endif
+                        //auto itr = std::ranges::upper_bound(loaded.EntryBoundaries, offset);
                         //assert(itr != loaded.EntryBoundaries.end());
 
+                        auto* typeInfo = m_typeInfos.at(type);
+                        auto* ns = GetNamespaceMutable(namespaceIndex);
                         #ifdef NATIVE
-                        auto const offset = entry.offset;
-                        auto* typeInfo = m_typeInfos.at(entry.type);
-                        auto* ns = GetNamespaceMutable(entry.namespaceIndex);
-                        auto* root = entry.rootIndex >= 0 ? GetByDataPointerMutable(&content.content[content.indexEntries[entry.rootIndex].offset]) : nullptr;
+                        auto* root = rootIndex >= 0 ? GetByDataPointerMutable(&data[indexEntries[rootIndex].offset]) : nullptr;
                         #else
-                        uint32 const offset = entry["offset"];
-                        auto* typeInfo = m_typeInfos.at(entry["type"]);
-                        auto* ns = GetNamespaceMutable(entry["namespaceIndex"]);
-                        int32 const rootIndex = entry["rootIndex"];
-                        auto* root = rootIndex >= 0 ? GetByDataPointerMutable(data[indexEntries[rootIndex]["offset"]]) : nullptr;
+                        auto* root = (int32)rootIndex >= 0 ? GetByDataPointerMutable(&data[indexEntries[rootIndex]["offset"]]) : nullptr;
                         #endif
 
                         auto object = new ContentObject
@@ -481,22 +457,14 @@ private:
                             .Type = typeInfo,
                             .Namespace = ns,
                             .Root = root,
-                            #ifdef NATIVE
-                            .Data = { &content.content[entry.offset], ContentObject::UNINITIALIZED_SIZE /*&content.content[*itr]*/ },
-                            #else
-                            .Data = { (byte const*)data[offset], ContentObject::UNINITIALIZED_SIZE /*(byte const*)data[*itr]*/ },
-                            #endif
+                            .Data = { &data[offset], ContentObject::UNINITIALIZED_SIZE /*&data[*itr]*/ },
                             .ContentFileEntryOffset = offset,
                             .ContentFileEntryBoundaries = &loaded.EntryBoundaries,
                             .ByteMap = &usedBytesMap[offset],
                         };
                         loaded.Objects.emplace_back(object);
                         m_objects.emplace_back(object);
-                        #ifdef NATIVE
-                        assert(m_objectsByDataPointer.emplace(&content.content[entry.offset], object).second);
-                        #else
-                        assert(m_objectsByDataPointer.emplace(data[offset], object).second);
-                        #endif
+                        assert(m_objectsByDataPointer.emplace(&data[offset], object).second);
                         if (auto const guid = object->GetGUID(); guid && !m_objectsByGUID.emplace(*guid, object).second)
                             std::terminate();
                         typeInfo->Objects.emplace_back(object);
@@ -526,15 +494,16 @@ private:
             {
                 #ifdef NATIVE
                 for (auto const& [sourceOffset, targetFileIndex, targetOffset] : content.trackedReferences)
-                {
-                    auto const* source = &content.content[sourceOffset];
-                    auto const* target = &(*(PackContent*)&m_loadedContentFiles[targetFileIndex].File->GetFirstChunk().Data).content[targetOffset];
                 #else
-                for (auto const& trackedReference : content["trackedReferences"])
-                {
-                    byte const* source = data[trackedReference["sourceOffset"]];
-                    byte const* target = m_loadedContentFiles[trackedReference["targetFileIndex"]].File->QueryChunk(fcc::Main)["content"][trackedReference["targetOffset"]];
+                for (auto const [sourceOffset, targetFileIndex, targetOffset] : content["trackedReferences"] | fields<"sourceOffset", "targetFileIndex", "targetOffset">)
                 #endif
+                {
+                    auto const* source = &data[sourceOffset];
+                    #ifdef NATIVE
+                    auto const* target = &((PackContent*)&m_loadedContentFiles[targetFileIndex].File->GetFirstChunk().Data)->content[targetOffset];
+                    #else
+                    auto const* target = &m_loadedContentFiles[targetFileIndex].File->QueryChunk(fcc::Main)["content"][targetOffset];
+                    #endif
                     GetByDataPointerMutable(source)->AddReference(*GetByDataPointerMutable(target), ContentObject::Reference::Types::Tracked);
                 }
                 break;
@@ -558,5 +527,7 @@ private:
         m_references[*current].emplace(target);
     }
 };
+
+}
 
 }
