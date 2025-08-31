@@ -43,38 +43,106 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
     std::pair<uint32, uint32> FilterDataID { -1, -1 };
     enum class ContentSort { GUID, UID, DataID, Type, Name } Sort { ContentSort::GUID };
     bool SortInvert { };
+    Utils::Async::Scheduler AsyncSort;
 
-    std::span<Data::Content::ContentObject const* const> GetSortedContentObjects(bool isNamespace, uint32 index, std::vector<Data::Content::ContentObject const*> const& entries)
+    struct SortedContentObjects
     {
-        auto timeout = Time::FrameStart + 10ms;
+        std::vector<Data::Content::ContentObject const*> const& Objects;
+        std::mutex& Lock;
+        bool SortPending;
+    };
+    SortedContentObjects GetSortedContentObjects(bool isNamespace, uint32 index, std::vector<Data::Content::ContentObject const*> const& entries)
+    {
         struct Cache
         {
             ContentSort Sort;
             bool Invert;
+            bool Flatten;
             std::vector<Data::Content::ContentObject const*> Objects;
+            std::mutex Lock;
             bool Reset = true;
+            bool Ready = false;
         };
+        static std::vector<Cache*> queue;
+        static std::mutex queueLock;
         static std::unordered_map<uint32, Cache> namespaces, rootObjects;
+        if (m_clearQueue)
+        {
+            std::scoped_lock _(queueLock);
+            queue.clear();
+            if (!AsyncSort.Current())
+                m_clearQueue = false;
+        }
         if (m_clearCache)
         {
-            namespaces.clear();
-            rootObjects.clear();
-            m_clearCache = false;
+            if (!AsyncSort.Current())
+            {
+                namespaces.clear();
+                rootObjects.clear();
+                m_clearCache = false;
+            }
         }
         auto& cache = (isNamespace ? namespaces : rootObjects)[index];
-        if (cache.Objects.size() != entries.size())
+        if (std::scoped_lock _(cache.Lock); cache.Objects.size() != entries.size())
         {
             cache.Objects = entries;
             cache.Reset = true;
+            cache.Ready = false;
         }
-        if ((cache.Reset || cache.Sort != Sort || cache.Invert != SortInvert) && Time::PreciseNow() < timeout)
+        if (m_clearCache || m_clearQueue)
+            return { cache.Objects, cache.Lock, !cache.Ready };
+        if (cache.Reset || cache.Sort != Sort || cache.Invert != SortInvert || cache.Flatten != Flatten.has_value())
         {
-            SortList(cache.Objects, (cache.Sort = Sort), (cache.Invert = SortInvert), Flatten.has_value());
+            cache.Ready = false;
+
             cache.Reset = false;
+            cache.Sort = Sort;
+            cache.Invert = SortInvert;
+            cache.Flatten = Flatten.has_value();
+
+            std::scoped_lock _(queueLock);
+            queue.emplace_back(&cache);
         }
-        return cache.Objects;
+        if (std::scoped_lock _(queueLock); !queue.empty() && !AsyncSort.Current())
+        {
+            AsyncSort.Run([this](Utils::Async::Context context)
+            {
+                for (uint32 i = 0;; ++i)
+                {
+                    Cache* next;
+                    {
+                        std::scoped_lock _(queueLock);
+                        if (i >= queue.size())
+                            break;
+                        next = queue[i];
+                        context->SetTotal(std::max<uint32>(context->Current, queue.size()));
+                    }
+                    if (auto& cache = *next; !cache.Ready)
+                    {
+                        decltype(cache.Objects) sorted;
+                        {
+                            std::scoped_lock _(cache.Lock);
+                            sorted = cache.Objects;
+                        }
+                        SortList(sorted, cache.Sort, cache.Invert, cache.Flatten);
+                        {
+                            std::scoped_lock _(cache.Lock);
+                            cache.Objects = std::move(sorted);
+                            cache.Ready = true;
+                        }
+                    }
+                    context->Increment();
+                }
+                context->Finish();
+            });
+        }
+        return { cache.Objects, cache.Lock, !cache.Ready };
     }
-    void ClearCache() { m_clearCache = true; }
+    void ClearCache()
+    {
+        m_clearQueue = true;
+        m_clearCache = true;
+    }
 
     void SortList(std::vector<Data::Content::ContentObject const*>& data, ContentSort sort, bool invert, bool flatten)
     {
@@ -106,7 +174,10 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             default: std::terminate();
         }
     }
-    void UpdateSort() { }
+    void UpdateSort()
+    {
+        m_clearQueue = true;
+    }
     void UpdateFilter(bool delayed = false)
     {
         FilterName.clear();
@@ -339,6 +410,7 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                 context.CollapseAll = true;
             I::SetItemTooltip("Collapse All Namespaces");
         }
+        if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, { 0, 0 }))
         if (scoped::WithStyleVar(ImGuiStyleVar_ItemInnerSpacing, { 0, I::GetStyle().ItemInnerSpacing.y }))
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, { I::GetStyle().FramePadding.x, 0 }))
         if (scoped::WithStyleVar(ImGuiStyleVar_IndentSpacing, 16))
@@ -352,7 +424,15 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             I::TableSetupColumn("GUID", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_DefaultSort, 40, (ImGuiID)ContentSort::GUID);
             I::TableSetupColumn("Refs", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoSort, 40);
             I::TableSetupScrollFreeze(0, 1);
+            auto const pos = I::GetCursorScreenPos();
+            auto const avail = I::GetContentRegionAvail();
             I::TableHeadersRow();
+            if (scoped::WithCursorScreenPos(pos.x, I::GetCursorScreenPos().y - I::TableGetHeaderRowHeight()))
+            if (scoped::TableBackgroundChannel())
+            {
+                I::Dummy({ avail.x, I::TableGetHeaderRowHeight() });
+                Controls::AsyncProgressBar(AsyncSort);
+            }
 
             if (auto specs = I::TableGetSortSpecs(); specs && specs->SpecsDirty && specs->SpecsCount > 0)
             {
@@ -399,7 +479,8 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
     }
 
 private:
-    bool m_clearCache;
+    bool m_clearQueue = false;
+    bool m_clearCache = false;
 
     struct ProcessContext
     {
@@ -559,6 +640,7 @@ private:
                 G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", ns.GetFullDisplayName()), nullptr, true);
 
             if (scoped::PopupContextItem())
+            if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, I::GetStyle().FramePadding))
             {
                 I::Text("Full Name: %s", Utils::Encoding::ToUTF8(ns.GetFullName()).c_str());
                 I::InputTextUTF8("Name", G::Config.ContentNamespaceNames, ns.GetFullName(), ns.Name);
@@ -657,9 +739,14 @@ private:
         }
     }
 
-    void ProcessEntries(std::span<Data::Content::ContentObject const* const> entries, ProcessContext& context, int parentIndex)
+    void ProcessEntries(SortedContentObjects const& entries, ProcessContext& context, int parentIndex)
     {
-        for (auto* child : entries)
+        if (entries.SortPending)
+            I::PushStyleVar(ImGuiStyleVar_Alpha, 0.375f + 0.125f * std::cosf(I::GetTime() * 10));
+
+        std::scoped_lock _(entries.Lock);
+
+        for (auto* child : entries.Objects)
         {
             auto const& entry = *child;
             if (!entry.MatchesFilter(ContentFilter))
@@ -696,6 +783,7 @@ private:
                     ContentViewer::Open(entry, { .MouseButton = button });
 
                 if (scoped::PopupContextItem())
+                if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, I::GetStyle().FramePadding))
                 {
                     I::Text("Full Name: %s", Utils::Encoding::ToUTF8(entry.GetFullName()).c_str());
                     if (I::InputTextUTF8("Name", G::Config.ContentObjectNames, *entry.GetGUID(), entry.GetName() && entry.GetName()->Name && *entry.GetName()->Name ? *entry.GetName()->Name : entry.GetDisplayName()))
@@ -782,6 +870,9 @@ private:
             if (context.CanSkip())
                 break;
         }
+
+        if (entries.SortPending)
+            I::PopStyleVar();
     }
 };
 
