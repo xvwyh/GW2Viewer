@@ -45,6 +45,11 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
     bool SortInvert { };
     Utils::Async::Scheduler AsyncSort;
 
+    float ScrollX = 0;
+    float ScrollExpectedX = 0;
+    float ScrollTargetX = 0;
+    float PrevMinDrawnIndent = 0;
+
     struct SortedContentObjects
     {
         std::vector<Data::Content::ContentObject const*> const& Objects;
@@ -321,6 +326,15 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
 
                 I::Separator();
 
+                I::Checkbox("Horizontal scrolling", &ViewerConfig.HorizontalScroll);
+                if (scoped::Disabled(!ViewerConfig.HorizontalScroll))
+                {
+                    I::Checkbox("Auto-scroll right to hide tree indents", &ViewerConfig.HorizontalScrollAutoIndent);
+                    I::Checkbox("Auto-scroll left when nothing is out of bounds", &ViewerConfig.HorizontalScrollAutoContent);
+                }
+
+                I::Separator();
+
                 I::Checkbox("Draw tree lines", &ViewerConfig.DrawTreeLines);
                 I::Checkbox("Draw separators between patches", &ViewerConfig.DrawSeparatorsBetweenReleases);
                 I::SetItemTooltip("Speculative, determined by DataID and GUID desynchronizing their ordering.\nReleases before 2015 don't follow this rule.\nOnly works when sorting by DataID.");
@@ -410,12 +424,25 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                 context.CollapseAll = true;
             I::SetItemTooltip("Collapse All Namespaces");
         }
+
+        ::ImGuiWindow* window = nullptr;
+        ImGuiTable* table = nullptr;
         if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, { 0, 0 }))
         if (scoped::WithStyleVar(ImGuiStyleVar_ItemInnerSpacing, { 0, I::GetStyle().ItemInnerSpacing.y }))
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, { I::GetStyle().FramePadding.x, 0 }))
         if (scoped::WithStyleVar(ImGuiStyleVar_IndentSpacing, 16))
-        if (scoped::Table("Table", 7, ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Sortable))
+        if (scoped::Table("Table", 7, ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Sortable, { 0, ViewerConfig.HorizontalScroll ? -I::GetStyle().ScrollbarSize : 0 }))
         {
+            window = I::GetCurrentWindow();
+            table = I::GetCurrentTable();
+            if (ViewerConfig.HorizontalScroll && I::GetIO().KeyShift && I::IsWindowHovered(ImGuiHoveredFlags_ChildWindows))
+            {
+                I::SetKeyOwner(ImGuiKey_MouseWheelX, window->ID, ImGuiInputFlags_LockThisFrame);
+                float max_step = table->Columns[0].ClipRect.GetWidth() * 0.67f;
+                float scroll_step = ImTrunc(ImMin(10 * window->FontRefSize, max_step));
+                ScrollTargetX = ScrollExpectedX - I::GetIO().MouseWheel * scroll_step;
+            }
+
             I::TableSetupColumn("Name", ImGuiTableColumnFlags_NoHide, 0, (ImGuiID)ContentSort::Name);
             I::TableSetupColumn("Type", ImGuiTableColumnFlags_WidthFixed, 40, (ImGuiID)ContentSort::Type);
             I::TableSetupColumn("Size", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoSort, 40);
@@ -463,6 +490,9 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                     }
                 }
 
+                if (ViewerConfig.HorizontalScroll && ScrollX)
+                    I::Indent(-ScrollX);
+
                 if (Flatten)
                 {
                     if (Flatten->empty())
@@ -474,7 +504,36 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
                 }
                 else
                     context.Draw([&] { ProcessNamespace(*G::Game.Content.GetNamespaceRoot(), context, 0); });
+
+                if (ViewerConfig.HorizontalScroll && ScrollX)
+                    I::Unindent(-ScrollX);
             }
+        }
+        if (context.MinDrawnIndent)
+            *context.MinDrawnIndent += ScrollX;
+
+        if (ViewerConfig.HorizontalScroll)
+        {
+            auto bb = I::GetWindowScrollbarRect(window, ImGuiAxis_X);
+            bb.Max.y = bb.Min.y + I::GetStyle().ScrollbarSize;
+            auto const size_visible = table->Columns[0].WorkMaxX - table->Columns[0].WorkMinX;
+            auto const size_contents = ScrollX + table->Columns[0].ContentMaxXUnfrozen - table->Columns[0].WorkMinX;
+            auto const size_padded_contents = ScrollX + std::max(size_visible, table->Columns[0].ContentMaxXUnfrozen - table->Columns[0].WorkMinX);
+
+            ScrollExpectedX = ScrollTargetX = ImRound64(ImClamp(ScrollTargetX, 0.0f, size_padded_contents - size_visible));
+            auto const smooth = ScrollExpectedX + (ScrollX - ScrollExpectedX) * expf(-20 * ImGui::GetIO().DeltaTime);
+            ScrollX = fabsf(smooth - ScrollExpectedX) > 0.5f ? smooth : ScrollExpectedX;
+
+            ImS64 scroll = ScrollX;
+            if (I::ScrollbarEx(bb, I::GetWindowScrollbarID(window, ImGuiAxis_X), ImGuiAxis_X, &scroll, size_visible, size_padded_contents, ImDrawFlags_RoundCornersBottom))
+                ScrollX = ScrollExpectedX = ScrollTargetX = scroll;
+
+            if (ViewerConfig.HorizontalScrollAutoContent && ScrollExpectedX > size_contents - size_visible)
+                ScrollTargetX = std::max(0.0f, size_contents - size_visible);
+            if (ViewerConfig.HorizontalScrollAutoIndent && context.MinDrawnIndent && ScrollExpectedX <= PrevMinDrawnIndent)
+                ScrollTargetX = std::max(0.0f, *context.MinDrawnIndent);
+
+            PrevMinDrawnIndent = context.MinDrawnIndent.value_or(0);
         }
     }
 
@@ -491,6 +550,7 @@ private:
         ImGuiButtonFlags_ OpenObjectButton = ImGuiButtonFlags_None;
         std::optional<Item> Locate;
         Data::Content::ContentObject const* PreviousObject = nullptr;
+        std::optional<float> MinDrawnIndent;
 
         void Draw(std::function<void()>&& process)
         {
@@ -542,6 +602,12 @@ private:
                 I::TreePushOverrideID(id);
             }
             return false;
+        }
+        void BeginItem()
+        {
+            auto const window = I::GetCurrentWindow();
+            if (window->ClipRect.Overlaps({ I::GetCursorScreenPos(), I::GetCursorScreenPos() + ImVec2(window->ClipRect.GetWidth(), I::GetFrameHeight()) }))
+                MinDrawnIndent = std::min(MinDrawnIndent.value_or(FLT_MAX), window->DC.Indent.x);
         }
         void CommitItem() const
         {
@@ -633,6 +699,7 @@ private:
 
             I::TableNextColumn();
             I::SetNextItemAllowOverlap();
+            context.BeginItem();
             open = I::TreeNodeEx(&ns, flags, ICON_FA_FOLDER " %s", Utils::Encoding::ToUTF8(ns.GetDisplayName(G::Config.ShowOriginalNames)).c_str());
             context.CommitItem();
 
@@ -775,6 +842,7 @@ private:
                 I::TableNextColumn();
                 I::SetNextItemAllowOverlap();
                 auto const cursorRowStart = I::GetCursorScreenPos();
+                context.BeginItem();
                 open = I::TreeNodeEx(&entry, flags, "") && canOpen;
                 context.CommitItem();
                 auto const rect = I::GetCurrentContext()->LastItemData.Rect;

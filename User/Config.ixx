@@ -50,6 +50,9 @@ struct Config
                 bool AutoOpenSearchResultInBackgroundTab = false;
                 bool DrawTreeLines = true;
                 bool DrawSeparatorsBetweenReleases = false;
+                bool HorizontalScroll = false;
+                bool HorizontalScrollAutoIndent = false;
+                bool HorizontalScrollAutoContent = false;
 
                 NLOHMANN_DEFINE_TYPE_ORDERED_INTRUSIVE_WITH_DEFAULT(ContentListViewer
                     , AutoExpandSearchResults
@@ -58,6 +61,9 @@ struct Config
                     , AutoOpenSearchResultInBackgroundTab
                     , DrawTreeLines
                     , DrawSeparatorsBetweenReleases
+                    , HorizontalScroll
+                    , HorizontalScrollAutoIndent
+                    , HorizontalScrollAutoContent
                 )
             } ContentListViewer;
 
