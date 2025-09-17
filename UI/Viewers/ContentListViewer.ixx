@@ -728,6 +728,19 @@ private:
         return std::clamp(Time::ToMs(Time::Between(now, highlightUntil)).count() / 1000.0f, 0.0f, 1.0f);
     }
 
+    void DrawBruteforceButtons(char const* header, std::wstring_view prefix, Data::Content::ContentNamespace const* recursiveBase = nullptr)
+    {
+        scoped::WithID(header);
+        I::AlignTextToFramePadding();
+        I::TextUnformatted(header);
+        if (I::SameLine(); !recursiveBase && I::Button(ICON_FA_FILE " Objects"))
+            G::Windows::Demangle.OpenBruteforceUI(prefix, recursiveBase, true, true, false);
+        if (I::SameLine(); I::Button(ICON_FA_FOLDER " Namespaces"))
+            G::Windows::Demangle.OpenBruteforceUI(prefix, recursiveBase, true, false, true);
+        if (I::SameLine(); !recursiveBase && I::Button(ICON_FA_ASTERISK " All"))
+            G::Windows::Demangle.OpenBruteforceUI(prefix, recursiveBase, true, true, true);
+    }
+
     void ProcessNamespace(Data::Content::ContentNamespace const& ns, ProcessContext& context, int parentIndex)
     {
         if (!ns.MatchesFilter(ContentFilter))
@@ -767,17 +780,13 @@ private:
                 I::SameLine();
                 Controls::CopyButton("Full Name", ns.GetFullDisplayName(G::Config.ShowOriginalNames, true));
 
-                I::AlignTextToFramePadding();
-                I::TextUnformatted("Bruteforce Demangle Name:");
-                I::SameLine();
-                if (ns.Parent && I::Button("This"))
-                    G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", ns.Parent->GetFullDisplayName(false, true)), nullptr, true, false, true);
-                I::SameLine();
-                if (I::Button("Children"))
-                    G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", ns.GetFullDisplayName(false, true)), nullptr, true, false, true);
-                I::SameLine();
-                if (I::Button("Recursively"))
-                    G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", ns.GetFullDisplayName(false, true)), &ns, true, false, true);
+                I::Dummy({ 1, 10 });
+
+                I::TextUnformatted("Bruteforce Demangle Name");
+                if (ns.Parent)
+                    DrawBruteforceButtons("Siblings", std::format(L"{}.", ns.Parent->GetFullDisplayName(false, true)));
+                DrawBruteforceButtons("Children", std::format(L"{}.", ns.GetFullDisplayName(false, true)));
+                DrawBruteforceButtons("Recursively", std::format(L"{}.", ns.GetFullDisplayName(false, true)), &ns);
                 if (G::Windows::Demangle.CanSkipRecursiveBruteforceTo(ns))
                     if (I::SameLine(); I::Button(ICON_FA_FORWARD_FAST " Skip to This"))
                         G::Windows::Demangle.SkipRecursiveBruteforceTo(ns);
@@ -931,11 +940,18 @@ private:
                     I::SameLine();
                     Controls::CopyButton("Full Name", I::StripMarkup(entry.GetFullDisplayName(false, true)));
 
-                    if (entry.Namespace && I::Button("Bruteforce Demangle Name"))
-                        G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", entry.Namespace->GetFullDisplayName(false, true)), nullptr, true, true, false);
+                    I::Dummy({ 1, 10 });
 
-                    if (I::Button("Search for Content References"))
+                    if (I::Button(ICON_FA_MAGNIFYING_GLASS " Search for Content References"))
                         G::Windows::ContentSearch.SearchForSymbolValue("Content*", (Data::Content::TypeInfo::Condition::ValueType)entry.Data.data());
+
+                    if (entry.Namespace)
+                    {
+                        I::Dummy({ 1, 10 });
+
+                        I::TextUnformatted("Bruteforce Demangle Name");
+                        DrawBruteforceButtons("Siblings", std::format(L"{}.", entry.Namespace->GetFullDisplayName(false, true)));
+                    }
                 }
 
                 I::SameLine(0, 0);
