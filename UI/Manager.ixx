@@ -1,5 +1,6 @@
 export module GW2Viewer.UI.Manager;
 import GW2Viewer.Common;
+import GW2Viewer.Data.Content;
 import GW2Viewer.UI.ImGui;
 import GW2Viewer.UI.Viewers.Viewer;
 import std;
@@ -19,6 +20,34 @@ public:
         ImFont* GameHeading { };
         ImFont* GameHeadingItalic { };
     } Fonts;
+
+    struct
+    {
+    private:
+        template<typename T>
+        struct HoveredObjectData
+        {
+            T Object;
+            ImGuiID ItemID;
+            int LastAliveFrame;
+
+            bool Is(T object) { return Object == object && LastAliveFrame + 1 >= I::GetFrameCount(); }
+            bool IsNotLastItem(T object)
+            {
+                return Is(object) && (!I::IsItemHovered() || ItemID != I::GetItemID());
+            }
+            void SetLastItem(T object)
+            {
+                if (I::IsItemHovered())
+                    *this = { object, I::GetItemID(), I::GetFrameCount() };
+                else if (ItemID == I::GetItemID())
+                    *this = { };
+            }
+        };
+
+    public:
+        HoveredObjectData<Data::Content::ContentObject const*> Object { };
+    } Hovered;
 
     bool IsLoaded() const { return m_loaded; }
     void Load();

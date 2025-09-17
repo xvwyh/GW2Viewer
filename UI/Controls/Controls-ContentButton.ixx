@@ -2,6 +2,7 @@ export module GW2Viewer.UI.Controls:ContentButton;
 import :Texture;
 import GW2Viewer.Data.Content;
 import GW2Viewer.UI.ImGui;
+import GW2Viewer.UI.Manager;
 import GW2Viewer.UI.Viewers.Viewer;
 import GW2Viewer.Utils.Encoding;
 import std;
@@ -10,7 +11,6 @@ import std;
 namespace GW2Viewer::UI::Controls
 {
 void OpenContent(Data::Content::ContentObject const& content, Viewers::OpenViewerOptions const& options);
-std::pair<Data::Content::ContentObject const*, ImGuiID> HoveredContentObject { };
 
 export
 {
@@ -54,15 +54,12 @@ void ContentButton(Data::Content::ContentObject const* content, void const* id, 
     while (size.x > I::GetContentRegionAvail().x && condense.Condense());
 
     auto const pos = I::GetCursorScreenPos();
-    if (content == HoveredContentObject.first)
+    if (G::UI.Hovered.Object.Is(content))
         I::PushStyleColor(ImGuiCol_Button, I::GetColorU32(ImGuiCol_ButtonHovered));
     I::Button("", size);
-    if (content == HoveredContentObject.first)
+    if (G::UI.Hovered.Object.Is(content))
         I::PopStyleColor();
-    if (I::IsItemHovered())
-        HoveredContentObject = { content, I::GetItemID() };
-    else if (HoveredContentObject.second == I::GetItemID())
-        HoveredContentObject = { };
+    G::UI.Hovered.Object.SetLastItem(content);
 
     if (content)
         if (auto const button = I::IsItemMouseClickedWith(ImGuiButtonFlags_MouseButtonLeft | ImGuiButtonFlags_MouseButtonMiddle))
