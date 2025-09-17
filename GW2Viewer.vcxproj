@@ -167,6 +167,7 @@
     <ClCompile Include="Tasks\StartupLoading.ixx" />
     <ClCompile Include="UI\Controls\Controls-AsyncProgressBar.ixx" />
     <ClCompile Include="UI\Controls\Controls-ContentButton.ixx" />
+    <ClCompile Include="UI\Controls\Controls-ContentNamespaceButton.ixx" />
     <ClCompile Include="UI\Controls\Controls-CopyButton.ixx" />
     <ClCompile Include="UI\Controls\Controls-FileButton.ixx" />
     <ClCompile Include="UI\Controls\Controls-FilteredComboBox.ixx" />

@@ -404,7 +404,7 @@ struct Demangle : Window
                     I::InputTextReadOnly("##Name", Utils::Encoding::ToUTF8(name));
 
                     I::TableNextColumn();
-                    I::Text(ICON_FA_FOLDER_CLOSED " %s", Utils::Encoding::ToUTF8(ns->GetFullDisplayName()).c_str());
+                    Controls::ContentNamespaceButton(ns, ns);
                     ++drawn;
                 }
                 for (auto const& [object, name] : ContentResults | std::views::drop(std::max(0, clipper.DisplayStart - (int)NamespaceResults.size())) | std::views::take(clipper.DisplayEnd - clipper.DisplayStart - drawn))
