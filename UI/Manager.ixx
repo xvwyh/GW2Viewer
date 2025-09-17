@@ -47,6 +47,7 @@ public:
 
     public:
         HoveredObjectData<Data::Content::ContentObject const*> Object { };
+        HoveredObjectData<Data::Content::ContentNamespace const*> Namespace { };
     } Hovered;
 
     bool IsLoaded() const { return m_loaded; }

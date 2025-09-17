@@ -284,9 +284,13 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
         UpdateFilter(true);
     }
 
+    void LocateObject(Data::Content::ContentObject const& object) { Locate(&object); }
+    void LocateNamespace(Data::Content::ContentNamespace const& ns) { Locate(&ns); }
+
     void Draw() override
     {
-        ProcessContext context;
+        ProcessContext context { *this };
+
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
         if (scoped::Table("Search", 2, ImGuiTableFlags_NoSavedSettings))
         {
@@ -409,7 +413,7 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             auto const viewer = dynamic_cast<ContentViewer*>(G::UI.GetCurrentViewer());
             if (scoped::Disabled(!viewer))
             if (I::Button(ICON_FA_FOLDER_MAGNIFYING_GLASS))
-                context.Locate = &viewer->Content;
+                LocateObject(viewer->Content);
             I::SetItemTooltip("Locate:\n%s", viewer ? viewer->Title().c_str() : "<no content selected>");
 
             I::TableNextColumn();
@@ -541,9 +545,11 @@ private:
     bool m_clearQueue = false;
     bool m_clearCache = false;
 
+    using Item = std::variant<Data::Content::ContentNamespace const*, Data::Content::ContentObject const*>;
+
     struct ProcessContext
     {
-        using Item = std::variant<Data::Content::ContentNamespace const*, Data::Content::ContentObject const*>;
+        ContentListViewer& Viewer;
 
         bool ExpandAll = false;
         bool CollapseAll = false;
@@ -552,8 +558,13 @@ private:
         Data::Content::ContentObject const* PreviousObject = nullptr;
         std::optional<float> MinDrawnIndent;
 
+        ProcessContext(ContentListViewer& viewer) : Viewer(viewer) { }
+
         void Draw(std::function<void()>&& process)
         {
+            if (Viewer.m_locate)
+                Locate = std::exchange(Viewer.m_locate, std::nullopt);
+
             process(); // Dry run to count elements
             while (Step())
                 process();
@@ -619,6 +630,14 @@ private:
                 I::ScrollToItem();
                 I::FocusItem();
             }
+
+            auto const hovered = std::visit(Utils::Visitor::Overloaded
+            {
+                [](Data::Content::ContentObject const* object) { G::UI.Hovered.Object.SetLastItem(object); return G::UI.Hovered.Object.IsNotLastItem(object); },
+                [](Data::Content::ContentNamespace const* ns) { G::UI.Hovered.Namespace.SetLastItem(ns); return G::UI.Hovered.Namespace.IsNotLastItem(ns); },
+            }, m_currentItem);
+            if (auto const alpha = std::max(Viewer.ShouldHighlight(m_currentItem), hovered ? 0.15f : 0.0f))
+                I::TableSetBgColor(ImGuiTableBgTarget_RowBg1, I::GetColorU32(0x80FFFFFF, alpha));
         }
 
         int GetCurrentIndex() const { return m_currentIndex; }
@@ -680,6 +699,34 @@ private:
             }, item, *Locate);
         }
     };
+
+    std::optional<Item> m_locate;
+    void Locate(Item item)
+    {
+        m_locate = item;
+        Highlight(item);
+    }
+
+    std::optional<std::tuple<Item, Time::Point>> m_highlight;
+    void Highlight(Item item, Time::Duration duration = 2s) { m_highlight.emplace(item, Time::Now() + duration); }
+    float ShouldHighlight(Item item)
+    {
+        if (!m_highlight)
+            return 0;
+
+        auto&& [highlightItem, highlightUntil] = *m_highlight;
+        if (highlightItem != item)
+            return 0;
+
+        auto const now = Time::Now();
+        if (now >= highlightUntil)
+        {
+            m_highlight.reset();
+            return 0;
+        }
+
+        return std::clamp(Time::ToMs(Time::Between(now, highlightUntil)).count() / 1000.0f, 0.0f, 1.0f);
+    }
 
     void ProcessNamespace(Data::Content::ContentNamespace const& ns, ProcessContext& context, int parentIndex)
     {
