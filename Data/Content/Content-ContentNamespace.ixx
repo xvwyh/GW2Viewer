@@ -18,6 +18,8 @@ struct ContentNamespace
 
     [[nodiscard]] bool HasCustomName() const;
     [[nodiscard]] bool HasCorrectCustomName() const;
+    [[nodiscard]] bool CustomNameMatchesSiblings() const;
+    [[nodiscard]] bool CustomNameMatchesSiblings(std::wstring_view custom) const;
     [[nodiscard]] std::wstring GetDisplayName(bool skipCustom = false, bool skipColor = false) const;
     [[nodiscard]] std::wstring GetFullDisplayName(bool skipCustom = false, bool skipColor = false) const;
     [[nodiscard]] std::wstring GetFullName() const;

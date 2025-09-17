@@ -401,7 +401,8 @@ struct Demangle : Window
 
                     I::TableNextColumn();
                     I::SetNextItemWidth(-FLT_MIN);
-                    I::InputTextReadOnly("##Name", Utils::Encoding::ToUTF8(name));
+                    if (scoped::WithColorVar(ImGuiCol_Text, ns->CustomNameMatchesSiblings(name) ? I::GetColorU32(ImGuiCol_Text) : 0xFFCCDDFF))
+                        I::InputTextReadOnly("##Name", Utils::Encoding::ToUTF8(name));
 
                     I::TableNextColumn();
                     Controls::ContentNamespaceButton(ns, ns);

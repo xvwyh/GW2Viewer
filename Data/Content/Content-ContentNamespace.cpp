@@ -31,6 +31,55 @@ bool ContentNamespace::HasCorrectCustomName() const
     return GetCustomName(*this) && IsCustomNameCorrect(*this);
 }
 
+bool ContentNamespace::CustomNameMatchesSiblings() const
+{
+    if (auto const custom = GetCustomName(*this))
+        return CustomNameMatchesSiblings(*custom);
+
+    return false;
+}
+
+bool ContentNamespace::CustomNameMatchesSiblings(std::wstring_view custom) const
+{
+    if (!Parent)
+        return true;
+
+    static auto trim = [](std::wstring_view string)
+    {
+        switch (string[0])
+        {
+            case L'_':
+                return string.substr(1);
+            default:
+                return string;
+        }
+    };
+
+    auto thisItr = std::ranges::find(Parent->Namespaces, this);
+    for (auto const prev : std::span(Parent->Namespaces.begin(), thisItr) | std::views::reverse)
+    {
+        if (auto const prevName = GetCustomName(*prev))
+        {
+            if (custom < *prevName && custom < trim(*prevName) && trim(custom) < *prevName && trim(custom) < trim(*prevName))
+                return false;
+
+            break;
+        }
+    }
+    for (auto const next : std::span(++thisItr, Parent->Namespaces.end()))
+    {
+        if (auto const nextName = GetCustomName(*next))
+        {
+            if (custom > *nextName && custom > trim(*nextName) && trim(custom) > *nextName && trim(custom) > trim(*nextName))
+                return false;
+
+            break;
+        }
+    }
+
+    return true;
+}
+
 std::wstring ContentNamespace::GetDisplayName(bool skipCustom, bool skipColor) const
 {
     if (!skipCustom)
@@ -38,8 +87,12 @@ std::wstring ContentNamespace::GetDisplayName(bool skipCustom, bool skipColor) c
         if (auto const custom = GetCustomName(*this))
         {
             if (!skipColor)
+            {
                 if (!IsCustomNameCorrect(*this))
                     return std::format(L"<c=#FCC>{}</c>", *custom);
+                if (!CustomNameMatchesSiblings(*custom))
+                    return std::format(L"<c=#FDC>{}</c>", *custom);
+            }
             return *custom;
         }
     }
