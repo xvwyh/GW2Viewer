@@ -17,7 +17,7 @@ template<typename T, typename Func> requires std::is_base_of_v<UI::Viewers::List
 void ForEach(Func&& func) { std::ranges::for_each(ListViewers<T>, [&func](T* viewer) { return std::invoke(func, *viewer); }); }
 
 template<typename T, typename Result, typename... Args> requires std::is_base_of_v<UI::Viewers::ListViewerBase, T>
-void Notify(Result(T::* method)(Args...), Args&&... args) { ForEach<T>(std::bind_back(method, std::forward<Args>(args)...)); }
+void Notify(Result(T::* method)(Args...), Args&&... args) { ForEach<T>(std::bind_back(method, std::ref(args)...)); }
 
 }
 
