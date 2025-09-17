@@ -28,8 +28,10 @@ struct Demangle : Window
     bool BruteforceObjects = false;
     bool BruteforceNamespaces = true;
     bool BruteforceRecursively = false;
+    bool BruteforceRecursiveActive = false;
     std::deque<Data::Content::ContentNamespace const*> BruteforceRecursiveQueue;
     std::unordered_set<Data::Content::ContentNamespace const*> BruteforceRecursiveProcessed;
+    Data::Content::ContentNamespace const* BruteforceRecursiveSkipTo = nullptr;
 
     std::mutex UILock;
     std::wstring BruteforceUIPrefix;
@@ -97,8 +99,10 @@ struct Demangle : Window
             context->SetIndeterminate();
             {
                 std::scoped_lock _(Lock);
+                BruteforceRecursiveActive = recursively;
                 BruteforceRecursiveQueue.clear();
                 BruteforceRecursiveProcessed.clear();
+                BruteforceRecursiveSkipTo = nullptr;
             }
 
             std::set<std::wstring> uniqueDictionary;
@@ -197,8 +201,9 @@ struct Demangle : Window
                 }
 
                 std::wstring current;
-                if (std::scoped_lock _(Lock); BruteforceRecursiveProcessed.emplace(&ns).second)
+                if (std::scoped_lock _(Lock); BruteforceRecursiveProcessed.emplace(&ns).second && (!BruteforceRecursiveSkipTo || BruteforceRecursiveSkipTo == &ns))
                 {
+                    BruteforceRecursiveSkipTo = nullptr;
                     if (objects && std::ranges::any_of(ns.Entries, [](auto const& object) { return !object->HasCorrectCustomName(); }) ||
                         namespaces && std::ranges::any_of(ns.Namespaces, [](auto const& ns) { return !ns->HasCorrectCustomName(); }))
                         current = std::format(L"{}.", ns.GetFullDisplayName());
@@ -252,6 +257,16 @@ struct Demangle : Window
             }
             context->Finish();
         });
+    }
+    bool CanSkipRecursiveBruteforceTo(Data::Content::ContentNamespace const& ns)
+    {
+        std::scoped_lock _(Lock);
+        return Async.Current() && BruteforceRecursiveActive && !BruteforceRecursiveSkipTo && !BruteforceRecursiveProcessed.contains(&ns);
+    }
+    void SkipRecursiveBruteforceTo(Data::Content::ContentNamespace const& ns)
+    {
+        std::scoped_lock _(Lock);
+        BruteforceRecursiveSkipTo = &ns;
     }
     void OpenBruteforceUI(std::wstring_view prefix, Data::Content::ContentNamespace const* recursiveBase, bool start = false, std::optional<bool> objects = { }, std::optional<bool> namespaces = { })
     {

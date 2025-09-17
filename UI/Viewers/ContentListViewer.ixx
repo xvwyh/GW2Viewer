@@ -778,6 +778,9 @@ private:
                 I::SameLine();
                 if (I::Button("Recursively"))
                     G::Windows::Demangle.OpenBruteforceUI(std::format(L"{}.", ns.GetFullDisplayName(false, true)), &ns, true, false, true);
+                if (G::Windows::Demangle.CanSkipRecursiveBruteforceTo(ns))
+                    if (I::SameLine(); I::Button(ICON_FA_FORWARD_FAST " Skip to This"))
+                        G::Windows::Demangle.SkipRecursiveBruteforceTo(ns);
             }
 
             if (open && ContentFilter && (ContentFilter.IsFilteringNamespaces() || ContentFilter.IsFilteringObjects()))
