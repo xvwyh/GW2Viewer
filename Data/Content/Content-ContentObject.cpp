@@ -202,7 +202,7 @@ bool ContentObject::MatchesFilter(ContentFilter& filter) const
             (!filter.Type || Type == filter.Type) &&
             (filter.NameSearch.empty()
                 || (name = GetName(), name && name->Name && *name->Name && std::ranges::search(std::wstring_view(*name->Name), filter.NameSearch, std::ranges::equal_to(), std::towupper, std::towupper))
-                || (displayName = GetDisplayName(), std::ranges::search(displayName, filter.NameSearch, std::ranges::equal_to(), std::towupper, std::towupper))) &&
+                || (displayName = GetDisplayName(false, true), std::ranges::search(displayName, filter.NameSearch, std::ranges::equal_to(), std::towupper, std::towupper))) &&
             (!filter.GUIDSearch || (guid = GetGUID(), guid && *guid == *filter.GUIDSearch)) &&
             (!filter.UIDSearch || (id = GetUID(), id && *id >= filter.UIDSearch->first && *id <= filter.UIDSearch->second)) &&
             (!filter.DataIDSearch || (id = GetDataID(), id && *id >= filter.DataIDSearch->first && *id <= filter.DataIDSearch->second));
