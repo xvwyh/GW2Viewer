@@ -29,6 +29,7 @@ struct Demangle : Window
     bool BruteforceNamespaces = true;
     bool BruteforceRecursively = false;
     std::deque<Data::Content::ContentNamespace const*> BruteforceRecursiveQueue;
+    std::unordered_set<Data::Content::ContentNamespace const*> BruteforceRecursiveProcessed;
 
     std::mutex UILock;
     std::wstring BruteforceUIPrefix;
@@ -97,6 +98,7 @@ struct Demangle : Window
             {
                 std::scoped_lock _(Lock);
                 BruteforceRecursiveQueue.clear();
+                BruteforceRecursiveProcessed.clear();
             }
 
             std::set<std::wstring> uniqueDictionary;
@@ -195,8 +197,8 @@ struct Demangle : Window
                 }
 
                 std::wstring current;
+                if (std::scoped_lock _(Lock); BruteforceRecursiveProcessed.emplace(&ns).second)
                 {
-                    std::scoped_lock _(Lock);
                     if (objects && std::ranges::any_of(ns.Entries, [](auto const& object) { return !object->HasCorrectCustomName(); }) ||
                         namespaces && std::ranges::any_of(ns.Namespaces, [](auto const& ns) { return !ns->HasCorrectCustomName(); }))
                         current = std::format(L"{}.", ns.GetFullDisplayName());
