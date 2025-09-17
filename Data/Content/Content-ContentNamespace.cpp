@@ -4,24 +4,47 @@
 module GW2Viewer.Data.Content;
 import :ContentFilter;
 import :ContentObject;
+import GW2Viewer.Data.Content.Mangling;
 import GW2Viewer.User.Config;
 import std;
 
 namespace GW2Viewer::Data::Content
 {
 
+std::wstring* GetCustomName(ContentNamespace const& ns)
+{
+    auto const itr = G::Config.ContentNamespaceNames.find(ns.GetFullName());
+    return itr != G::Config.ContentNamespaceNames.end() && !itr->second.empty() ? &itr->second : nullptr;
+}
+bool IsCustomNameCorrect(ContentNamespace const& ns)
+{
+    return MangleFullName(std::format(L"{}.", ns.GetFullDisplayName(false, true))).substr(0, 5) == ns.Name;
+}
+
 bool ContentNamespace::HasCustomName() const
 {
-    return G::Config.ContentNamespaceNames.contains(GetFullName());
+    return GetCustomName(*this);
+}
+
+bool ContentNamespace::HasCorrectCustomName() const
+{
+    return GetCustomName(*this) && IsCustomNameCorrect(*this);
 }
 
 std::wstring ContentNamespace::GetDisplayName(bool skipCustom, bool skipColor) const
 {
-    if (skipCustom)
-        return skipColor ? Name : std::format(L"<c=#FFC>{}</c>", Name);
+    if (!skipCustom)
+    {
+        if (auto const custom = GetCustomName(*this))
+        {
+            if (!skipColor)
+                if (!IsCustomNameCorrect(*this))
+                    return std::format(L"<c=#FCC>{}</c>", *custom);
+            return *custom;
+        }
+    }
 
-    auto const itr = G::Config.ContentNamespaceNames.find(GetFullName());
-    return itr != G::Config.ContentNamespaceNames.end() && !itr->second.empty() ? itr->second : GetDisplayName(true, skipColor);
+    return skipColor ? Name : std::format(L"<c=#FFC>{}</c>", Name);
 }
 
 std::wstring ContentNamespace::GetFullDisplayName(bool skipCustom, bool skipColor) const

@@ -53,6 +53,7 @@ struct ContentObject
     }
 
     [[nodiscard]] bool HasCustomName() const;
+    [[nodiscard]] bool HasCorrectCustomName() const;
     [[nodiscard]] std::wstring GetDebugDisplayName() const;
     [[nodiscard]] std::wstring GetDisplayName(bool skipCustom = false, bool skipColor = false, bool skipFormat = false) const;
     [[nodiscard]] std::wstring GetFullDisplayName(bool skipCustom = false, bool skipColor = false, bool skipFormat = false) const;

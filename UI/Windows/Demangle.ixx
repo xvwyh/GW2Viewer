@@ -197,8 +197,8 @@ struct Demangle : Window
                 std::wstring current;
                 {
                     std::scoped_lock _(Lock);
-                    if (objects && std::ranges::any_of(ns.Entries, [](auto const& object) { return !object->HasCustomName(); }) ||
-                        namespaces && std::ranges::any_of(ns.Namespaces, [](auto const& ns) { return !ns->HasCustomName(); }))
+                    if (objects && std::ranges::any_of(ns.Entries, [](auto const& object) { return !object->HasCorrectCustomName(); }) ||
+                        namespaces && std::ranges::any_of(ns.Namespaces, [](auto const& ns) { return !ns->HasCorrectCustomName(); }))
                         current = std::format(L"{}.", ns.GetFullDisplayName());
                 }
                 if (!current.empty())
@@ -209,7 +209,7 @@ struct Demangle : Window
                     bool named;
                     {
                         std::scoped_lock _(Lock);
-                        named = child->HasCustomName();
+                        named = child->HasCorrectCustomName();
                     }
                     if (named)
                         for (auto const& result : generatePrefix(*child, false, generatePrefix))
@@ -338,7 +338,7 @@ struct Demangle : Window
             ContentResults.clear();
         }
         I::SameLine();
-        static bool onlyUnnamed;
+        static bool onlyUnnamed = true;
         I::Checkbox("Only Unnamed", &onlyUnnamed);
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
         if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
@@ -358,13 +358,13 @@ struct Demangle : Window
             {
                 [this](Data::Content::ContentNamespace const* ns, std::wstring const& name)
                 {
-                    if (auto const itr = G::Config.ContentNamespaceNames.find(ns->GetFullName()); itr != G::Config.ContentNamespaceNames.end() && (onlyUnnamed || itr->second == name))
+                    if (ns->HasCorrectCustomName() && (onlyUnnamed || ns->GetDisplayName(false, true) == name))
                         return true;
                     return false;
                 },
                 [this](Data::Content::ContentObject const* object, std::wstring const& name)
                 {
-                    if (auto const itr = G::Config.ContentObjectNames.find(*object->GetGUID()); itr != G::Config.ContentObjectNames.end() && (onlyUnnamed || itr->second == name))
+                    if (object->HasCorrectCustomName() && (onlyUnnamed || object->GetDisplayName(false, true) == name))
                         return true;
                     if (!ResultsPrefix.empty())
                         if (!object->GetFullName().starts_with({ mangledPrefix.data(), 5 }))

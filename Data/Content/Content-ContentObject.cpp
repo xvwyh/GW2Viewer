@@ -48,9 +48,26 @@ void ContentObject::Finalize() const
         Data = { Data.data(), 1 };
 }
 
+std::wstring* GetCustomName(ContentObject const& object)
+{
+    auto const itr = G::Config.ContentObjectNames.find(*object.GetGUID());
+    return itr != G::Config.ContentObjectNames.end() && !itr->second.empty() ? &itr->second : nullptr;
+}
+bool IsCustomNameCorrect(ContentObject const& object, std::wstring_view custom)
+{
+    auto const name = object.GetName();
+    return name && name->Name && *name->Name && MangleFullName(custom) == wcsrchr(*name->Name, L'.') + 1;
+}
+
 bool ContentObject::HasCustomName() const
 {
-    return G::Config.ContentObjectNames.contains(*GetGUID());
+    return GetCustomName(*this);
+}
+
+bool ContentObject::HasCorrectCustomName() const
+{
+    auto const custom = GetCustomName(*this);
+    return custom && IsCustomNameCorrect(*this, *custom);
 }
 
 std::wstring ContentObject::GetDebugDisplayName() const
@@ -63,13 +80,8 @@ std::wstring ContentObject::GetDisplayName(bool skipCustom, bool skipColor, bool
     if (!skipCustom)
     {
         // Use custom name if set
-        if (auto const itr = G::Config.ContentObjectNames.find(*GetGUID()); itr != G::Config.ContentObjectNames.end() && !itr->second.empty())
-        {
-            if (!skipColor)
-                if (auto* name = GetName(); name && name->Name && *name->Name)
-                    return std::format(L"<c=#{}>{}</c>", MangleFullName(itr->second) == wcsrchr(*name->Name, L'.') + 1 ? L"CFC" : L"FCC", itr->second);
-            return itr->second;
-        }
+        if (auto const custom = GetCustomName(*this))
+            return skipColor ? *custom : std::format(L"<c=#{}>{}</c>", IsCustomNameCorrect(*this, *custom) ? L"CFC" : L"FCC", *custom);
 
         // Use name from a designated symbol if enabled and available
         if (auto const& typeInfo = Type->GetTypeInfo(); !typeInfo.DisplayFormat.empty() || !typeInfo.NameFields.empty())

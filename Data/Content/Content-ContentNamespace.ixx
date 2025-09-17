@@ -17,6 +17,7 @@ struct ContentNamespace
     std::vector<ContentObject const*> Entries;
 
     [[nodiscard]] bool HasCustomName() const;
+    [[nodiscard]] bool HasCorrectCustomName() const;
     [[nodiscard]] std::wstring GetDisplayName(bool skipCustom = false, bool skipColor = false) const;
     [[nodiscard]] std::wstring GetFullDisplayName(bool skipCustom = false, bool skipColor = false) const;
     [[nodiscard]] std::wstring GetFullName() const;
