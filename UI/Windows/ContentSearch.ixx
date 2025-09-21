@@ -62,10 +62,13 @@ struct ContentSearch : Window
         if (scoped::Disabled(true))
             I::InputText("##Description", (char*)std::format("Content that contains {} fields with value: {}", Symbol->Name, Value).c_str(), 9999);
         Controls::AsyncProgressBar(Async);
+        auto resultText = std::format("{} result{}", Results.size(), Results.size() == 1 ? "" : "s").c_str();
+        I::SameLine(I::GetCursorPosX() + I::GetContentRegionAvail().x - I::CalcTextSize(resultText).x);
+        I::TextUnformatted(resultText);
         if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
-        if (scoped::Child("Content", { }, 0, ImGuiWindowFlags_AlwaysVerticalScrollbar))
-            for (auto const& object : Results)
-                Controls::ContentButton(object, object);
+            if (scoped::Child("Content", { }, 0, ImGuiWindowFlags_AlwaysVerticalScrollbar))
+                for (auto const& object : Results)
+                    Controls::ContentButton(object, object);
     }
 };
 
