@@ -95,11 +95,20 @@ struct ListContentValues : Window
         if (IsEnum && (I::SameLine(), I::Checkbox("As Flags", &AsFlags)))
             Refresh();
 
+        int totalResultsCount = 0;
+        for (auto const& result : Results) {
+            totalResultsCount += result.second.Objects.size();
+        }
+        auto resultText = std::format("{} unique result{} ({} total)", Results.size(), Results.size() == 1 ? "" : "s", totalResultsCount).c_str();
+        I::SameLine(I::GetCursorPosX() + I::GetContentRegionAvail().x - I::CalcTextSize(resultText).x);
+        I::TextUnformatted(resultText);
+
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
         if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
-        if (scoped::Table("UniqueFieldValues", 3, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoSavedSettings))
+        if (scoped::Table("UniqueFieldValues", 4, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoSavedSettings))
         {
             I::TableSetupColumn(SymbolPath.c_str(), 0, 1);
+            I::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize);
             I::TableSetupColumn("##Fold", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize);
             I::TableSetupColumn("Content", 0, 3);
             I::TableSetupScrollFreeze(0, 1);
@@ -134,6 +143,17 @@ struct ListContentValues : Window
                             value.Symbol.Draw(value.Data, Data::Content::TypeInfo::Symbol::DrawType::TableRow, *object);
                             I::GetCurrentWindow()->DC.CursorMaxPos.y -= yOffset;
                         }
+
+                        I::TableNextColumn();
+                        if (first)
+                        { 
+							int const countForValue = value.Objects.size();
+                            if (countForValue > 1) {
+                                auto const text = std::format("{}", countForValue);
+                                I::SetCursorPosX(ImGui::GetCursorPosX() + I::GetContentRegionAvail().x - I::CalcTextSize(text.c_str()).x);
+                                I::TextUnformatted(text.c_str());
+                            }
+                        }					
 
                         I::TableNextColumn();
                         if (first && value.ObjectsSorted.size() > 1)
