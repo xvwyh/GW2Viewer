@@ -456,11 +456,11 @@ void Manager::PlayVoice(uint32 voiceID)
                 return;
 
             if (I::GetIO().KeyAlt)
-                return ExportData(encrypted, std::format(R"(Export\Voice\English\{}.mp3)", voiceID));
+                return ExportData(encrypted, std::format(R"(Export\Voice\{}\{}.mp3)", G::Config.Language, voiceID));
         }
 
         if (I::GetIO().KeyAlt)
-            return ExportData(data, std::format(R"(Export\Voice\English\{}.mp3)", voiceID));
+            return ExportData(data, std::format(R"(Export\Voice\{}\{}.mp3)", G::Config.Language, voiceID));
 
         system->playSound(sound, nullptr, false, &channel);
     }
