@@ -280,7 +280,7 @@ void Manager::Update()
             if (I::MenuItem("Export Content Files"))
                 for (auto const fileID : G::Game.Content.GetFileIDs())
                     if (auto data = G::Game.Archive.GetFile(fileID); !data.empty())
-                        ExportData(data, std::format(R"(Export\Game Content\{}.cntc)", fileID));
+                        ExportData(data, std::format(R"(Export\Game Content\{}\{}.cntc)", G::Game.Build, fileID));
             I::MenuItem("Migrate Content Types", nullptr, &G::Windows::MigrateContentTypes.GetShown());
         }
         I::Text("<c=#8>Gw2: %u</c>", G::Game.Build);
