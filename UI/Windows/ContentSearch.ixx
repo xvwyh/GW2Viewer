@@ -60,15 +60,29 @@ struct ContentSearch : Window
         std::scoped_lock __(Lock);
         I::SetNextItemWidth(-FLT_MIN);
         if (scoped::Disabled(true))
-            I::InputText("##Description", (char*)std::format("Content that contains {} fields with value: {}", Symbol->Name, Value).c_str(), 9999);
+            I::InputText("##Dummy", (char*)"", 1);
         Controls::AsyncProgressBar(Async);
-        auto resultText = std::format("{} result{}", Results.size(), Results.size() == 1 ? "" : "s").c_str();
-        I::SameLine(I::GetCursorPosX() + I::GetContentRegionAvail().x - I::CalcTextSize(resultText).x);
-        I::TextUnformatted(resultText);
+        I::SameLine(FLT_MIN, I::GetStyle().WindowPadding.x + I::GetStyle().FramePadding.x);
+        if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
+        if (scoped::Table("Header", 3, ImGuiTableFlags_NoSavedSettings, { -I::GetStyle().FramePadding.x, 0 }))
+        {
+            I::TableSetupColumn("Left", ImGuiTableColumnFlags_WidthFixed);
+            I::TableSetupColumn("Padding", ImGuiTableColumnFlags_WidthStretch);
+            I::TableSetupColumn("Right", ImGuiTableColumnFlags_WidthFixed);
+
+            I::TableNextColumn();
+            I::AlignTextToFramePadding();
+            I::Text(std::format("<c=#8>Content that contains </c>{}<c=#8> fields with value: </c>{}", Symbol->Name, Value).c_str());
+
+            I::TableNextColumn();
+
+            I::TableNextColumn();
+            I::Text("<c=#8>%zu result%s</c>", Results.size(), Results.size() == 1 ? "" : "s");
+        }
         if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
-            if (scoped::Child("Content", { }, 0, ImGuiWindowFlags_AlwaysVerticalScrollbar))
-                for (auto const& object : Results)
-                    Controls::ContentButton(object, object);
+        if (scoped::Child("Content", { }, 0, ImGuiWindowFlags_AlwaysVerticalScrollbar))
+            for (auto const& object : Results)
+                Controls::ContentButton(object, object);
     }
 };
 
