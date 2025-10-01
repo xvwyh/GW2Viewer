@@ -88,36 +88,41 @@ struct ListContentValues : Window
     std::string Title() override { return "List Content Values"; }
     void Draw() override
     {
-        if (I::Button(ICON_FA_ARROWS_ROTATE " Refresh"))
-            Refresh();
-        if (I::SameLine(), I::Checkbox("Include Zero", &IncludeZero))
-            Refresh();
-        if (IsEnum && (I::SameLine(), I::Checkbox("As Flags", &AsFlags)))
-            Refresh();
+        if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
+        if (scoped::Table("Header", 3, ImGuiTableFlags_NoSavedSettings, { -FLT_MIN, 0 }))
+        {
+            I::TableSetupColumn("Left", ImGuiTableColumnFlags_WidthFixed);
+            I::TableSetupColumn("Padding", ImGuiTableColumnFlags_WidthStretch);
+            I::TableSetupColumn("Right", ImGuiTableColumnFlags_WidthFixed);
 
-        int totalResultsCount = 0;
-        for (auto const& result : Results) {
-            totalResultsCount += result.second.Objects.size();
+            I::TableNextColumn();
+            if (I::Button(ICON_FA_ARROWS_ROTATE " Refresh"))
+                Refresh();
+            if (I::SameLine(), I::Checkbox("Include Zero", &IncludeZero))
+                Refresh();
+            if (IsEnum && (I::SameLine(), I::Checkbox("As Flags", &AsFlags)))
+                Refresh();
+
+            I::TableNextColumn();
+
+            I::TableNextColumn();
+            I::Text("<c=#8>%zu unique result%s (%zu total)</c>", Results.size(), Results.size() == 1 ? "" : "s", std::ranges::fold_left(Results, 0, [](size_t count, auto const& result) { return count + result.second.ObjectsSorted.size(); }));
         }
-        auto resultText = std::format("{} unique result{} ({} total)", Results.size(), Results.size() == 1 ? "" : "s", totalResultsCount).c_str();
-        I::SameLine(I::GetCursorPosX() + I::GetContentRegionAvail().x - I::CalcTextSize(resultText).x);
-        I::TextUnformatted(resultText);
 
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
         if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2()))
-        if (scoped::Table("UniqueFieldValues", 4, ImGuiTableFlags_SizingStretchProp | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoSavedSettings))
+        if (scoped::Table("UniqueFieldValues", 3, ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Hideable | ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoSavedSettings))
         {
-            I::TableSetupColumn(SymbolPath.c_str(), 0, 1);
-            I::TableSetupColumn("Count", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize);
-            I::TableSetupColumn("##Fold", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize);
-            I::TableSetupColumn("Content", 0, 3);
+            I::TableSetupColumn(SymbolPath.c_str(), ImGuiTableColumnFlags_WidthFixed, 200);
+            I::TableSetupColumn("##Fold", ImGuiTableColumnFlags_WidthFixed | ImGuiTableColumnFlags_NoResize, I::GetStyle().FramePadding.x * 2 + std::ranges::fold_left(Results, 0, [](float width, auto const& result) { return std::max(width, result.second.ObjectsSorted.size() > 1 ? I::CalcTextSize(std::format("{} " ICON_FA_CHEVRON_DOWN, result.second.ObjectsSorted.size()).c_str()).x : 0); }));
+            I::TableSetupColumn("Content", ImGuiTableColumnFlags_WidthStretch);
             I::TableSetupScrollFreeze(0, 1);
             I::TableHeadersRow();
 
             auto const tableContentsCursor = I::GetCursorScreenPos();
 
             ImGuiListClipper clipper;
-            clipper.Begin(std::ranges::fold_left(Results, 0u, [](uint32 count, auto const& pair) { return count + (pair.second.IsFolded ? 1 : pair.second.Objects.size()); }), I::GetFrameHeight());
+            clipper.Begin(std::ranges::fold_left(Results, 0u, [](uint32 count, auto const& pair) { return count + (pair.second.IsFolded ? 1 : pair.second.ObjectsSorted.size()); }), I::GetFrameHeight());
             std::set<decltype(Results)::key_type> keyDrawn;
             while (clipper.Step())
             {
@@ -145,23 +150,13 @@ struct ListContentValues : Window
                         }
 
                         I::TableNextColumn();
-                        if (first)
-                        { 
-							int const countForValue = value.Objects.size();
-                            if (countForValue > 1) {
-                                auto const text = std::format("{}", countForValue);
-                                I::SetCursorPosX(ImGui::GetCursorPosX() + I::GetContentRegionAvail().x - I::CalcTextSize(text.c_str()).x);
-                                I::TextUnformatted(text.c_str());
-                            }
-                        }					
-
-                        I::TableNextColumn();
                         if (first && value.ObjectsSorted.size() > 1)
                         {
                             if (yOffset)
                                 I::SetCursorPosY(I::GetCursorPosY() + yOffset);
                             if (scoped::WithID(&value))
-                                if (I::Button(value.IsFolded ? ICON_FA_CHEVRON_RIGHT : ICON_FA_CHEVRON_DOWN))
+                            if (scoped::WithStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(1, 0.5f)))
+                                if (I::Button(std::format("<c=#8>{}</c> {}", value.ObjectsSorted.size(), value.IsFolded ? ICON_FA_CHEVRON_RIGHT : ICON_FA_CHEVRON_DOWN).c_str(), { -FLT_MIN, 0 }))
                                     value.IsFolded ^= true;
                             I::GetCurrentWindow()->DC.CursorMaxPos.y -= yOffset;
                         }
