@@ -243,6 +243,11 @@ struct ArchiveIndex
             m_index->Timestamps[0].Version = CacheTimestamp::CurrentVersion;
         }
 
+        // Add a timestamp for the current game build even without scanning for file changes,
+        // as this can double as a database of game builds and their approximate release dates
+        if (G::Game.Build)
+            AddTimestamp();
+
         OnLoaded();
     }
     void Save()
