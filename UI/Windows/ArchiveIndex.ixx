@@ -1,3 +1,6 @@
+module;
+#include <cassert>
+
 export module GW2Viewer.UI.Windows.ArchiveIndex;
 import GW2Viewer.Common;
 import GW2Viewer.Common.Time;
@@ -126,23 +129,31 @@ struct ArchiveIndex : Window
                     buffer.reserve(elementSize * results.size());
                     auto out = std::back_inserter(buffer);
 
-                    static auto printableFourCC = [editedFourCC = 0u](uint32 fourCC) mutable
+                    auto writeFile = [this, &out](uint32 fileID)
                     {
-                        editedFourCC = fourCC;
-                        for (auto& c : std::span((char*)&editedFourCC, 4))
-                            if (!isprint(c) && !isspace(c))
-                                c = '?';
-                        return std::string_view((char const*)&editedFourCC, 4);
+                        auto const& cache = Index.GetFile(fileID);
+                        std::format_to(out, "{}", fileID);
+                        if (cache.BaseOrFileID)
+                            std::format_to(out, " [{}{}]", cache.IsRevision ? "<" : ">", cache.BaseOrFileID);
+                        if (cache.ParentOrStreamBaseID)
+                            std::format_to(out, " [{}{}]", cache.IsStream ? "-" : "+", cache.ParentOrStreamBaseID);
                     };
+
                     if constexpr (isMap)
                     {
-                        for (auto const& [fileID, cache] : results)
-                            std::format_to(out, "{} (Was {})\n", fileID, Index.GetMetadata(cache.MetadataIndex).ToString());
+                        for (auto const& [fileID, oldCache] : results)
+                        {
+                            writeFile(fileID);
+                            std::format_to(out, " (Was {})\n", Index.GetMetadata(oldCache.MetadataIndex).ToString());
+                        }
                     }
                     else
                     {
                         for (auto const fileID : results)
-                            std::format_to(out, "{}\n", fileID);
+                        {
+                            writeFile(fileID);
+                            std::format_to(out, "\n");
+                        }
                     }
 
                     if (WritingLog)
@@ -180,11 +191,13 @@ struct ArchiveIndex : Window
                         for (auto fileID : files)
                         {
                             CHECK_ASYNC;
+                            auto const& cache = Index.GetFile(fileID);
+                            assert(!cache.IsRevision);
                             auto data = Index.GetSource().Archive.GetFile(fileID);
-                            std::filesystem::path path = std::format(R"(Export\Index\{:%F_%H-%M-%S}Z_{}_{}\{})", Time::FromTimestamp(Index.GetArchiveTimestamp()), G::Game.Build, Name, fileID);
+                            std::filesystem::path path = std::format(R"(Export\Index\{:%F_%H-%M-%S}Z_{}_{}\{}.{})", Time::FromTimestamp(Index.GetArchiveTimestamp()), G::Game.Build, Name, fileID, cache.GetFileID() ? cache.GetFileID() : fileID);
                             create_directories(path.parent_path());
                             G::UI.ExportData(data, path);
-                            //path.replace_extension(".png");
+                            //path += ".png";
                             //G::Game.Texture.Load(fileID, { .DataSource = &data, .ExportPath = path });
                             context->Increment();
                         }

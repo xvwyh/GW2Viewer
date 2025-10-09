@@ -9,6 +9,7 @@ import GW2Viewer.Common.FourCC;
 import GW2Viewer.Common.Time;
 import GW2Viewer.Data.Archive;
 import GW2Viewer.Data.Game;
+import GW2Viewer.Data.Manifest.Asset;
 import GW2Viewer.Utils.Async;
 import GW2Viewer.Utils.Format;
 import GW2Viewer.Utils.Visitor;
@@ -74,7 +75,7 @@ struct ArchiveIndex
 #pragma pack(push, 1)
     struct CacheHeader
     {
-        static constexpr byte CurrentVersion = 1;
+        static constexpr byte CurrentVersion = 2;
 
         uint32 FourCC = std::byteswap('GW2V');
         uint32 FourCC2 = std::byteswap('AIDX');
@@ -151,18 +152,25 @@ struct ArchiveIndex
     static_assert(sizeof(CacheTimestamp) == 0x10);
     struct CacheFile
     {
-        static constexpr byte CurrentVersion = 1;
+        static constexpr byte CurrentVersion = 2;
 
         byte Version = CurrentVersion; // 0 means cache is absent
         byte Deleted : 1 = 0;
+        byte IsRevision : 1 = 0;
+        byte IsStream : 1 = 0;
         uint16 MetadataIndex = 0;
         uint32 AddedTimestampIndex : 12 = 0;
         uint32 ChangedTimestampIndex : 12 = 0;
         uint32 Reserved1 : 8 = 0;
         uint32 RawFileSize = 0;
         uint32 FileSize = 0;
-        uint32 MFTCRC = 0;
-        uint32 CombinedBlockCRC = 0;
+        uint32 BaseOrFileID = 0;
+        uint32 ParentOrStreamBaseID = 0;
+
+        uint32 GetBaseID() const { return Version >= 2 ? IsRevision ? BaseOrFileID : 0 : 0; }
+        uint32 GetFileID() const { return Version >= 2 ? IsRevision ? 0 : BaseOrFileID : 0; }
+        uint32 GetParentBaseID() const { return Version >= 2 ? IsStream ? ParentOrStreamBaseID : 0 : 0; }
+        uint32 GetStreamBaseID() const { return Version >= 2 ? IsStream ? 0 : ParentOrStreamBaseID : 0; }
     };
     static_assert(sizeof(CacheFile) == 0x18);
     struct CacheIndex
@@ -234,6 +242,8 @@ struct ArchiveIndex
             m_index->Metadata[4].Version = CacheMetadata::CurrentVersion;
             m_index->Timestamps[0].Version = CacheTimestamp::CurrentVersion;
         }
+
+        OnLoaded();
     }
     void Save()
     {
@@ -257,7 +267,7 @@ struct ArchiveIndex
         return m_header->ArchiveTimestampOnLastRun;
     }
 
-    uint16 AddMetadata(CacheMetadata const& metadata)
+    uint16 AddMetadata(CacheMetadata const& metadata) const
     {
         assert(IsLoaded());
         assert(m_mappedFile.size() >= sizeof(CacheIndex));
@@ -282,8 +292,8 @@ struct ArchiveIndex
     }
     CacheMetadata const& GetFileMetadata(uint32 fileID) const { return GetMetadata(GetFile(fileID).MetadataIndex); }
 
-    uint16 AddTimestamp() { return AddTimestamp({ .Build = G::Game.Build, .Timestamp = m_header->ArchiveTimestampOnLastRun }); }
-    uint16 AddTimestamp(CacheTimestamp const& timestamp)
+    uint16 AddTimestamp() const { return AddTimestamp({ .Build = G::Game.Build, .Timestamp = m_header->ArchiveTimestampOnLastRun }); }
+    uint16 AddTimestamp(CacheTimestamp const& timestamp) const
     {
         assert(IsLoaded());
         assert(m_mappedFile.size() >= sizeof(CacheIndex));
@@ -313,7 +323,10 @@ struct ArchiveIndex
     {
         assert(IsLoaded());
         assert(m_mappedFile.size() >= sizeof(CacheIndex) + sizeof(*CacheIndex::Files) * (fileID + 1));
-        return m_index->Files[fileID];
+        auto& cache = m_index->Files[fileID];
+        if (cache.Version && cache.Version < CacheFile::CurrentVersion)
+            UpdateCacheVersion(cache, fileID);
+        return cache;
     }
 
     enum class CheckCacheResult
@@ -324,12 +337,9 @@ struct ArchiveIndex
         CacheValidOutdated,
         CacheCorrupted,
         FileMissing,
-        FileChangedMFTCRC,
-        FileChangedRawFileSize,
-        FileChangedFileSize,
-        FileChangedCombinedBlockCRC,
+        FileChanged,
     };
-    CheckCacheResult CheckCache(CacheFile const& cache, uint32 fileID, uint32* outCombinedBlockCRC) const
+    CheckCacheResult CheckCache(CacheFile const& cache, uint32 fileID) const
     {
         auto const entry = m_archiveSource->Archive.GetFileMftEntry(fileID);
 
@@ -342,26 +352,18 @@ struct ArchiveIndex
         if (!entry)
             return cache.Deleted ? CheckCacheResult::CacheValid : CheckCacheResult::FileMissing;
 
-        if (cache.MFTCRC != entry->alloc.crc)
-            return CheckCacheResult::FileChangedMFTCRC;
-
-        if (cache.RawFileSize != entry->alloc.size)
-            return CheckCacheResult::FileChangedRawFileSize;
-
-        if (cache.FileSize != m_archiveSource->Archive.GetFileSize(fileID))
-            return CheckCacheResult::FileChangedFileSize;
-
-        uint32 const combinedBlockCRC = m_archiveSource->Archive.CalculateRawFileCRC(fileID);
-        if (outCombinedBlockCRC)
-            *outCombinedBlockCRC = combinedBlockCRC;
-        if (cache.CombinedBlockCRC != combinedBlockCRC)
-            return CheckCacheResult::FileChangedCombinedBlockCRC;
+        if (auto const expected = GetExpectedCacheFile(fileID);
+            cache.IsRevision != expected.IsRevision ||
+            cache.IsStream != expected.IsStream ||
+            cache.BaseOrFileID != expected.BaseOrFileID ||
+            cache.ParentOrStreamBaseID != expected.ParentOrStreamBaseID)
+            return CheckCacheResult::FileChanged;
 
         if (cache.Version != CacheFile::CurrentVersion)
             return CheckCacheResult::CacheValidOutdated;
         return CheckCacheResult::CacheValid;
     }
-    bool UpdateCache(CacheFile& cache, uint32 fileID, uint32 const* precalculatedCombinedBlockCRC);
+    bool UpdateCache(CacheFile& cache, uint32 fileID) const;
     struct ScanOptions
     {
         std::optional<std::vector<uint32>> Files;
@@ -418,16 +420,18 @@ private:
     CacheIndex* m_index = nullptr;
     CacheHeader* m_header = nullptr;
 
+    void OnLoaded() const;
+
     ScanResult Scan(ScanOptions const& options, ScanProgress& progress, Utils::Async::Context context)
     {
         ScanResult result;
         auto process = [this, &options, &progress, &result](uint32 fileID, CacheFile& cache)
         {
             ++result.Scanned;
-            uint32 combinedBlockCRC = 0;
-            bool hasCRC = false;
             bool fileChanged = false;
-            switch (CheckCache(cache, fileID, &combinedBlockCRC))
+            if (cache.Version && cache.Version < CacheFile::CurrentVersion)
+                UpdateCacheVersion(cache, fileID);
+            switch (CheckCache(cache, fileID))
             {
                 case CheckCacheResult::NoFile:
                     --result.Scanned;
@@ -442,27 +446,29 @@ private:
                     return;
 
                 case CheckCacheResult::FileMissing:
-                    ++progress.DeletedFiles;
-                    result.DeletedFiles.emplace(fileID, cache);
+                    if (!cache.IsRevision)
+                    {
+                        ++progress.DeletedFiles;
+                        result.DeletedFiles.emplace(fileID, cache);
+                    }
                     cache.Deleted = true;
                     cache.ChangedTimestampIndex = AddTimestamp();
                     return;
 
                 case CheckCacheResult::CacheMissing:
-                    ++progress.NewFiles;
-                    result.NewFiles.emplace_back(fileID);
+                    if (!GetExpectedCacheFile(fileID).IsRevision)
+                    {
+                        ++progress.NewFiles;
+                        result.NewFiles.emplace_back(fileID);
+                    }
                     cache.AddedTimestampIndex = AddTimestamp();
                     break;
                 case CheckCacheResult::CacheCorrupted:
                     ++progress.CorruptedCaches;
                     result.CorruptedCaches.emplace(fileID, cache);
                     break;
-                case CheckCacheResult::FileChangedCombinedBlockCRC:
-                    hasCRC = true;
-                    [[fallthrough]];
-                case CheckCacheResult::FileChangedMFTCRC:
-                case CheckCacheResult::FileChangedRawFileSize:
-                case CheckCacheResult::FileChangedFileSize:
+                case CheckCacheResult::FileChanged:
+                    assert(!cache.IsRevision);
                     ++progress.ChangedFiles;
                     result.ChangedFiles.emplace(fileID, cache);
                     cache.ChangedTimestampIndex = AddTimestamp();
@@ -472,7 +478,7 @@ private:
             if (fileChanged || options.ShouldUpdate(GetMetadata(cache.MetadataIndex).Type))
             {
                 ++result.Updated;
-                if (!UpdateCache(cache, fileID, hasCRC ? &combinedBlockCRC : nullptr))
+                if (!UpdateCache(cache, fileID))
                 {
                     ++progress.ErrorFiles;
                     result.ErrorFiles.emplace_back(fileID);
@@ -517,6 +523,35 @@ private:
         if (context)
             context->Finish();
         return result;
+    }
+
+    CacheFile GetExpectedCacheFile(uint32 fileID) const
+    {
+        auto const asset = m_archiveSource->Archive.GetFileManifestAsset(fileID);
+        bool const hasRevision = asset && asset->BaseID && asset->FileID && asset->BaseID != asset->FileID;
+        bool const hasStream = asset && (asset->ParentBaseID || asset->StreamBaseID);
+        return {
+            .IsRevision = hasRevision && asset->FileID == fileID,
+            .IsStream = hasStream && asset->ParentBaseID,
+            .BaseOrFileID = hasRevision ? asset->FileID == fileID ? asset->BaseID : asset->FileID : 0,
+            .ParentOrStreamBaseID = hasStream ? asset->ParentBaseID ? asset->ParentBaseID : asset->StreamBaseID : 0,
+        };
+    }
+
+    void UpdateCacheVersion(CacheFile& cache, uint32 fileID) const
+    {
+        if (!cache.Version)
+            return;
+
+        if (cache.Version < 2)
+        {
+            auto const expected = GetExpectedCacheFile(fileID);
+            cache.IsRevision = expected.IsRevision;
+            cache.IsStream = expected.IsStream;
+            cache.BaseOrFileID = expected.BaseOrFileID;
+            cache.ParentOrStreamBaseID = expected.ParentOrStreamBaseID;
+            cache.Version = 2;
+        }
     }
 };
 
