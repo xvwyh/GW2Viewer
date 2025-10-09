@@ -183,29 +183,43 @@ struct FileListViewer : ListViewer<FileListViewer, { ICON_FA_FILE " Files", "Fil
         if (I::IsItemHovered())
             I::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
 
-        I::SetNextItemWidth(-FLT_MIN);
-        std::vector<std::optional<User::ArchiveIndex::Type>> values(1, std::nullopt);
-        values.append_range(magic_enum::enum_values<User::ArchiveIndex::Type>());
-        if (Controls::FilteredComboBox("##Type", FilterType, values,
+        if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
+        if (scoped::Table("Filter", 2, ImGuiTableFlags_NoSavedSettings))
         {
-            .MaxHeight = 500,
-            .Formatter = [](auto const& type) -> std::string
+            I::TableSetupColumn("Type");
+            I::TableSetupColumn("Locate", ImGuiTableColumnFlags_WidthFixed);
+
+            I::TableNextColumn();
+            I::SetNextItemWidth(-FLT_MIN);
+            std::vector<std::optional<User::ArchiveIndex::Type>> values(1, std::nullopt);
+            values.append_range(magic_enum::enum_values<User::ArchiveIndex::Type>());
+            if (Controls::FilteredComboBox("##Type", FilterType, values,
             {
-                if (!type)
-                    return std::format("<c=#8>{} {}</c>", ICON_FA_FILTER, "Any Type");
+                .MaxHeight = 500,
+                .Formatter = [](auto const& type) -> std::string
+                {
+                    if (!type)
+                        return std::format("<c=#8>{} {}</c>", ICON_FA_FILTER, "Any Type");
 
-                return std::format("<c=#8>{}</c> {}", ICON_FA_FILTER, magic_enum::enum_name(*type));
-            },
-            .Filter = [](auto const& type, auto const& filter, auto const& options)
-            {
-                if (!type)
-                    return filter.Filters.empty();
+                    return std::format("<c=#8>{}</c> {}", ICON_FA_FILTER, magic_enum::enum_name(*type));
+                },
+                .Filter = [](auto const& type, auto const& filter, auto const& options)
+                {
+                    if (!type)
+                        return filter.Filters.empty();
 
-                return filter.PassFilter(magic_enum::enum_name(*type).data());
-            },
-        }))
-            UpdateFilter();
+                    return filter.PassFilter(magic_enum::enum_name(*type).data());
+                },
+            }))
+                UpdateFilter();
 
+            I::TableNextColumn();
+            auto const viewer = dynamic_cast<FileViewer*>(G::UI.GetCurrentViewer());
+            if (scoped::Disabled(!viewer))
+                if (I::Button(ICON_FA_FOLDER_MAGNIFYING_GLASS))
+                    ScrollTo = viewer->GetCurrent();
+            I::SetItemTooltip("Locate:\n%s", viewer ? viewer->Title().c_str() : "<no file selected>");
+        }
         if (scoped::WithStyleVar(ImGuiStyleVar_ItemSpacing, I::GetStyle().FramePadding))
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, I::GetStyle().ItemSpacing / 2))
         if (scoped::Table("Table", 18, ImGuiTableFlags_ScrollY | ImGuiTableFlags_NoPadOuterX | ImGuiTableFlags_Hideable | ImGuiTableFlags_Resizable | ImGuiTableFlags_Reorderable | ImGuiTableFlags_Sortable))
