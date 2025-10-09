@@ -1,3 +1,6 @@
+module;
+#include <cassert>
+
 export module GW2Viewer.UI.Windows.ArchiveIndex;
 import GW2Viewer.Common;
 import GW2Viewer.Common.Time;
@@ -10,6 +13,7 @@ import GW2Viewer.UI.Windows.Window;
 import GW2Viewer.User.ArchiveIndex;
 import GW2Viewer.Utils.Async;
 import GW2Viewer.Utils.Container;
+import GW2Viewer.Utils.Encoding;
 import std;
 import magic_enum;
 #include "Macros.h"
@@ -33,14 +37,19 @@ struct ArchiveIndex : Window
         bool WriteLog = false;
         bool WritingLog = false;
 
+        bool OpenTab = false;
+        bool RunFullScan = false;
+
         void Draw()
         {
             scoped::WithID(this);
             if (!Index.IsLoaded())
             {
-                I::Text("Specify the path to %s in settings and restart the application.", Name);
+                I::Text("Specify the path to \"%s\" in settings and restart the application.", Name);
                 return;
             }
+            I::SetNextItemWidth(-FLT_MIN);
+            I::InputTextReadOnly("##Path", Utils::Encoding::ToUTF8(Index.GetSource().Path.wstring()));
 
             auto context = Index.AsyncScan.Current();
             ScanInProgress = context;
@@ -68,7 +77,7 @@ struct ArchiveIndex : Window
             {
                 if (scoped::Disabled(std::ranges::any_of(AsyncExport | std::views::values, &Utils::Async::Scheduler::Current)))
                 {
-                    if (I::Button("Start Full Scan"))
+                    if (I::Button("Start Full Scan") || std::exchange(RunFullScan, false) && !I::IsDisabled())
                     {
                         ScanProgress = { };
                         Index.ScanAsync(ScanOptions, ScanProgress, [this](auto const& result)
@@ -126,23 +135,31 @@ struct ArchiveIndex : Window
                     buffer.reserve(elementSize * results.size());
                     auto out = std::back_inserter(buffer);
 
-                    static auto printableFourCC = [editedFourCC = 0u](uint32 fourCC) mutable
+                    auto writeFile = [this, &out](uint32 fileID)
                     {
-                        editedFourCC = fourCC;
-                        for (auto& c : std::span((char*)&editedFourCC, 4))
-                            if (!isprint(c) && !isspace(c))
-                                c = '?';
-                        return std::string_view((char const*)&editedFourCC, 4);
+                        auto const& cache = Index.GetFile(fileID);
+                        std::format_to(out, "{}", fileID);
+                        if (cache.BaseOrFileID)
+                            std::format_to(out, " [{}{}]", cache.IsRevision ? "<" : ">", cache.BaseOrFileID);
+                        if (cache.ParentOrStreamBaseID)
+                            std::format_to(out, " [{}{}]", cache.IsStream ? "-" : "+", cache.ParentOrStreamBaseID);
                     };
+
                     if constexpr (isMap)
                     {
-                        for (auto const& [fileID, cache] : results)
-                            std::format_to(out, "{} (Was {})\n", fileID, Index.GetMetadata(cache.MetadataIndex).ToString());
+                        for (auto const& [fileID, oldCache] : results)
+                        {
+                            writeFile(fileID);
+                            std::format_to(out, " (Was {})\n", Index.GetMetadata(oldCache.MetadataIndex).ToString());
+                        }
                     }
                     else
                     {
                         for (auto const fileID : results)
-                            std::format_to(out, "{}\n", fileID);
+                        {
+                            writeFile(fileID);
+                            std::format_to(out, "\n");
+                        }
                     }
 
                     if (WritingLog)
@@ -180,11 +197,13 @@ struct ArchiveIndex : Window
                         for (auto fileID : files)
                         {
                             CHECK_ASYNC;
+                            auto const& cache = Index.GetFile(fileID);
+                            assert(!cache.IsRevision);
                             auto data = Index.GetSource().Archive.GetFile(fileID);
-                            std::filesystem::path path = std::format(R"(Export\Index\{:%F_%H-%M-%S}Z_{}_{}\{})", Time::FromTimestamp(Index.GetArchiveTimestamp()), G::Game.Build, Name, fileID);
+                            std::filesystem::path path = std::format(R"(Export\Index\{:%F_%H-%M-%S}Z_{}_{}\{}.{})", Time::FromTimestamp(Index.GetArchiveTimestamp()), G::Game.Build, Name, fileID, cache.GetFileID() ? cache.GetFileID() : fileID);
                             create_directories(path.parent_path());
                             G::UI.ExportData(data, path);
-                            //path.replace_extension(".png");
+                            //path += ".png";
                             //G::Game.Texture.Load(fileID, { .DataSource = &data, .ExportPath = path });
                             context->Increment();
                         }
@@ -200,12 +219,25 @@ struct ArchiveIndex : Window
         { "Local.dat", G::ArchiveIndex[Data::Archive::Kind::Local] },
     };
 
+    void OpenTab(User::ArchiveIndex const& index)
+    {
+        for (auto& archive : Archives)
+            if (&archive.Index == &index)
+                archive.OpenTab = true;
+    }
+    void RunFullScan(User::ArchiveIndex const& index)
+    {
+        for (auto& archive : Archives)
+            if (&archive.Index == &index)
+                archive.RunFullScan = true;
+    }
+
     std::string Title() override { return "Archive Index"; }
     void Draw() override
     {
         if (scoped::TabBar("##Archives"))
             for (auto& archive : Archives)
-                if (scoped::TabItem(archive.Name))
+                if (scoped::TabItem(archive.Name, nullptr, std::exchange(archive.OpenTab, false) ? ImGuiTabItemFlags_SetSelected : 0))
                     archive.Draw();
     }
 };

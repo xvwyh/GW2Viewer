@@ -100,7 +100,7 @@ struct StartupLoading
         });
         AddTask({
             .Description = "Loading archive index",
-            .Requires = { Archive, GameBuild },
+            .Requires = { Archive, GameBuild, Manifest },
             .Provides = { ArchiveIndex },
             .Handler = [](ProgressBarContext& progress)
             {
