@@ -13,6 +13,7 @@ import GW2Viewer.UI.Windows.Window;
 import GW2Viewer.User.ArchiveIndex;
 import GW2Viewer.Utils.Async;
 import GW2Viewer.Utils.Container;
+import GW2Viewer.Utils.Encoding;
 import std;
 import magic_enum;
 #include "Macros.h"
@@ -36,14 +37,19 @@ struct ArchiveIndex : Window
         bool WriteLog = false;
         bool WritingLog = false;
 
+        bool OpenTab = false;
+        bool RunFullScan = false;
+
         void Draw()
         {
             scoped::WithID(this);
             if (!Index.IsLoaded())
             {
-                I::Text("Specify the path to %s in settings and restart the application.", Name);
+                I::Text("Specify the path to \"%s\" in settings and restart the application.", Name);
                 return;
             }
+            I::SetNextItemWidth(-FLT_MIN);
+            I::InputTextReadOnly("##Path", Utils::Encoding::ToUTF8(Index.GetSource().Path.wstring()));
 
             auto context = Index.AsyncScan.Current();
             ScanInProgress = context;
@@ -71,7 +77,7 @@ struct ArchiveIndex : Window
             {
                 if (scoped::Disabled(std::ranges::any_of(AsyncExport | std::views::values, &Utils::Async::Scheduler::Current)))
                 {
-                    if (I::Button("Start Full Scan"))
+                    if (I::Button("Start Full Scan") || std::exchange(RunFullScan, false) && !I::IsDisabled())
                     {
                         ScanProgress = { };
                         Index.ScanAsync(ScanOptions, ScanProgress, [this](auto const& result)
@@ -213,12 +219,25 @@ struct ArchiveIndex : Window
         { "Local.dat", G::ArchiveIndex[Data::Archive::Kind::Local] },
     };
 
+    void OpenTab(User::ArchiveIndex const& index)
+    {
+        for (auto& archive : Archives)
+            if (&archive.Index == &index)
+                archive.OpenTab = true;
+    }
+    void RunFullScan(User::ArchiveIndex const& index)
+    {
+        for (auto& archive : Archives)
+            if (&archive.Index == &index)
+                archive.RunFullScan = true;
+    }
+
     std::string Title() override { return "Archive Index"; }
     void Draw() override
     {
         if (scoped::TabBar("##Archives"))
             for (auto& archive : Archives)
-                if (scoped::TabItem(archive.Name))
+                if (scoped::TabItem(archive.Name, nullptr, std::exchange(archive.OpenTab, false) ? ImGuiTabItemFlags_SetSelected : 0))
                     archive.Draw();
     }
 };

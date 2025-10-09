@@ -2,6 +2,10 @@
 #include <Windows.h>
 
 module GW2Viewer.User.ArchiveIndex;
+import GW2Viewer.UI.ImGui;
+import GW2Viewer.UI.Notifications;
+import GW2Viewer.UI.Windows.ArchiveIndex;
+import GW2Viewer.Utils.Encoding;
 import <cctype>;
 
 namespace GW2Viewer::User
@@ -281,8 +285,49 @@ bool ArchiveIndex::UpdateCache(CacheFile& cache, uint32 fileID) const
 
 void ArchiveIndex::OnLoaded() const
 {
-    if (m_header->Version < CacheHeader::CurrentVersion)
+    if (m_header->ArchiveTimestampOnLastFullScan < m_header->ArchiveTimestampOnLastRun)
+    {
+        G::Notifications.AddCloseable({
+            .Draw = [this](UI::Notification::Handle handle)
+            {
+                I::Text("Archive \"%s\" was updated since the last full scan.\nArchive Index needs to be updated.", Utils::Encoding::ToUTF8(m_archiveSource->Path.filename().wstring()).c_str());
+                if (I::Button("Run Full Scan"))
+                {
+                    G::Windows::ArchiveIndex.Show();
+                    G::Windows::ArchiveIndex.OpenTab(*this);
+                    G::Windows::ArchiveIndex.RunFullScan(*this);
+                    handle.Close();
+                }
+                if (I::SameLine(); I::Button("Show UI"))
+                {
+                    G::Windows::ArchiveIndex.Show();
+                    G::Windows::ArchiveIndex.OpenTab(*this);
+                }
+            }
+        });
+    }
+    else if (m_header->Version < CacheHeader::CurrentVersion)
+    {
         m_header->Version = CacheHeader::CurrentVersion;
+        G::Notifications.AddCloseable({
+            .Draw = [this](UI::Notification::Handle handle)
+            {
+                I::Text("Archive Index system has been updated.\nArchive \"%s\" needs to be rescanned.", Utils::Encoding::ToUTF8(m_archiveSource->Path.filename().wstring()).c_str());
+                if (I::Button("Run Full Scan"))
+                {
+                    G::Windows::ArchiveIndex.Show();
+                    G::Windows::ArchiveIndex.OpenTab(*this);
+                    G::Windows::ArchiveIndex.RunFullScan(*this);
+                    handle.Close();
+                }
+                if (I::SameLine(); I::Button("Show UI"))
+                {
+                    G::Windows::ArchiveIndex.Show();
+                    G::Windows::ArchiveIndex.OpenTab(*this);
+                }
+            }
+        });
+    }
 }
 
 }
