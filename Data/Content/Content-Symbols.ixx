@@ -238,6 +238,10 @@ struct ParamValue : TypeInfo::SymbolType
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
     [[nodiscard]] std::optional<uint32> GetIcon(Context const& context) const override;
     [[nodiscard]] std::optional<ContentObject const*> GetMap(Context const& context) const override;
+    [[nodiscard]] std::optional<byte const*> GetPointer(Context const& context) const override;
+    [[nodiscard]] bool IsContent() const override { return true; }
+    [[nodiscard]] std::optional<ContentObject const*> GetContent(Context const& context) const override;
+    [[nodiscard]] bool IsInline() const override { return false; }
     [[nodiscard]] uint32 Size() const override { return sizeof(Struct); }
     void Draw(Context const& context) const override;
 };
@@ -259,6 +263,10 @@ struct ParamDeclare : TypeInfo::SymbolType
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override { return { }; }
     [[nodiscard]] std::optional<uint32> GetIcon(Context const& context) const override;
     [[nodiscard]] std::optional<ContentObject const*> GetMap(Context const& context) const override;
+    [[nodiscard]] std::optional<byte const*> GetPointer(Context const& context) const override;
+    [[nodiscard]] bool IsContent() const override { return true; }
+    [[nodiscard]] std::optional<ContentObject const*> GetContent(Context const& context) const override;
+    [[nodiscard]] bool IsInline() const override { return false; }
     [[nodiscard]] uint32 Alignment() const override { return sizeof(void*); }
     [[nodiscard]] uint32 Size() const override { return sizeof(Struct); }
     void Draw(Context const& context) const override;

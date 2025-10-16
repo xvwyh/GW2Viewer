@@ -508,6 +508,20 @@ std::optional<ContentObject const*> ParamValue::GetMap(Context const& context) c
         return typeInfo->GetMap({ param.Raw, context });
     return { };
 }
+std::optional<byte const*> ParamValue::GetPointer(Context const& context) const
+{
+    auto const& param = GetStruct(context);
+    if (auto [typeInfo, count] = GetSymbolTypeForContentType(param.ContentType); typeInfo)
+        return typeInfo->GetPointer({ param.Raw, context });
+    return { };
+}
+std::optional<ContentObject const*> ParamValue::GetContent(Context const& context) const
+{
+    auto const& param = GetStruct(context);
+    if (auto [typeInfo, count] = GetSymbolTypeForContentType(param.ContentType); typeInfo)
+        return typeInfo->GetContent({ param.Raw, context });
+    return { };
+}
 void ParamValue::Draw(Context const& context) const
 {
     auto const& param = GetStruct(context);
@@ -561,6 +575,16 @@ std::optional<ContentObject const*> ParamDeclare::GetMap(Context const& context)
 {
     auto const& param = GetStruct(context);
     return GetByName("ParamValue")->GetMap({ &param.Value, context });
+}
+std::optional<byte const*> ParamDeclare::GetPointer(Context const& context) const
+{
+    auto const& param = GetStruct(context);
+    return GetByName("ParamValue")->GetPointer({ &param.Value, context });
+}
+std::optional<ContentObject const*> ParamDeclare::GetContent(Context const& context) const
+{
+    auto const& param = GetStruct(context);
+    return GetByName("ParamValue")->GetContent({ &param.Value, context });
 }
 void ParamDeclare::Draw(Context const& context) const
 {
