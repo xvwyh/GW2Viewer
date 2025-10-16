@@ -22,6 +22,7 @@ struct Integer : TypeInfo::SymbolType
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(Context const& context) const override { return context.Data<T>(); }
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
     [[nodiscard]] uint32 Size() const override { return sizeof(T); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override { return context.Data<T>(); }
     void Draw(Context const& context) const override;
 };
 template<typename T>
@@ -41,6 +42,7 @@ struct Number : TypeInfo::SymbolType
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(Context const& context) const override { return { }; }
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override { return std::format("{}", context.Data<T>()); }
     [[nodiscard]] uint32 Size() const override { return sizeof(T); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override { return context.Data<T>(); }
     void Draw(Context const& context) const override;
 };
 template<typename T>
@@ -66,6 +68,7 @@ struct String : TypeInfo::SymbolType
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
     [[nodiscard]] uint32 Alignment() const override { return sizeof(Struct::Pointer); }
     [[nodiscard]] uint32 Size() const override { return sizeof(Struct::Pointer) + sizeof(Struct::Hash); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override { return GetString(context); }
     void Draw(Context const& context) const override;
 };
 template<typename T>
@@ -78,6 +81,7 @@ struct StringPointer : TypeInfo::SymbolType
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(Context const& context) const override { return { }; }
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
     [[nodiscard]] uint32 Size() const override { return sizeof(typename String<T>::Struct*); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override;
     void Draw(Context const& context) const override;
 };
 struct Color : TypeInfo::SymbolType
@@ -89,6 +93,7 @@ struct Color : TypeInfo::SymbolType
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(Context const& context) const override { return context.Data<uint32>(); }
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
     [[nodiscard]] uint32 Size() const override { return sizeof(uint32); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override;
     void Draw(Context const& context) const override;
 };
 template<typename T, size_t N>
@@ -99,6 +104,7 @@ struct Point : TypeInfo::SymbolType
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(Context const& context) const override { return context.Data<T>(); }
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
     [[nodiscard]] uint32 Size() const override { return sizeof(T) * N; }
+    [[nodiscard]] ordered_json Export(Context const& context) const override;
     void Draw(Context const& context) const override;
 };
 struct GUID : TypeInfo::SymbolType
@@ -113,6 +119,7 @@ struct GUID : TypeInfo::SymbolType
     [[nodiscard]] std::optional<ContentObject const*> GetContent(Context const& context) const override;
     [[nodiscard]] bool IsInline() const override { return false; }
     [[nodiscard]] uint32 Size() const override { return sizeof(GW2Viewer::GUID); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override { return context.Data<GW2Viewer::GUID>(); }
     void Draw(Context const& context) const override;
 };
 struct Token32 : TypeInfo::SymbolType
@@ -126,6 +133,7 @@ struct Token32 : TypeInfo::SymbolType
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(Context const& context) const override { return context.Data<uint32>(); }
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override { return GetDecoded(context).data(); }
     [[nodiscard]] uint32 Size() const override { return sizeof(uint32); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override { return GetDecoded(context).data(); }
     void Draw(Context const& context) const override;
 };
 struct Token64 : TypeInfo::SymbolType
@@ -139,6 +147,7 @@ struct Token64 : TypeInfo::SymbolType
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(Context const& context) const override { return context.Data<uint64>(); }
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override { return GetDecoded(context).data(); }
     [[nodiscard]] uint32 Size() const override { return sizeof(uint64); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override { return GetDecoded(context).data(); }
     void Draw(Context const& context) const override;
 };
 struct StringID : TypeInfo::SymbolType
@@ -150,6 +159,7 @@ struct StringID : TypeInfo::SymbolType
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(Context const& context) const override { return context.Data<uint32>(); }
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
     [[nodiscard]] uint32 Size() const override { return sizeof(uint32); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override { return GetStringID(context); } // TODO
     void Draw(Context const& context) const override;
 };
 struct FileID : TypeInfo::SymbolType
@@ -163,6 +173,7 @@ struct FileID : TypeInfo::SymbolType
     [[nodiscard]] std::optional<uint32> GetIcon(Context const& context) const override { return GetFileID(context); }
     [[nodiscard]] uint32 Alignment() const override { return sizeof(wchar_t*); }
     [[nodiscard]] uint32 Size() const override { return sizeof(uint32); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override { return GetFileID(context); } // TODO
     void Draw(Context const& context) const override;
 };
 struct RawPointerT : TypeInfo::SymbolType
@@ -173,6 +184,7 @@ struct RawPointerT : TypeInfo::SymbolType
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override { return { }; }
     [[nodiscard]] std::optional<byte const*> GetPointer(Context const& context) const override { return context.Data<byte const*>(); }
     [[nodiscard]] uint32 Size() const override { return sizeof(void*); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override { return ordered_json::object(); }
     void Draw(Context const& context) const override;
 };
 struct ContentPointer : RawPointerT
@@ -186,6 +198,7 @@ struct ContentPointer : RawPointerT
     [[nodiscard]] std::optional<ContentObject const*> GetContent(Context const& context) const override;
     [[nodiscard]] bool IsInline() const override { return false; }
     [[nodiscard]] uint32 Size() const override { return sizeof(ContentObject const*); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override;
     void Draw(Context const& context) const override;
 };
 struct ArrayT : TypeInfo::SymbolType
@@ -199,6 +212,7 @@ struct ArrayT : TypeInfo::SymbolType
     [[nodiscard]] std::optional<byte const*> GetPointer(Context const& context) const override { return context.Data<byte const*>(); }
     [[nodiscard]] uint32 Alignment() const override { return sizeof(void*); }
     [[nodiscard]] uint32 Size() const override { return sizeof(void*) + sizeof(uint32); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override { return ordered_json::array(); }
     void Draw(Context const& context) const override;
 };
 struct ArrayContent : ArrayT
@@ -208,6 +222,7 @@ struct ArrayContent : ArrayT
     [[nodiscard]] bool IsContent() const override { return true; }
     [[nodiscard]] std::optional<ContentObject const*> GetContent(Context const& context) const override;
     [[nodiscard]] uint32 Size() const override { return sizeof(ContentObject const*) + sizeof(uint32); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override { return ordered_json::array(); }
     void Draw(Context const& context) const override;
 };
 struct ParamValue : TypeInfo::SymbolType
@@ -239,6 +254,7 @@ struct ParamValue : TypeInfo::SymbolType
     [[nodiscard]] std::optional<uint32> GetIcon(Context const& context) const override;
     [[nodiscard]] std::optional<ContentObject const*> GetMap(Context const& context) const override;
     [[nodiscard]] uint32 Size() const override { return sizeof(Struct); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override;
     void Draw(Context const& context) const override;
 };
 struct ParamDeclare : TypeInfo::SymbolType
@@ -261,6 +277,7 @@ struct ParamDeclare : TypeInfo::SymbolType
     [[nodiscard]] std::optional<ContentObject const*> GetMap(Context const& context) const override;
     [[nodiscard]] uint32 Alignment() const override { return sizeof(void*); }
     [[nodiscard]] uint32 Size() const override { return sizeof(Struct); }
+    [[nodiscard]] ordered_json Export(Context const& context) const override;
     void Draw(Context const& context) const override;
 };
 
@@ -272,6 +289,7 @@ struct MetaSymbolType : virtual TypeInfo::SymbolType
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(Context const& context) const override { return { }; }
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override { return { }; }
     [[nodiscard]] uint32 Size() const override { return 0; }
+    [[nodiscard]] ordered_json Export(Context const& context) const override { std::terminate(); };
     void Draw(Context const& context) const override { }
 };
 struct MetaContentName : MetaSymbolType

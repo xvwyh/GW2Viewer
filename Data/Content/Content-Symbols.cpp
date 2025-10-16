@@ -143,6 +143,12 @@ template<typename T> std::string StringPointer<T>::GetDisplayText(Context const&
         return GetTargetSymbolType()->GetDisplayText({ target, context });
     return "";
 }
+template<typename T> ordered_json StringPointer<T>::Export(Context const& context) const
+{
+    if (auto const target = context.Data<typename String<T>::Struct const*>())
+        return GetTargetSymbolType()->Export({ target, context });
+    return "";
+}
 template<typename T> void StringPointer<T>::Draw(Context const& context) const
 {
     if (auto const target = context.Data<typename String<T>::Struct const*>())
@@ -161,6 +167,10 @@ std::string Color::GetDisplayText(Context const& context) const
         color.Channels[dest] = original.Channels[source];
     return std::format("<c=#{0:08X}>#{0:08X}</c>", std::byteswap(color.Color));
 }
+ordered_json Color::Export(Context const& context) const
+{
+    return I::StripMarkup(GetDisplayText(context));
+}
 void Color::Draw(Context const& context) const
 {
     ImVec4 const original = I::ColorConvertU32ToFloat4(context.Data<uint32>()); // 0xAABBGGRR
@@ -175,6 +185,18 @@ static constexpr std::array pointColors { 0xFFCCCCFF, 0xFFCCFFCC, 0xFFFFCCCC, 0x
 template<typename T, size_t N> std::string Point<T, N>::GetDisplayText(Context const& context) const
 {
     return std::format("({})", std::string { std::from_range, std::views::zip_transform([](T value, uint32 color) { return std::format("<c=#{:X}>{}</c>", std::byteswap(color), value); }, std::span { &context.Data<T>(), N }, pointColors) | std::views::join_with(std::string(", ")) });
+}
+template<typename T, size_t N> ordered_json Point<T, N>::Export(Context const& context) const
+{
+    if constexpr (N == 1)
+        return { { "X", (&context.Data<T>())[0] } };
+    if constexpr (N == 2)
+        return { { "X", (&context.Data<T>())[0] }, { "Y", (&context.Data<T>())[1] } };
+    if constexpr (N == 3)
+        return { { "X", (&context.Data<T>())[0] }, { "Y", (&context.Data<T>())[1] }, { "Z", (&context.Data<T>())[2] } };
+    if constexpr (N == 4)
+        return { { "X", (&context.Data<T>())[0] }, { "Y", (&context.Data<T>())[1] }, { "Z", (&context.Data<T>())[2] }, { "W", (&context.Data<T>())[3] } };
+    std::terminate();
 }
 template<typename T, size_t N> void Point<T, N>::Draw(Context const& context) const
 {
@@ -339,6 +361,12 @@ std::optional<ContentObject const*> ContentPointer::GetContent(Context const& co
         object->Finalize();
         return object;
     }
+    return nullptr;
+}
+ordered_json ContentPointer::Export(Context const& context) const
+{
+    if (auto const object = *GetContent(context))
+        return *object->GetGUID();
     return nullptr;
 }
 void ContentPointer::Draw(Context const& context) const
@@ -508,6 +536,21 @@ std::optional<ContentObject const*> ParamValue::GetMap(Context const& context) c
         return typeInfo->GetMap({ param.Raw, context });
     return { };
 }
+ordered_json ParamValue::Export(Context const& context) const
+{
+    auto const& param = GetStruct(context);
+    if (auto [typeInfo, count] = GetSymbolTypeForContentType(param.ContentType); typeInfo)
+    {
+        if (count <= 1)
+            return typeInfo->Export({ param.Raw, context });
+
+        auto array = ordered_json::array();
+        for (uint32 i = 0; i < count; ++i)
+            array.emplace_back(typeInfo->Export({ &param.Raw[i * typeInfo->Size()], context }));
+        return array;
+    }
+    return "Unhandled basic type";
+}
 void ParamValue::Draw(Context const& context) const
 {
     auto const& param = GetStruct(context);
@@ -561,6 +604,11 @@ std::optional<ContentObject const*> ParamDeclare::GetMap(Context const& context)
 {
     auto const& param = GetStruct(context);
     return GetByName("ParamValue")->GetMap({ &param.Value, context });
+}
+ordered_json ParamDeclare::Export(Context const& context) const
+{
+    auto const& param = GetStruct(context);
+    return GetByName("ParamValue")->Export({ &param.Value, context });
 }
 void ParamDeclare::Draw(Context const& context) const
 {

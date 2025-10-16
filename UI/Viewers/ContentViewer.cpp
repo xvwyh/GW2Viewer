@@ -47,6 +47,16 @@ void ContentViewer::Draw()
             G::Config.TreeContentStructLayout ^= true;
 
         I::SameLine();
+        if (I::SameLine(); I::Button(ICON_FA_COPY))
+            I::SetClipboardText(Data::Content::ExportSymbolData(Content).dump(2).c_str());
+        if (I::SameLine(); I::Button(ICON_FA_COPY ICON_FA_COPY))
+            I::SetClipboardText(Data::Content::ExportSymbolData(Content, { .InlineObjectMaxDepth = 1 }).dump(2).c_str());
+        if (I::SameLine(); I::Button(ICON_FA_COPY ICON_FA_COPY ICON_FA_COPY))
+            I::SetClipboardText(Data::Content::ExportSymbolData(Content, { .InlineObjectMaxDepth = 2 }).dump(2).c_str());
+        if (I::SameLine(); I::Button(ICON_FA_COPY ICON_FA_COPY ICON_FA_COPY ICON_FA_COPY))
+            I::SetClipboardText(Data::Content::ExportSymbolData(Content, { .InlineObjectMaxDepth = 3 }).dump(2).c_str());
+
+        I::SameLine();
         if (scoped::TabBar("Tabs", ImGuiTabBarFlags_NoCloseWithMiddleMouseButton | ImGuiTabBarFlags_NoTabListScrollingButtons))
         {
             if (scoped::TabItem(ICON_FA_INFO " Info", nullptr, ImGuiTabItemFlags_NoCloseButton | ImGuiTabItemFlags_NoCloseWithMiddleMouseButton))

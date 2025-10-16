@@ -83,5 +83,10 @@ struct QuerySymbolDataResult : TypeInfo::Context
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, SymbolPath::Span path);
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, std::string_view path);
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, TypeInfo::SymbolType const& type, TypeInfo::Condition::ValueType value);
+struct ExportOptions
+{
+    uint32 InlineObjectMaxDepth = 0;
+};
+ordered_json ExportSymbolData(ContentObject const& content, ExportOptions const& options = { });
 
 }

@@ -99,12 +99,13 @@ struct TypeInfo
         [[nodiscard]] virtual std::optional<ContentObject const*> GetMap(Context const& context) const { return { }; };
         [[nodiscard]] virtual bool IsArray() const { return false; }
         [[nodiscard]] virtual std::optional<uint32> GetArrayCount(Context const& context) const { return { }; }
-        [[nodiscard]] virtual std::optional<byte const*> GetPointer(Context const& context) const { return nullptr; }
+        [[nodiscard]] virtual std::optional<byte const*> GetPointer(Context const& context) const { return { }; }
         [[nodiscard]] virtual bool IsContent() const { return false; }
-        [[nodiscard]] virtual std::optional<ContentObject const*> GetContent(Context const& context) const { return nullptr; }
+        [[nodiscard]] virtual std::optional<ContentObject const*> GetContent(Context const& context) const { return { }; }
         [[nodiscard]] virtual bool IsInline() const { return true; }
         [[nodiscard]] virtual uint32 Alignment() const { return 1; }
         [[nodiscard]] virtual uint32 Size() const = 0;
+        [[nodiscard]] virtual ordered_json Export(Context const& context) const = 0;
         virtual void Draw(Context const& context) const = 0;
     };
     using SymbolMap = std::multimap<uint32, Symbol>;
