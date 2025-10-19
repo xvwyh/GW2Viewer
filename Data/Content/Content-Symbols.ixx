@@ -22,7 +22,7 @@ struct Integer : TypeInfo::SymbolType
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(Context const& context) const override { return context.Data<T>(); }
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
     [[nodiscard]] uint32 Size() const override { return sizeof(T); }
-    [[nodiscard]] ordered_json Export(Context const& context) const override { return context.Data<T>(); }
+    [[nodiscard]] ordered_json Export(Context const& context) const;
     void Draw(Context const& context) const override;
 };
 template<typename T>
@@ -159,7 +159,7 @@ struct StringID : TypeInfo::SymbolType
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(Context const& context) const override { return context.Data<uint32>(); }
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
     [[nodiscard]] uint32 Size() const override { return sizeof(uint32); }
-    [[nodiscard]] ordered_json Export(Context const& context) const override { return GetStringID(context); } // TODO
+    [[nodiscard]] ordered_json Export(Context const& context) const;
     void Draw(Context const& context) const override;
 };
 struct FileID : TypeInfo::SymbolType
@@ -173,7 +173,7 @@ struct FileID : TypeInfo::SymbolType
     [[nodiscard]] std::optional<uint32> GetIcon(Context const& context) const override { return GetFileID(context); }
     [[nodiscard]] uint32 Alignment() const override { return sizeof(wchar_t*); }
     [[nodiscard]] uint32 Size() const override { return sizeof(uint32); }
-    [[nodiscard]] ordered_json Export(Context const& context) const override { return GetFileID(context); } // TODO
+    [[nodiscard]] ordered_json Export(Context const& context) const;
     void Draw(Context const& context) const override;
 };
 struct RawPointerT : TypeInfo::SymbolType

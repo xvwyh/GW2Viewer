@@ -53,6 +53,45 @@ template<typename T> std::string Integer<T>::GetDisplayText(Context const& conte
     }
     return std::format("{}", value);
 }
+template<typename T> nlohmann::ordered_json Integer<T>::Export(Context const& context) const
+{
+    nlohmann::ordered_json json;
+    if (auto const e = context.Symbol.GetEnum())
+    {
+        auto value = context.Data<T>();
+        if (e->Flags)
+        {
+            TypeInfo::Enum::FlagsUnderlyingType remaining = value;
+            std::vector<std::string> flagArray;
+
+            for (auto const& [flag, name] : e->Values)
+            {
+                if (TypeInfo::Enum::FlagsUnderlyingType const flagTyped = flag;
+                    (remaining & flagTyped) == flagTyped)
+                {
+                    flagArray.push_back(name);
+                    remaining &= ~flagTyped;
+                }
+            }
+
+            if (remaining)
+                flagArray.push_back(std::format("0x{:X}", remaining));
+
+            json = flagArray;
+        }
+        else
+        {
+            if (auto itr = e->Values.find(value); itr != e->Values.end())
+                json = itr->second;
+            else
+                json = GetDisplayText(context);
+        }
+    }
+    else
+        json = GetDisplayText(context);
+
+    return json;
+}
 template<typename T> void Integer<T>::Draw(Context const& context) const
 {
     std::string text;
@@ -289,6 +328,18 @@ std::string StringID::GetDisplayText(Context const& context) const
     auto [string, status] = G::Game.Text.Get(stringID);
     return std::format("{}{}", Encryption::GetStatusText(status), string ? *string : L"");
 }
+nlohmann::ordered_json StringID::Export(Context const& context) const
+{
+    auto const stringID = GetStringID(context);
+    if(stringID == 0)
+		return nullptr;
+
+    auto resolvedString = G::Game.Text.Get(stringID).first;
+    if (resolvedString)
+        return  *resolvedString;
+    else
+        return std::format("(({}))", stringID);
+}
 void StringID::Draw(Context const& context) const
 {
     uint32 stringID = GetStringID(context);
@@ -306,7 +357,14 @@ void StringID::Draw(Context const& context) const
         I::SetNextItemWidth(-FLT_MIN);
     I::InputTextReadOnly("##Input", text, text.contains('\n') ? ImGuiInputTextFlags_Multiline : 0);
 }
-
+nlohmann::ordered_json FileID::Export(Context const& context) const
+{
+    auto const fileID = GetFileID(context);
+    if (fileID == 0)
+        return nullptr;
+    else
+        return fileID;
+}
 void FileID::Draw(Context const& context) const
 {
     auto const fileID = GetFileID(context);
@@ -365,8 +423,15 @@ std::optional<ContentObject const*> ContentPointer::GetContent(Context const& co
 }
 ordered_json ContentPointer::Export(Context const& context) const
 {
-    if (auto const object = *GetContent(context))
-        return *object->GetGUID();
+    if (auto const object = *GetContent(context)) {
+        nlohmann::ordered_json json;
+		json["Content::GUID"] = *object->GetGUID();
+        json["Content::Type"] = Utils::Encoding::ToUTF8(object->Type->GetDisplayName());
+        if (auto dataIdPtr = object->GetDataID()) {
+            json["Content::DataID"] = *dataIdPtr;
+        }
+        return json;
+    }
     return nullptr;
 }
 void ContentPointer::Draw(Context const& context) const
