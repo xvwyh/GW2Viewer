@@ -2,6 +2,7 @@ export module GW2Viewer.UI.Viewers.ContentListViewer;
 import GW2Viewer.Common;
 import GW2Viewer.Common.GUID;
 import GW2Viewer.Common.Time;
+import GW2Viewer.Common.JSON;
 import GW2Viewer.Data.Content;
 import GW2Viewer.Data.Game;
 import GW2Viewer.UI.Controls;
@@ -11,6 +12,7 @@ import GW2Viewer.UI.Viewers.ContentViewer;
 import GW2Viewer.UI.Viewers.ListViewer;
 import GW2Viewer.UI.Viewers.ViewerRegistry;
 import GW2Viewer.UI.Windows.ContentSearch;
+import GW2Viewer.UI.Windows.ContentExport;
 import GW2Viewer.UI.Windows.Demangle;
 import GW2Viewer.User.Config;
 import GW2Viewer.Utils.Async;
@@ -345,11 +347,12 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             }
         }
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
-        if (scoped::Table("Filter", 5, ImGuiTableFlags_NoSavedSettings))
+        if (scoped::Table("Filter", 6, ImGuiTableFlags_NoSavedSettings))
         {
             I::TableSetupColumn("Type");
             I::TableSetupColumn("Flatten", ImGuiTableColumnFlags_WidthFixed);
             I::TableSetupColumn("Locate", ImGuiTableColumnFlags_WidthFixed);
+            I::TableSetupColumn("Export", ImGuiTableColumnFlags_WidthFixed);
             I::TableSetupColumn("Expand", ImGuiTableColumnFlags_WidthFixed);
             I::TableSetupColumn("Collapse", ImGuiTableColumnFlags_WidthFixed);
 
@@ -415,6 +418,29 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             if (I::Button(ICON_FA_FOLDER_MAGNIFYING_GLASS))
                 LocateObject(viewer->Content);
             I::SetItemTooltip("Locate:\n%s", viewer ? viewer->Title().c_str() : "<no content selected>");
+
+            I::TableNextColumn();
+            if (scoped::Disabled(!G::Game.Content.AreObjectsLoaded()))
+            {
+                if (I::Button(ICON_FA_DOWNLOAD))
+                {
+                    std::vector<Data::Content::ContentObject const*> filteredObjects;
+                    filteredObjects.reserve(ContentFilter.GetFilteredObjectsCount());
+
+                    std::ranges::copy(
+                        G::Game.Content.GetObjects()
+                        | std::views::filter([&](Data::Content::ContentObject const* object) {
+                            return object->MatchesFilter(ContentFilter);
+                            }),
+                        std::back_inserter(filteredObjects)
+                    );
+
+                    SortList(filteredObjects, Sort, SortInvert, Flatten.has_value());
+
+                    G::Windows::ContentExport.ExportContentData(std::vector(filteredObjects.begin(), filteredObjects.end()));
+                }
+            }
+            I::SetItemTooltip("Export current content object list");
 
             I::TableNextColumn();
             if (scoped::Disabled(Flatten.has_value()))
