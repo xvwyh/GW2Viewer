@@ -17,6 +17,7 @@ export namespace GW2Viewer::Data::Content
 {
 struct ContentObject;
 struct ContentTypeInfo;
+struct ExportOptions;
 
 struct TypeInfo
 {
@@ -105,7 +106,7 @@ struct TypeInfo
         [[nodiscard]] virtual bool IsInline() const { return true; }
         [[nodiscard]] virtual uint32 Alignment() const { return 1; }
         [[nodiscard]] virtual uint32 Size() const = 0;
-        [[nodiscard]] virtual ordered_json Export(Context const& context) const = 0;
+        [[nodiscard]] virtual ordered_json Export(Context const& context, ExportOptions const& options) const = 0;
         virtual void Draw(Context const& context) const = 0;
     };
     using SymbolMap = std::multimap<uint32, Symbol>;

@@ -53,44 +53,34 @@ template<typename T> std::string Integer<T>::GetDisplayText(Context const& conte
     }
     return std::format("{}", value);
 }
-template<typename T> nlohmann::ordered_json Integer<T>::Export(Context const& context) const
+template<typename T> ordered_json Integer<T>::Export(Context const& context, ExportOptions const& options) const
 {
-    nlohmann::ordered_json json;
+    auto const value = context.Data<T>();
     if (auto const e = context.Symbol.GetEnum())
     {
-        auto value = context.Data<T>();
         if (e->Flags)
         {
+            ordered_json json;
             TypeInfo::Enum::FlagsUnderlyingType remaining = value;
-            std::vector<std::string> flagArray;
-
             for (auto const& [flag, name] : e->Values)
             {
-                if (TypeInfo::Enum::FlagsUnderlyingType const flagTyped = flag;
-                    (remaining & flagTyped) == flagTyped)
+                if (TypeInfo::Enum::FlagsUnderlyingType const flagTyped = flag; (remaining & flagTyped) == flagTyped)
                 {
-                    flagArray.push_back(name);
+                    json.emplace_back(name);
                     remaining &= ~flagTyped;
                 }
             }
-
             if (remaining)
-                flagArray.push_back(std::format("0x{:X}", remaining));
+                json.emplace_back(std::format("0x{:X}", remaining));
+            return json;
+        }
 
-            json = flagArray;
-        }
-        else
-        {
-            if (auto itr = e->Values.find(value); itr != e->Values.end())
-                json = itr->second;
-            else
-                json = GetDisplayText(context);
-        }
+        if (auto itr = e->Values.find(value); itr != e->Values.end())
+            return itr->second;
+
+        return GetDisplayText(context);
     }
-    else
-        json = GetDisplayText(context);
-
-    return json;
+    return value;
 }
 template<typename T> void Integer<T>::Draw(Context const& context) const
 {
@@ -182,11 +172,11 @@ template<typename T> std::string StringPointer<T>::GetDisplayText(Context const&
         return GetTargetSymbolType()->GetDisplayText({ target, context });
     return "";
 }
-template<typename T> ordered_json StringPointer<T>::Export(Context const& context) const
+template<typename T> ordered_json StringPointer<T>::Export(Context const& context, ExportOptions const& options) const
 {
     if (auto const target = context.Data<typename String<T>::Struct const*>())
-        return GetTargetSymbolType()->Export({ target, context });
-    return "";
+        return GetTargetSymbolType()->Export({ target, context }, options);
+    return nullptr;
 }
 template<typename T> void StringPointer<T>::Draw(Context const& context) const
 {
@@ -194,7 +184,7 @@ template<typename T> void StringPointer<T>::Draw(Context const& context) const
         GetTargetSymbolType()->Draw({ target, context });
 }
 
-std::string Color::GetDisplayText(Context const& context) const
+template<std::array<byte, 4> Swizzle> uint32 Color<Swizzle>::GetRGBA(Context const& context)
 {
     union
     {
@@ -204,13 +194,17 @@ std::string Color::GetDisplayText(Context const& context) const
     auto color = original;
     for (auto const& [dest, source] : Swizzle | std::views::enumerate)
         color.Channels[dest] = original.Channels[source];
-    return std::format("<c=#{0:08X}>#{0:08X}</c>", std::byteswap(color.Color));
+    return color.Color;
 }
-ordered_json Color::Export(Context const& context) const
+template<std::array<byte, 4> Swizzle> std::string Color<Swizzle>::GetDisplayText(Context const& context) const
 {
-    return I::StripMarkup(GetDisplayText(context));
+    return std::format("<c=#{0:08X}>#{0:08X}</c>", std::byteswap(GetRGBA(context)));
 }
-void Color::Draw(Context const& context) const
+template<std::array<byte, 4> Swizzle> ordered_json Color<Swizzle>::Export(Context const& context, ExportOptions const& options) const
+{
+    return std::format("#{:08X}", std::byteswap(GetRGBA(context)));
+}
+template<std::array<byte, 4> Swizzle> void Color<Swizzle>::Draw(Context const& context) const
 {
     ImVec4 const original = I::ColorConvertU32ToFloat4(context.Data<uint32>()); // 0xAABBGGRR
     ImVec4 color;
@@ -220,22 +214,18 @@ void Color::Draw(Context const& context) const
     I::ColorEdit4("##Input", &color.x, ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_AlphaPreviewHalf);
 }
 
+static constexpr std::array pointAxes { "X", "Y", "Z", "W" };
 static constexpr std::array pointColors { 0xFFCCCCFF, 0xFFCCFFCC, 0xFFFFCCCC, 0xFFFFCCFF };
 template<typename T, size_t N> std::string Point<T, N>::GetDisplayText(Context const& context) const
 {
     return std::format("({})", std::string { std::from_range, std::views::zip_transform([](T value, uint32 color) { return std::format("<c=#{:X}>{}</c>", std::byteswap(color), value); }, std::span { &context.Data<T>(), N }, pointColors) | std::views::join_with(std::string(", ")) });
 }
-template<typename T, size_t N> ordered_json Point<T, N>::Export(Context const& context) const
+template<typename T, size_t N> ordered_json Point<T, N>::Export(Context const& context, ExportOptions const& options) const
 {
-    if constexpr (N == 1)
-        return { { "X", (&context.Data<T>())[0] } };
-    if constexpr (N == 2)
-        return { { "X", (&context.Data<T>())[0] }, { "Y", (&context.Data<T>())[1] } };
-    if constexpr (N == 3)
-        return { { "X", (&context.Data<T>())[0] }, { "Y", (&context.Data<T>())[1] }, { "Z", (&context.Data<T>())[2] } };
-    if constexpr (N == 4)
-        return { { "X", (&context.Data<T>())[0] }, { "Y", (&context.Data<T>())[1] }, { "Z", (&context.Data<T>())[2] }, { "W", (&context.Data<T>())[3] } };
-    std::terminate();
+    ordered_json json;
+    for (uint32 i = 0; i < N; ++i)
+        json[pointAxes[i]] = (&context.Data<T>())[i];
+    return json;
 }
 template<typename T, size_t N> void Point<T, N>::Draw(Context const& context) const
 {
@@ -328,17 +318,16 @@ std::string StringID::GetDisplayText(Context const& context) const
     auto [string, status] = G::Game.Text.Get(stringID);
     return std::format("{}{}", Encryption::GetStatusText(status), string ? *string : L"");
 }
-nlohmann::ordered_json StringID::Export(Context const& context) const
+ordered_json StringID::Export(Context const& context, ExportOptions const& options) const
 {
-    auto const stringID = GetStringID(context);
-    if(stringID == 0)
-		return nullptr;
+    if (auto const stringID = GetStringID(context))
+    {
+        if (auto const string = G::Game.Text.Get(stringID).first)
+            return *string;
 
-    auto resolvedString = G::Game.Text.Get(stringID).first;
-    if (resolvedString)
-        return  *resolvedString;
-    else
-        return std::format("(({}))", stringID);
+        return stringID;
+    }
+    return nullptr;
 }
 void StringID::Draw(Context const& context) const
 {
@@ -357,13 +346,12 @@ void StringID::Draw(Context const& context) const
         I::SetNextItemWidth(-FLT_MIN);
     I::InputTextReadOnly("##Input", text, text.contains('\n') ? ImGuiInputTextFlags_Multiline : 0);
 }
-nlohmann::ordered_json FileID::Export(Context const& context) const
+
+ordered_json FileID::Export(Context const& context, ExportOptions const& options) const
 {
-    auto const fileID = GetFileID(context);
-    if (fileID == 0)
-        return nullptr;
-    else
+    if (auto const fileID = GetFileID(context))
         return fileID;
+    return nullptr;
 }
 void FileID::Draw(Context const& context) const
 {
@@ -421,16 +409,31 @@ std::optional<ContentObject const*> ContentPointer::GetContent(Context const& co
     }
     return nullptr;
 }
-ordered_json ContentPointer::Export(Context const& context) const
+ordered_json ContentPointer::Export(Context const& context, ExportOptions const& options) const
 {
-    if (auto const object = *GetContent(context)) {
-        nlohmann::ordered_json json;
-		json["Content::GUID"] = *object->GetGUID();
-        json["Content::Type"] = Utils::Encoding::ToUTF8(object->Type->GetDisplayName());
-        if (auto dataIdPtr = object->GetDataID()) {
-            json["Content::DataID"] = *dataIdPtr;
+    if (auto const object = *GetContent(context))
+    {
+        switch (options.ContentPointerFormat)
+        {
+            using enum ExportOptions::ContentPointerFormats;
+            case GUID:
+                return *object->GetGUID();
+            case Verbose:
+            {
+                ordered_json json;
+                json["Content::GUID"] = *object->GetGUID();
+                json["Content::Type"] = Utils::Encoding::ToUTF8(object->Type->GetDisplayName());
+                if (auto const dataID = object->GetDataID())
+                    json["Content::DataID"] = *dataID;
+                return json;
+            }
+            case Joined:
+                if (auto const dataID = object->GetDataID())
+                    return std::format("{1}{0}{2}{0}{3}", options.ContentPointerFormatJoinedSeparator, *object->GetGUID(), object->Type->GetDisplayName(), *dataID);
+                return std::format("{1}{0}{2}", options.ContentPointerFormatJoinedSeparator, *object->GetGUID(), object->Type->GetDisplayName());
+            default:
+                std::terminate();
         }
-        return json;
     }
     return nullptr;
 }
@@ -522,6 +525,14 @@ std::string ContentType::GetDisplayText(Context const& context) const
 
     return std::format("<c=#4>#{}</c>", typeIndex);
 }
+ordered_json ContentType::Export(Context const& context, ExportOptions const& options) const
+{
+    auto const typeIndex = context.Data<uint32>();
+    if (auto const& typeInfo = G::Game.Content.GetType(typeIndex)->GetTypeInfo(); !typeInfo.Name.empty())
+        return typeInfo.Name;
+
+    return typeIndex;
+}
 
 std::tuple<TypeInfo::SymbolType const*, uint32> GetSymbolTypeForContentType(uint32 typeIndex)
 {
@@ -550,7 +561,6 @@ std::tuple<TypeInfo::SymbolType const*, uint32> GetSymbolTypeForContentType(uint
         default:            return { GetByName("Content*"), 1 };
     }
 }
-
 std::strong_ordering ParamValue::CompareDataForSearch(byte const* dataA, byte const* dataB) const
 {
     auto const& paramA = GetStruct(dataA);
@@ -574,7 +584,6 @@ std::strong_ordering ParamValue::CompareDataForSearch(byte const* dataA, byte co
 
     return std::strong_ordering::equal;
 }
-
 std::optional<TypeInfo::Condition::ValueType> ParamValue::GetValueForCondition(Context const& context) const
 {
     auto const& param = GetStruct(context);
@@ -624,17 +633,17 @@ std::optional<ContentObject const*> ParamValue::GetContent(Context const& contex
         return typeInfo->GetContent({ param.Raw, context });
     return { };
 }
-ordered_json ParamValue::Export(Context const& context) const
+ordered_json ParamValue::Export(Context const& context, ExportOptions const& options) const
 {
     auto const& param = GetStruct(context);
     if (auto [typeInfo, count] = GetSymbolTypeForContentType(param.ContentType); typeInfo)
     {
         if (count <= 1)
-            return typeInfo->Export({ param.Raw, context });
+            return typeInfo->Export({ param.Raw, context }, options);
 
         auto array = ordered_json::array();
         for (uint32 i = 0; i < count; ++i)
-            array.emplace_back(typeInfo->Export({ &param.Raw[i * typeInfo->Size()], context }));
+            array.emplace_back(typeInfo->Export({ &param.Raw[i * typeInfo->Size()], context }, options));
         return array;
     }
     return "Unhandled basic type";
@@ -677,7 +686,6 @@ std::strong_ordering ParamDeclare::CompareDataForSearch(byte const* dataA, byte 
             return result;
     return GetByName("ParamValue")->CompareDataForSearch((byte const*)&paramA.Value, (byte const*)&paramB.Value);
 }
-
 std::optional<TypeInfo::Condition::ValueType> ParamDeclare::GetValueForCondition(Context const& context) const
 {
     auto const& param = GetStruct(context);
@@ -703,10 +711,10 @@ std::optional<ContentObject const*> ParamDeclare::GetContent(Context const& cont
     auto const& param = GetStruct(context);
     return GetByName("ParamValue")->GetContent({ &param.Value, context });
 }
-ordered_json ParamDeclare::Export(Context const& context) const
+ordered_json ParamDeclare::Export(Context const& context, ExportOptions const& options) const
 {
     auto const& param = GetStruct(context);
-    return GetByName("ParamValue")->Export({ &param.Value, context });
+    return GetByName("ParamValue")->Export({ &param.Value, context }, options);
 }
 void ParamDeclare::Draw(Context const& context) const
 {
@@ -774,10 +782,10 @@ std::vector<TypeInfo::SymbolType const*>& GetTypes()
         new StringPointer<char>("char**"),
         new String<wchar_t>("wchar_t*"),
         new StringPointer<wchar_t>("wchar_t**"),
-        new Color("ColorRGBA", { 0, 1, 2, 3 }),
-        new Color("ColorBGRA", { 2, 1, 0, 3 }),
-        new Color("ColorARGB", { 3, 0, 1, 2 }),
-        new Color("ColorABGR", { 3, 2, 1, 0 }),
+        new Color<{ 0, 1, 2, 3 }>("ColorRGBA"),
+        new Color<{ 2, 1, 0, 3 }>("ColorBGRA"),
+        new Color<{ 3, 0, 1, 2 }>("ColorARGB"),
+        new Color<{ 3, 2, 1, 0 }>("ColorABGR"),
         new Point<float, 2>("Point2D"),
         new Point<float, 3>("Point3D"),
         new Point<int, 2>("IntPoint2D"),

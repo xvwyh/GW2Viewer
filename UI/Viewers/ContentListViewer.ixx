@@ -347,14 +347,10 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             }
         }
         if (scoped::WithStyleVar(ImGuiStyleVar_CellPadding, ImVec2()))
-        if (scoped::Table("Filter", 6, ImGuiTableFlags_NoSavedSettings))
+        if (scoped::Table("Filter", 2, ImGuiTableFlags_NoSavedSettings))
         {
             I::TableSetupColumn("Type");
-            I::TableSetupColumn("Flatten", ImGuiTableColumnFlags_WidthFixed);
-            I::TableSetupColumn("Locate", ImGuiTableColumnFlags_WidthFixed);
-            I::TableSetupColumn("Export", ImGuiTableColumnFlags_WidthFixed);
-            I::TableSetupColumn("Expand", ImGuiTableColumnFlags_WidthFixed);
-            I::TableSetupColumn("Collapse", ImGuiTableColumnFlags_WidthFixed);
+            I::TableSetupColumn("Right", ImGuiTableColumnFlags_WidthFixed);
 
             I::TableNextColumn();
             I::SetNextItemWidth(-FLT_MIN);
@@ -412,43 +408,33 @@ struct ContentListViewer : ListViewer<ContentListViewer, { ICON_FA_FOLDER_TREE "
             }
             I::SetItemTooltip("Flatten the Content Tree");
 
-            I::TableNextColumn();
+            I::SameLine(0, 0);
+            if (std::shared_lock __(Lock); scoped::Disabled(!G::Game.Content.AreObjectsLoaded() || !ContentFilter.GetFilteredObjectsCount()))
+            if (I::Button(ICON_FA_DOWNLOAD))
+            {
+                std::vector<Data::Content::ContentObject const*> filteredObjects;
+                filteredObjects.reserve(ContentFilter.GetFilteredObjectsCount());
+                filteredObjects.assign_range(G::Game.Content.GetObjects() | std::views::filter([&](Data::Content::ContentObject const* object) { return object->MatchesFilter(ContentFilter); }));
+                SortList(filteredObjects, Sort, SortInvert, Flatten.has_value());
+
+                G::Windows::ContentExport.Export(filteredObjects);
+            }
+            I::SetItemTooltip("Export Filtered Content Tree");
+
+            I::SameLine(0, 0);
             auto const viewer = dynamic_cast<ContentViewer*>(G::UI.GetCurrentViewer());
             if (scoped::Disabled(!viewer))
             if (I::Button(ICON_FA_FOLDER_MAGNIFYING_GLASS))
                 LocateObject(viewer->Content);
             I::SetItemTooltip("Locate:\n%s", viewer ? viewer->Title().c_str() : "<no content selected>");
 
-            I::TableNextColumn();
-            if (scoped::Disabled(!G::Game.Content.AreObjectsLoaded()))
-            {
-                if (I::Button(ICON_FA_DOWNLOAD))
-                {
-                    std::vector<Data::Content::ContentObject const*> filteredObjects;
-                    filteredObjects.reserve(ContentFilter.GetFilteredObjectsCount());
-
-                    std::ranges::copy(
-                        G::Game.Content.GetObjects()
-                        | std::views::filter([&](Data::Content::ContentObject const* object) {
-                            return object->MatchesFilter(ContentFilter);
-                            }),
-                        std::back_inserter(filteredObjects)
-                    );
-
-                    SortList(filteredObjects, Sort, SortInvert, Flatten.has_value());
-
-                    G::Windows::ContentExport.ExportContentData(std::vector(filteredObjects.begin(), filteredObjects.end()));
-                }
-            }
-            I::SetItemTooltip("Export current content object list");
-
-            I::TableNextColumn();
+            I::SameLine(0, 0);
             if (scoped::Disabled(Flatten.has_value()))
             if (I::Button(ICON_FA_FOLDER_OPEN))
                 context.ExpandAll = true;
             I::SetItemTooltip("Expand All Namespaces");
 
-            I::TableNextColumn();
+            I::SameLine(0, 0);
             if (scoped::Disabled(Flatten.has_value()))
             if (I::Button(ICON_FA_FOLDER_CLOSED))
                 context.CollapseAll = true;

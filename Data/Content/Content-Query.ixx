@@ -85,7 +85,15 @@ QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, s
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, TypeInfo::SymbolType const& type, TypeInfo::Condition::ValueType value);
 struct ExportOptions
 {
-    uint32 InlineObjectMaxDepth = 0;
+    enum class ContentPointerFormats
+    {
+        GUID,
+        Verbose,
+        Joined,
+    } ContentPointerFormat = ContentPointerFormats::Verbose;
+    std::string ContentPointerFormatJoinedSeparator = "|";
+    uint32 ContentPointerMaxInlineDepth = 0;
+    bool IgnoreUnnamedFields = false;
 };
 ordered_json ExportSymbolData(ContentObject const& content, ExportOptions const& options = { });
 
