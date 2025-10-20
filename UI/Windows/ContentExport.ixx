@@ -40,6 +40,21 @@ struct ContentExport : Window
 
     void Draw() override
     {
+        I::AlignTextToFramePadding(); I::Text("Indentation:"); I::SameLine();
+        I::SetNextItemWidth(60);
+        I::DragInt("##Indent", &Indent, 0.05f, -1, 8, Indent >= 0 ? "%d" : "compact");
+        if (I::IsItemHovered())
+            I::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
+        if (Indent > 0)
+        {
+            I::SameLine();
+            I::RadioButton(std::format("space{}##IndentSpace", Indent != 1 ? "s" : "").c_str(), &IndentChar, ' ');
+            I::SameLine();
+            I::RadioButton(std::format("tab{}##IndentSpace", Indent != 1 ? "s" : "").c_str(), &IndentChar, '\t');
+        }
+
+        I::Checkbox("Ignore unnamed fields", &Options.IgnoreUnnamedFields);
+
         I::AlignTextToFramePadding(); I::Text("Resolve content object reference depth:"); I::SameLine();
         I::SetNextItemWidth(30);
         I::DragInt("##ContentPointerMaxInlineDepth", (int*)&Options.ContentPointerMaxInlineDepth, 0.05f, 0, 5);
@@ -68,21 +83,6 @@ struct ContentExport : Window
                 case Joined:  preview = ordered_json(std::format("{1}{0}{2}{0}{3}", Options.ContentPointerFormatJoinedSeparator, (std::string_view)json["Content::GUID"], (std::string_view)json["Content::Type"], (uint32)json["Content::DataID"])).dump(); break;
             }
             I::TextUnformatted(std::format("<code>{}</code>", preview).c_str());
-        }
-
-        I::Checkbox("Ignore unnamed fields", &Options.IgnoreUnnamedFields);
-
-        I::AlignTextToFramePadding(); I::Text("Indentation:"); I::SameLine();
-        I::SetNextItemWidth(60);
-        I::DragInt("##Indent", &Indent, 0.05f, -1, 8, Indent >= 0 ? "%d" : "compact");
-        if (I::IsItemHovered())
-            I::SetMouseCursor(ImGuiMouseCursor_ResizeEW);
-        if (Indent > 0)
-        {
-            I::SameLine();
-            I::RadioButton(std::format("space{}##IndentSpace", Indent != 1 ? "s" : "").c_str(), &IndentChar, ' ');
-            I::SameLine();
-            I::RadioButton(std::format("tab{}##IndentSpace", Indent != 1 ? "s" : "").c_str(), &IndentChar, '\t');
         }
 
         I::Separator();
