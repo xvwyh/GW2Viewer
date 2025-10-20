@@ -646,7 +646,7 @@ begin:
                 }
                 else if (!state.MonospaceDepth)
                 {
-                    monospace.back().Max = { x + 2, y + line_height + 2 };
+                    monospace.back().Max = ImMax(monospace.back().Max, { x + 2, y + line_height + 2 });
                     x += 2;
                 }
             }
@@ -697,7 +697,7 @@ begin:
             if (s >= word_wrap_eol)
             {
                 if (state.MonospaceDepth)
-                    monospace.back().Max = { x + 2, y + line_height + 2 };
+                    monospace.back().Max = ImMax(monospace.back().Max, { x + 2, y + line_height + 2 });
                 x = origin_x;
                 y += line_height;
                 if (y > clip_rect.w)
@@ -724,6 +724,8 @@ begin:
         {
             if (c == '\n')
             {
+                if (!word_wrap_enabled && state.MonospaceDepth)
+                    monospace.back().Max = ImMax(monospace.back().Max, { x + 2, y + line_height + 2 });
                 x = origin_x;
                 y += line_height;
                 if (y > clip_rect.w)
