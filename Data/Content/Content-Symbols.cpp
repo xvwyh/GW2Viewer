@@ -61,17 +61,26 @@ template<typename T> ordered_json Integer<T>::Export(Context const& context, Exp
         if (e->Flags)
         {
             ordered_json json;
-            TypeInfo::Enum::FlagsUnderlyingType remaining = value;
-            for (auto const& [flag, name] : e->Values)
+            // Workaround for std::make_unsigned not accepting bool type, because of the silly decision to implement bool symbols as Integer<bool>
+            // flags will be the value converted to unsigned version of type T, to avoid e.g. int32 0x80000000 auto expanding to int64 as 0xFFFFFFFF80000000
+            auto const flags = [value]
             {
-                if (TypeInfo::Enum::FlagsUnderlyingType const flagTyped = flag; (remaining & flagTyped) == flagTyped)
+                if constexpr (std::is_same_v<T, bool>)
+                    return value;
+                else
+                    return (std::make_unsigned_t<T>)value;
+            }();
+            for (TypeInfo::Enum::FlagsUnderlyingType bit = 1; bit; bit <<= 1)
+            {
+                if (flags & bit)
                 {
-                    json.emplace_back(name);
-                    remaining &= ~flagTyped;
+                    if (auto const itr = e->Values.find(bit); itr != e->Values.end())
+                        json.emplace_back(itr->second);
+                    else
+                        json.emplace_back(std::format("0x{:X}", bit));
                 }
             }
-            if (remaining)
-                json.emplace_back(std::format("0x{:X}", remaining));
+
             return json;
         }
 
