@@ -514,6 +514,15 @@ void ArrayContent::Draw(Context const& context) const
         I::PopStyleColor();
 }
 
+std::string ContentType::GetDisplayText(Context const& context) const
+{
+    auto const typeIndex = context.Data<uint32>();
+    if (auto const& typeInfo = G::Game.Content.GetType(typeIndex)->GetTypeInfo(); !typeInfo.Name.empty())
+        return std::format("{}  <c=#4>#{}</c>", typeInfo.Name, typeIndex);
+
+    return std::format("<c=#4>#{}</c>", typeIndex);
+}
+
 std::tuple<TypeInfo::SymbolType const*, uint32> GetSymbolTypeForContentType(uint32 typeIndex)
 {
     switch (G::Game.Content.GetType(typeIndex)->GetTypeInfo().ContentType)
@@ -778,6 +787,7 @@ std::vector<TypeInfo::SymbolType const*>& GetTypes()
         new Token64(),
         new StringID(),
         new FileID(),
+        new ContentType(),
         new ContentPointer(),
         new ArrayContent(),
         new RawPointerT(),

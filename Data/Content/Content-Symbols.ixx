@@ -225,6 +225,12 @@ struct ArrayContent : ArrayT
     [[nodiscard]] ordered_json Export(Context const& context) const override { return ordered_json::array(); }
     void Draw(Context const& context) const override;
 };
+struct ContentType : Integer<uint32>
+{
+    ContentType() : Integer("ContentType") { }
+
+    [[nodiscard]] std::string GetDisplayText(Context const& context) const override;
+};
 struct ParamValue : TypeInfo::SymbolType
 {
     ParamValue() : SymbolType("ParamValue") { }
