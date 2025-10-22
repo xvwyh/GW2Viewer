@@ -80,11 +80,12 @@ struct StringPointer : TypeInfo::SymbolType
     [[nodiscard]] uint32 Size() const override { return sizeof(typename String<T>::Struct*); }
     void Draw(Context const& context) const override;
 };
+template<std::array<byte, 4> Swizzle>
 struct Color : TypeInfo::SymbolType
 {
-    std::array<byte, 4> Swizzle;
+    Color(char const* name) : SymbolType(name) { }
 
-    Color(char const* name, std::array<byte, 4> swizzle) : SymbolType(name), Swizzle(swizzle) { }
+    [[nodiscard]] static uint32 GetRGBA(Context const& context);
 
     [[nodiscard]] std::optional<TypeInfo::Condition::ValueType> GetValueForCondition(Context const& context) const override { return context.Data<uint32>(); }
     [[nodiscard]] std::string GetDisplayText(Context const& context) const override;

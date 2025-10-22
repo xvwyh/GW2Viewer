@@ -149,7 +149,7 @@ template<typename T> void StringPointer<T>::Draw(Context const& context) const
         GetTargetSymbolType()->Draw({ target, context });
 }
 
-std::string Color::GetDisplayText(Context const& context) const
+template<std::array<byte, 4> Swizzle> uint32 Color<Swizzle>::GetRGBA(Context const& context)
 {
     union
     {
@@ -159,9 +159,13 @@ std::string Color::GetDisplayText(Context const& context) const
     auto color = original;
     for (auto const& [dest, source] : Swizzle | std::views::enumerate)
         color.Channels[dest] = original.Channels[source];
-    return std::format("<c=#{0:08X}>#{0:08X}</c>", std::byteswap(color.Color));
+    return color.Color;
 }
-void Color::Draw(Context const& context) const
+template<std::array<byte, 4> Swizzle> std::string Color<Swizzle>::GetDisplayText(Context const& context) const
+{
+    return std::format("<c=#{0:08X}>#{0:08X}</c>", std::byteswap(GetRGBA(context)));
+}
+template<std::array<byte, 4> Swizzle> void Color<Swizzle>::Draw(Context const& context) const
 {
     ImVec4 const original = I::ColorConvertU32ToFloat4(context.Data<uint32>()); // 0xAABBGGRR
     ImVec4 color;
@@ -457,7 +461,6 @@ std::tuple<TypeInfo::SymbolType const*, uint32> GetSymbolTypeForContentType(uint
         default:            return { GetByName("Content*"), 1 };
     }
 }
-
 std::strong_ordering ParamValue::CompareDataForSearch(byte const* dataA, byte const* dataB) const
 {
     auto const& paramA = GetStruct(dataA);
@@ -481,7 +484,6 @@ std::strong_ordering ParamValue::CompareDataForSearch(byte const* dataA, byte co
 
     return std::strong_ordering::equal;
 }
-
 std::optional<TypeInfo::Condition::ValueType> ParamValue::GetValueForCondition(Context const& context) const
 {
     auto const& param = GetStruct(context);
@@ -569,7 +571,6 @@ std::strong_ordering ParamDeclare::CompareDataForSearch(byte const* dataA, byte 
             return result;
     return GetByName("ParamValue")->CompareDataForSearch((byte const*)&paramA.Value, (byte const*)&paramB.Value);
 }
-
 std::optional<TypeInfo::Condition::ValueType> ParamDeclare::GetValueForCondition(Context const& context) const
 {
     auto const& param = GetStruct(context);
@@ -661,10 +662,10 @@ std::vector<TypeInfo::SymbolType const*>& GetTypes()
         new StringPointer<char>("char**"),
         new String<wchar_t>("wchar_t*"),
         new StringPointer<wchar_t>("wchar_t**"),
-        new Color("ColorRGBA", { 0, 1, 2, 3 }),
-        new Color("ColorBGRA", { 2, 1, 0, 3 }),
-        new Color("ColorARGB", { 3, 0, 1, 2 }),
-        new Color("ColorABGR", { 3, 2, 1, 0 }),
+        new Color<{ 0, 1, 2, 3 }>("ColorRGBA"),
+        new Color<{ 2, 1, 0, 3 }>("ColorBGRA"),
+        new Color<{ 3, 0, 1, 2 }>("ColorARGB"),
+        new Color<{ 3, 2, 1, 0 }>("ColorABGR"),
         new Point<float, 2>("Point2D"),
         new Point<float, 3>("Point3D"),
         new Point<int, 2>("IntPoint2D"),
