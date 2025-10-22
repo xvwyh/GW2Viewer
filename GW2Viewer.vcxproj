@@ -208,6 +208,7 @@
     <ClCompile Include="UI\Viewers\ViewerRegistry.ixx" />
     <ClCompile Include="UI\Viewers\ViewerWithHistory.ixx" />
     <ClCompile Include="UI\Windows\ArchiveIndex.ixx" />
+    <ClCompile Include="UI\Windows\ContentExport.ixx" />
     <ClCompile Include="UI\Windows\ContentSearch.ixx" />
     <ClCompile Include="UI\Windows\Demangle.ixx" />
     <ClCompile Include="UI\Windows\ListContentValues.ixx" />

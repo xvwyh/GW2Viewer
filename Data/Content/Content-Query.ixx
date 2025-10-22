@@ -83,5 +83,18 @@ struct QuerySymbolDataResult : TypeInfo::Context
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, SymbolPath::Span path);
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, std::string_view path);
 QuerySymbolDataResult::Generator QuerySymbolData(ContentObject const& content, TypeInfo::SymbolType const& type, TypeInfo::Condition::ValueType value);
+struct ExportOptions
+{
+    enum class ContentPointerFormats
+    {
+        GUID,
+        Verbose,
+        Joined,
+    } ContentPointerFormat = ContentPointerFormats::Verbose;
+    std::string ContentPointerFormatJoinedSeparator = "|";
+    uint32 ContentPointerMaxInlineDepth = 0;
+    bool IgnoreUnnamedFields = false;
+};
+ordered_json ExportSymbolData(ContentObject const& content, ExportOptions const& options = { });
 
 }
