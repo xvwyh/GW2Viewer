@@ -98,7 +98,7 @@ void ConversationViewer::Draw()
             std::set targets { std::from_range, conversation.States | std::views::transform(&Content::Conversation::State::StateID) };
             targets.erase(state.StateID);
             for (auto const& state : conversation.States)
-                for (auto const& transition : state.Transitions)
+                for (auto const& transition : state.Transitions | std::views::filter([](Content::Conversation::State::Transition const& transition) { return iconInfo[iconToIconInfoIndex[transition.Icon]].Name != "Back"; }))
                     for (auto const& target : transition.Targets)
                         targets.erase(target.TargetStateID);
 
@@ -228,7 +228,7 @@ void ConversationViewer::Draw()
 
             I::SameLine();
             I::Text("%s%s%s",
-                drawTextID ? std::format("<c=#CCF>({})</c>", state.TextID).c_str() : "",
+                drawTextID ? std::format("<c=#CCF>({})</c> ", state.TextID).c_str() : "",
                 drawEncryptionStatus ? GetStatusText(status) : "", 
                 text.c_str());
         }
