@@ -513,9 +513,9 @@ void EventViewer::DrawObjective(Content::Event::Objective const& objective, Cach
         { { "Cull" }, [](Params const& params)
         {
             params.DrawProgress({
-                .DisplayedAsProgressBar = params.Objective.Flags & 0x1,
-                .Invert = params.Objective.Flags & 0x2,
-                .InvertProgress = (params.Objective.Flags & 0x4) ^ true,
+                .DisplayedAsProgressBar = params.Objective.Flags & 0x2,
+                .Invert = params.Objective.Flags & 0x1,
+                .InvertProgress = !(params.Objective.Flags & 0x4),
                 .AgentName = params.Objective.AgentNameTextID,
                 .TextDefault = 47096,
                 .TargetCount = params.Objective.TargetCount,
