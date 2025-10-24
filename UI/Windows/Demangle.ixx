@@ -206,7 +206,7 @@ struct Demangle : Window
                     BruteforceRecursiveSkipTo = nullptr;
                     if (objects && std::ranges::any_of(ns.Entries, [](auto const& object) { return !object->HasCorrectCustomName(); }) ||
                         namespaces && std::ranges::any_of(ns.Namespaces, [](auto const& ns) { return !ns->HasCorrectCustomName(); }))
-                        current = std::format(L"{}.", ns.GetFullDisplayName());
+                        current = std::format(L"{}.", ns.GetFullDisplayName(false, true));
                 }
                 if (!current.empty())
                     co_yield current;
